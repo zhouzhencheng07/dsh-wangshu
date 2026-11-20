@@ -40,15 +40,15 @@ const call = async (route, url, method = 'GET') => {
 
 // 1) 逐文件 exact：表里的文件回 200 + 正确 content-type，表外的 URL 一律 404
 const disposeFiles = registerVendorFiles(webServer, new Map([
-  ['/dsh-wangshu/vendor/xterm.js', 'xterm.js'],
+  ['/dsh-wangshu/vendor/katex.min.js', 'katex.min.js'],
   ['/dsh-wangshu/vendor/pdf.min.mjs', 'pdf.min.mjs'],
 ]))
 check('每个文件一条 exact 路由', routes.length === 2 && routes.every((r) => r.kind === 'exact'))
-check('js 与 mjs 都是可执行脚本类型', (await call(routes[0], '/dsh-wangshu/vendor/xterm.js')).type.startsWith('text/javascript') && (await call(routes[1], '/dsh-wangshu/vendor/pdf.min.mjs')).type.startsWith('text/javascript'))
-const hit = await call(routes[0], '/dsh-wangshu/vendor/xterm.js')
+check('js 与 mjs 都是可执行脚本类型', (await call(routes[0], '/dsh-wangshu/vendor/katex.min.js')).type.startsWith('text/javascript') && (await call(routes[1], '/dsh-wangshu/vendor/pdf.min.mjs')).type.startsWith('text/javascript'))
+const hit = await call(routes[0], '/dsh-wangshu/vendor/katex.min.js')
 check('白名单里的文件真取到字节', hit.status === 200 && hit.bytes > 1000)
-check('HEAD 也放行（不返体）', (await call(routes[0], '/dsh-wangshu/vendor/xterm.js', 'HEAD')).status === 200)
-check('非 GET/HEAD 一律 404', (await call(routes[0], '/dsh-wangshu/vendor/xterm.js', 'POST')).status === 404)
+check('HEAD 也放行（不返体）', (await call(routes[0], '/dsh-wangshu/vendor/katex.min.js', 'HEAD')).status === 200)
+check('非 GET/HEAD 一律 404', (await call(routes[0], '/dsh-wangshu/vendor/katex.min.js', 'POST')).status === 404)
 check('撤路由后不再留在表里', (disposeFiles(), removed.length === 2))
 
 // 2) 子目录前缀（KaTeX 字体）：单段白名单字符放行，穿越与多段一律 404
@@ -57,7 +57,7 @@ const fonts = routes[routes.length - 1]
 check('字体走一条前缀路由', fonts.kind === 'prefix' && fonts.path === '/dsh-wangshu/vendor/fonts')
 const font = await call(fonts, '/dsh-wangshu/vendor/fonts/KaTeX_AMS-Regular.woff2')
 check('字体文件取到且是 font/woff2', font.status === 200 && font.type === 'font/woff2' && font.bytes > 0)
-check('目录穿越 404（.. 不放行）', (await call(fonts, '/dsh-wangshu/vendor/fonts/../xterm.js')).status === 404)
+check('目录穿越 404（.. 不放行）', (await call(fonts, '/dsh-wangshu/vendor/fonts/../katex.min.js')).status === 404)
 check('多段路径 404', (await call(fonts, '/dsh-wangshu/vendor/fonts/a/b.woff2')).status === 404)
 check('缺文件名 404', (await call(fonts, '/dsh-wangshu/vendor/fonts/')).status === 404)
 check('不存在的字体 404', (await call(fonts, '/dsh-wangshu/vendor/fonts/nope.woff2')).status === 404)

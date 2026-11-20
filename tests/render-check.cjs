@@ -106,7 +106,7 @@ if (!global.location) {
 
 // 3) 组装可执行的 factory 闭包，并导出组件（替换防 early-return）；
 //    setKitUi 用于预置面板状态等依赖状态的渲染分支。
-//    根 return 必须取最后一处：files/terminal 组件模块体内各有
+//    根 return 必须取最后一处：组件模块体内各有
 //    一个自己的 return module.exports，replace 首处会把 factory 提前截断在组件段。
 const RETURN = "return module.exports;";
 const rootReturn = body.lastIndexOf(RETURN);
@@ -244,8 +244,7 @@ check("TreeRowMenu 目录行菜单(新建文件/目录单入口+复制相对/重
 
 // 5)/6) FileTreePanel 与 DiffPane 直测在 tests\render-check-files.cjs
 
-// 7) 入口：知识库 · 日程 收进对话区那一枚钮（输入行入口已退场，命令走快捷键）；
-//    终端入口与坞直测在 tests\render-check-terminal.cjs
+// 7) 入口：知识库 · 日程 收进对话区那一枚钮（输入行入口已退场，命令走快捷键）
 check(
   "对话区不再挂知识库 · 日程入口钮（唯一入口是快捷键）",
   !src.includes("function VaultEntry") &&
@@ -1559,7 +1558,7 @@ let vaultFetchPrev = null;
   check("保存串行：控制面与自动保存共用一条队列（并发写必撞 CAS）", src.includes("let saving = false;") && src.includes("let queuedMode = null;") && src.includes("saveQueueRef.current = enqueueSave;") && src.includes("flush: enqueued(\"auto\")"));
   check("卸载保底用挂载那一刻的保存函数（ref 镜像此时已指向新页）", src.includes("const mountedSave = onSaveRef.current;") && src.includes("void mountedSave(rteRef.current.getMd(), \"auto\");"));
   // Esc 一律没有环境级行为：root 壳不认这个键（同一个键既收插件界面又触发宿主手势——
-  // 终端里 ESC 与坞一起收、跑回复时顺手关页签）。浮层自己开着时的 Esc 各自持有。
+  // 跑回复时顺手关页签）。浮层自己开着时的 Esc 各自持有。
   check("Esc 无环境级行为（root 不挂全局 Esc、无让路座与全局关签件）", !src.includes("closeActiveRightbarTab") && !src.includes("activeRightbarFeature") && !src.includes("dock.vaultSearch") && !src.includes("else if (getKitUi().termDockOpen) setKitUi({ termDockOpen: false });"));
   check("浮层自己的 Esc 仍在（树行菜单与对话框持有）", src.includes('if (e.key === "Escape") onClose();') && (src.match(/if \(e\.key === "Escape"\) onClose\(\);/g) ?? []).length === 1 && /if \(e\.key === "Escape"\) \{\s*\n\s*e\.stopPropagation\(\);\s*\n\s*onClose\(\);/.test(src));
   check("读页上下文提交后发布（渲染期通知订阅者）+ 空页表用常量", src.includes("react.useEffect(() => {\n        const refreshIndex = () => void loadIndex();") && src.includes("?? VAULT_EMPTY_PAGES"));
@@ -1744,7 +1743,7 @@ let vaultFetchPrev = null;
   stateSeq = 0;
   stateStore.clear();
 }
-comps.setKitUi({ terminals: [], activeTermId: null, termDockOpen: false });
+comps.setKitUi({ treeOpen: false, vaultSideOpen: false });
 callLog = [];
 out = comps.KitSurfaces({});
 check("KitSurfaces 无hooks渲染无异常（根壳不渲染面板本体）", out === null);
@@ -1818,9 +1817,9 @@ check("KitSurfaces 带cwd渲染无异常（根壳不渲染面板本体）", out 
   const isComponent = (row) => typeof row.id === "string" && !/^-?\d+$/.test(row.id);
   const carrier = rows.filter((row) => !isComponent(row));
   const comps = rows.filter(isComponent);
-  const expected = ["files", "chat", "vault", "terminal", "phone", "monitor", "search"];
+  const expected = ["files", "chat", "vault", "phone", "monitor", "search"];
   check(
-    "patch 形状：一行载体行（name = 包名、id 写数字字面量 → 不当作可管理组件：不进组件列表、没有行开关；浏览器半边挂在它上面，放行序末尾不跟功能行混在一起）+ 七个组件行 id/name 齐备且顺序 = 描述顺序（组件行 id 必须显式且稳定：匿名行的随机 id 每次 profile 写入都会换 → 该行重挂、整包客户端重载）",
+    "patch 形状：一行载体行（name = 包名、id 写数字字面量 → 不当作可管理组件：不进组件列表、没有行开关；浏览器半边挂在它上面，放行序末尾不跟功能行混在一起）+ 六个组件行 id/name 齐备且顺序 = 描述顺序（组件行 id 必须显式且稳定：匿名行的随机 id 每次 profile 写入都会换 → 该行重挂、整包客户端重载）",
     carrier.length === 1 && carrier[0].name === "dsh-wangshu" && /^-?\d+$/.test(carrier[0].id) &&
       rows[rows.length - 1] === carrier[0] &&
       rows.length === expected.length + 1 &&
@@ -1839,9 +1838,9 @@ check("KitSurfaces 带cwd渲染无异常（根壳不渲染面板本体）", out 
   const zhDesc = JSON.parse(fs.readFileSync(__dirname + "/../locale/zh.json", "utf8")).meta.description;
   const enDesc = JSON.parse(fs.readFileSync(__dirname + "/../locale/en.json", "utf8")).meta.description;
   check(
-    "卡片描述按同一顺序枚举七个组件（zh/en 同序）",
-    inOrder(zhDesc, ["文件树", "对话小窗", "知识库·日程", "终端", "手机访问", "用量与监视", "网页搜索"]) &&
-      inOrder(enDesc, ["File tree", "chat window", "vault & schedule", "terminal", "phone access", "usage & monitor", "web search"]),
+    "卡片描述按同一顺序枚举六个组件（zh/en 同序）",
+    inOrder(zhDesc, ["文件树", "对话小窗", "知识库·日程", "手机访问", "用量与监视", "网页搜索"]) &&
+      inOrder(enDesc, ["File tree", "chat window", "vault & schedule", "phone access", "usage & monitor", "web search"]),
   );
 }
 
@@ -1900,8 +1899,8 @@ check(
 );
 // 悬停提示不再自带原生 title（知识库入口钮改由 KitTip 出官方气泡）
 check("入口钮的悬停不再自带原生 title（全走官方气泡）", !/dshk-enbtn"[\s\S]{0,120}?\n\s*title:/.test(src));
-// 终端半边已收回根包（单包组件化）：坞/图标/xterm 胶水/命令注册/样式都在本 bundle，
-// 正向钉住见 tests\render-check-terminal.cjs（comps = dockExports.terminal）
+// 组件半边都在本 bundle，
+
 
 // 至少渲染出来 JSX 元素（说明走到 render 而非静默 null）。根壳（KitSurfaces）只做座位
 // 门控、恒返回 null，这里用日程清单面板确认 JSX 真走到 render。

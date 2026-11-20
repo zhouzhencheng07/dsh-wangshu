@@ -16,8 +16,6 @@
       name: dsh-wangshu/chat
     - id: vault
       name: dsh-wangshu/vault
-    - id: terminal
-      name: dsh-wangshu/terminal
     - id: phone
       name: dsh-wangshu/phone
     - id: monitor
@@ -38,6 +36,6 @@
     #     整包重载（知识库 / PDF / diff 等面板全部重开）。字面量 id 不会被换掉
     #     （写 0 不行：falsy 会被当匿名）。
     # 它不对应任何功能，故排在功能行之后。
-    # vendor 静态资源归用它的组件行（终端 / 手机访问 / 知识库）。
+    # vendor 静态资源归用它的组件行（手机访问 / 知识库）。
     - id: 1
       name: dsh-wangshu

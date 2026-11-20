@@ -1,6 +1,6 @@
 // vendor 静态资源路由：白名单里的每个文件注册一条 exact 路由，资源归**用它的组件行**伺服。
 //
-// 归属跟着行走：终端行关 = 连 xterm 的 js / css 都没有，知识库行关 = pdf.js / katex /
+// 归属跟着行走：知识库行关 = pdf.js / katex /
 // mermaid 都没有。URL 一律 /dsh-wangshu/vendor/<文件名>（KaTeX 字体走 fonts/ 前缀路由），
 // 浏览器半边只按 URL 取，不因归属变化而改。
 //
@@ -44,7 +44,7 @@ function serveFile(req, res, file) {
 }
 /**
  * 逐文件 exact 路由。files = URL 路径 → client/vendor/ 下的文件名（如
- * '/dsh-wangshu/vendor/xterm.js' → 'xterm.js'）；URL 不在表里就 404，天然挡路径穿越。
+ * '/dsh-wangshu/vendor/katex.min.js' → 'katex.min.js'）；URL 不在表里就 404，天然挡路径穿越。
  */
 export function registerVendorFiles(webServer, files) {
     const disposers = [];

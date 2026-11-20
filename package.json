@@ -1,7 +1,7 @@
 {
   "name": "dsh-wangshu",
   "version": "0.1.7-rc.2",
-  "description": "Page capability kit for DeepSeek Harness (dsh): one row per component — file tree, floating chat window, terminal, knowledge base & schedule, usage monitor, free multi-source web search, phone access",
+  "description": "Page capability kit for DeepSeek Harness (dsh): one row per component — file tree, floating chat window, knowledge base & schedule, usage monitor, free multi-source web search, phone access",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
@@ -17,11 +17,6 @@
       "default": "./dist/chat/index.js"
     },
     "./chat/locale/*.json": "./locale/chat/*.json",
-    "./terminal": {
-      "types": "./dist/terminal/index.d.ts",
-      "default": "./dist/terminal/index.js"
-    },
-    "./terminal/locale/*.json": "./locale/terminal/*.json",
     "./monitor": {
       "types": "./dist/monitor/index.d.ts",
       "default": "./dist/monitor/index.js"
@@ -69,7 +64,6 @@
     "deepseek-harness",
     "dsh-plugin",
     "plugin",
-    "terminal",
     "file-tree",
     "settings",
     "chat",

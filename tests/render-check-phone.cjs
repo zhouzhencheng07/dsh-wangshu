@@ -233,7 +233,7 @@ async function checkApply() {
   const read = (rel) => fs.readFileSync(__dirname + "/../" + rel, "utf8");
   const bundleSrc = read("client/bundle.js");
   // 套件没有根入口模块：查的是「手机访问的装配没渗进别的组件行」
-  const hostSrc = ["chat", "files", "monitor", "search", "terminal"]
+  const hostSrc = ["chat", "files", "monitor", "search"]
     .map((d) => read(`src/${d}/index.ts`)).join("\n");
   const compSrc = read("src/phone/index.ts");
   const gwSrc = read("src/phone/gateway.ts");
@@ -265,7 +265,7 @@ async function checkApply() {
   check(
     "二维码静态资源归本行注册（行关 = 没有 qrcode.js），不夹带别家的资源",
     compSrc.includes("registerVendorFiles") && compSrc.includes("['/dsh-wangshu/vendor/qrcode.js', 'qrcode.js']") &&
-      !/xterm[.]js|richeditor|katex|pdf[.]/.test(compSrc),
+      !/richeditor|katex|pdf[.]/.test(compSrc),
   );
   check(
     "组件入口自持端点与配置，且带探针（404 = 行关闭）",

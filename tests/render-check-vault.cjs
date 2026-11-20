@@ -707,7 +707,7 @@ async function checkApply() {
   const read = (rel) => fs.readFileSync(__dirname + "/../" + rel, "utf8");
   const bundleSrc = read("client/bundle.js");
   // 套件没有根入口模块：查的是「知识库的装配没渗进别的组件行」
-  const hostSrc = ["chat", "files", "monitor", "phone", "search", "terminal"]
+  const hostSrc = ["chat", "files", "monitor", "phone", "search"]
     .map((d) => read(`src/${d}/index.ts`)).join("\n");
   const compSrc = read("src/vault/index.ts");
   const patchSrc = read("cordis.patch.yml");
@@ -735,7 +735,7 @@ async function checkApply() {
     "阅读面的第三方库路由归知识库行注册（pdf.js / TipTap / mermaid / KaTeX + fonts 前缀），不夹带别家的资源",
     compSrc.includes("registerVendorFiles") && compSrc.includes("registerVendorSubdir") &&
       ["/dsh-wangshu/vendor/pdf.min.mjs", "/dsh-wangshu/vendor/pdf.worker.min.mjs", "/dsh-wangshu/vendor/richeditor.bundle.js", "/dsh-wangshu/vendor/mermaid.min.js", "/dsh-wangshu/vendor/katex.min.js", "/dsh-wangshu/vendor/katex.min.css"].every((u) => compSrc.includes("['" + u + "',")) &&
-      compSrc.includes("'/dsh-wangshu/vendor/fonts'") && !/xterm[.]js|qrcode[.]js/.test(compSrc),
+      compSrc.includes("'/dsh-wangshu/vendor/fonts'") && !/qrcode[.]js/.test(compSrc),
   );
   // 代码盒正文可编辑的命门：node view 的 ignoreMutation 判据必须收在「控件区」——
   // 写成「contentDOM 之外的都忽略」会把浏览器删空代码块时摘 <code> 的结构改动一起吞掉，

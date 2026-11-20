@@ -5,8 +5,7 @@
 //   入口：左栏底部的形态切换条（sidebar.footer.action）——会话列表 / 文件树 /
 //     知识库·日程三枚一行，管的是侧栏那一格显示哪个形态（三形态天然互斥）。
 //     整条归 root 渲染（SideFormBar），组件那几枚由各自的组件半边
-//     物化期登记进 kitBase.sideForms。composer 工具行只剩终端一枚
-//     （conversation.input.left，dsh-wangshu/terminal 自注册）；日程的家是右栏 dock 签。
+//     物化期登记进 kitBase.sideForms。日程的家是右栏 dock 签。
 //   右栏（唯一工作台形态）：sidebarRightTabs 注册四类 dock 签，
 //     pane 正文经 slots.inject（sidebar.right.pane.tab）按 id 提供，pane 内自管
 //     pane 正文。dock 签本身没有按钮：知识库/日程都是被动签（树/对话
@@ -24,10 +23,10 @@
 //     渲染器单槽分发。
 //     文件点击改投官方右栏文件签（sidebarRight.openResource，kit 不自建
 //     预览/编辑）；vault 内 md 页直达知识库编辑器。
-//   组件半边：files / monitor / terminal / search / vault / phone
+//   组件半边：files / monitor / search / vault / phone
 //     各自一个 xModule 隔离壳（本 factory 尾部组装完成后执行），激活由根 apply 尾部
 //     循环触发——行禁用只摘宿主半边端点，探针 404 的组件整体不注册。
-// 第三方大库（xterm / pdf.js / TipTap / mermaid / KaTeX / 二维码）都不打进 bundle，
+// 第三方大库（pdf.js / TipTap / mermaid / KaTeX / 二维码）都不打进 bundle，
 // 由用它们的组件行伺服 /dsh-wangshu/vendor/* 静态资源（行关 = 连资源一起没有），各自
 // 首次用到时按需加载。
 //
@@ -507,9 +506,7 @@ window.__ModuleLoader__.load({
     // 右栏文件签，不进这里。
     // 侧栏那一格是单槽：tree / git / 知识库·日程 三者互斥。知识库与日程同属一个组件、
     // 共占那一格，槽内切哪一面由 vaultSideTab 记（tab 条画在组件自己的侧栏渲染器里）。
-    let kitUi = { treeOpen: false, vaultSideOpen: false, vaultSideTab: "vault", terminals: [], activeTermId: null, termDockOpen: false, vaultOpen: false };
-    // terminals/activeTermId/termDockOpen 是 dsh-wangshu-terminal 组件的水位（入口与坞
-    // 分属两个槽位，状态必须共享一份）。
+    let kitUi = { treeOpen: false, vaultSideOpen: false, vaultSideTab: "vault", vaultOpen: false };
     const kitUiListeners = new Set();
     function setKitUi(patch) {
       kitUi = { ...kitUi, ...patch };
@@ -1184,7 +1181,6 @@ window.__ModuleLoader__.load({
       deleted: "已删除",
       edit: "编辑",
       fileDownload: "下载到本机",
-      contentFail: "读取失败",
       officialOpenFail: "打开失败",
       scNoSeat: "当前不在对话中",
       sideFormsLabel: "侧栏视图",
@@ -1214,7 +1210,6 @@ window.__ModuleLoader__.load({
       deleted: "Deleted",
       edit: "Edit",
       fileDownload: "Download file",
-      contentFail: "Failed to read",
       officialOpenFail: "Open failed",
       scNoSeat: "Not in a conversation",
       sideFormsLabel: "Sidebar view",
@@ -1239,27 +1234,16 @@ window.__ModuleLoader__.load({
     // ─────────── 样式 ───────────
     const UI_CSS = `
 .dshk-head{flex:none;min-height:34px;display:flex;align-items:center;gap:8px;padding:0 6px 0 12px;color:var(--dsw-alias-label-secondary);font-size:12px;border-bottom:1px solid var(--dsw-alias-border-l1);overflow:hidden}
-.dshk-title{font-weight:600;color:var(--dsw-alias-label-primary);flex:1 1 auto;min-width:0;overflow-wrap:anywhere}
-.dshk-spring{flex:1}
 .dshk-btn{appearance:none;background:transparent;border:0;color:var(--dsw-alias-label-secondary);width:26px;height:26px;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:13px;line-height:1;padding:0}
 .dshk-btn:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}
 /* 官方文件预览头部注入的下载按钮：度量对齐官方 tool 按钮（28×28 圆形热区、15px 图形） */
 .dshk-preview-dl{appearance:none;background:transparent;border:0;color:var(--dsw-alias-label-secondary);width:28px;height:28px;border-radius:28px;cursor:pointer;flex:none;display:inline-flex;align-items:center;justify-content:center;padding:6px;line-height:1}
 .dshk-preview-dl:hover{color:var(--dsw-alias-label-primary);background:var(--dsw-alias-interactive-bg-hover)}
 .dshk-preview-dl svg{width:15px;height:15px;display:block}
-/* 多终端：入口图标数量角标 + 标签条 + 堆叠 pane（隐藏 pane 离屏缓冲输出） */
+/* 入口图标数量角标 */
 .dshk-enbtn{position:relative}
 /* 品牌主色是单色令牌（浅色主题近黑、深色主题近白），主色底上的文字一律用 bg-base 取反——
    写死 #fff 在深色主题就是白底白字（配置/文件/Git 的保存钮同此） */
-.dshk-tabs{display:inline-flex;align-items:center;gap:2px;min-width:0;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
-.dshk-tabs::-webkit-scrollbar{display:none}
-.dshk-tab{display:inline-flex;align-items:center;gap:5px;flex:none;height:22px;padding:0 5px 0 9px;border-radius:6px;font-size:12px;color:var(--dsw-alias-label-secondary);cursor:pointer;white-space:nowrap;max-width:170px;user-select:none}
-.dshk-tab:hover{background:var(--dsw-alias-interactive-bg-hover)}
-.dshk-tab-on,.dshk-tab-on:hover{background:var(--dsw-alias-button-tool-bar-fill);color:var(--dsw-alias-label-primary)}
-.dshk-tab-label{overflow:hidden;text-overflow:ellipsis}
-.dshk-tab-x{appearance:none;border:0;background:none;color:inherit;width:15px;height:15px;border-radius:4px;font-size:10px;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex:none;visibility:hidden}
-.dshk-tab:hover .dshk-tab-x,.dshk-tab-x:hover{visibility:visible}
-.dshk-tab-x:hover{background:var(--dsw-alias-interactive-bg-hover)}
 /* 新建内联输入：头部下单行，\ 前缀建目录 */
 .dshk-createrow{display:flex;gap:6px;padding:6px 8px}
 .dshk-createrow input{flex:1;min-width:0;appearance:none;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font:inherit;font-size:12px;padding:5px 8px;border-radius:6px}
@@ -2156,8 +2140,7 @@ ellipsis，窄列只截字不破版 */
 
 
     // ─────────── 入口按钮（conversation.input.left）───────────
-    // 输入行只剩终端一枚（dsh-wangshu/terminal 组件自注册）；文件树与知识库·日程
-    // 都已改挂左栏底部的形态切换条（见上面的 SideFormBar）。
+    // 输入行不再挂插件入口；文件树与知识库·日程都挂在左栏底部的形态切换条上（见上面的 SideFormBar）。
     // 选中态标记：aria-pressed 属性选择器命中 .dshk-enbtn[aria-pressed="true"]
     // 规则（底色 + 品牌色图标）；形态条那几枚是同一观感的 .dshk-sfbtn 规则。
     // 选中态底色必须用真实存在的 tool-bar-fill 令牌——不存在的变量（如
@@ -2201,8 +2184,7 @@ ellipsis，窄列只截字不破版 */
     // 角标、自动跟随判定都读它）；pane 卸载（用户点官方签 ✕）同步回假——
     // 「签开着吗」以官方 pane 的挂载为准。
     // ─────────── 面板宿主（shell.overlay 全帧浮层）───────────
-    // 终端停靠在这里渲染（fixed 定位不受 composer 祖先
-    // stacking context 影响）；知识库单实例挂载、文件树/索引的 sidebar.workspaces
+    // 知识库单实例挂载、文件树/索引的 sidebar.workspaces
     // 动态注册、几何 RO、快捷键监听全部挂在这个常驻根组件里。
     function KitSurfaces(props) {
       react.useSyncExternalStore(subscribeLocale, getLocaleVersion); // 跟随 DSH 语言切换重绘
@@ -2251,8 +2233,8 @@ ellipsis，窄列只截字不破版 */
       }, [ui.treeOpen, ui.vaultSideOpen, cwd, rightbarUp]);
 
       // Esc 没有全局行为：官方自己认这个键（浮层关闭手势、连按两次停止回复），插件再挂一个
-      // 环境级 Esc 就是同一个按键干两件事——终端里会把 ESC 与坞一起收掉，跑回复时第一下
-      // 顺手关掉知识库/文件页签。页签关、侧栏视图关、终端坞收起各有自己的钮与快捷键。
+      // 环境级 Esc 就是同一个按键干两件事——跑回复时第一下会顺手关掉知识库/文件页签。
+      // 页签关、侧栏视图关各有自己的钮与快捷键。
 
       // 知识库/日程的面板本体归 dsh-wangshu/vault 自己的壳（见该组件的 VaultShell），
       // 根壳只留 shellShare 桥与手机访问页的座位门控
@@ -2381,12 +2363,12 @@ ellipsis，窄列只截字不破版 */
         });
         scanPreviewDownload();
       }
-      // 组件半边激活（有浏览器半边的组件各一个：files/chat/monitor/terminal/
+      // 组件半边激活（有浏览器半边的组件各一个：files/chat/monitor/
       // vault/phone；search 只有宿主半边，不在这里）。**清单必须与组件行
       // 一一对应**：漏一个，那个组件的 apply 永不执行，探针再通也没人拉。client
       // 入口注册总是发生，功能存在性由各组件自己的探针门控（行禁用只摘宿主半边端点，
       // 探针 404 的组件整体不注册）
-      for (const componentMod of [exports.files, exports.chat, exports.monitor, exports.terminal, exports.vault, exports.phone]) {
+      for (const componentMod of [exports.files, exports.chat, exports.monitor, exports.vault, exports.phone]) {
         if (componentMod && typeof componentMod.apply === "function") componentMod.apply(ctx);
       }
     }
@@ -3372,7 +3354,7 @@ ellipsis，窄列只截字不破版 */
 
     // 官方 shortcuts 服务的 resolve 回调入口：注册发生在 apply（拿不到会话与
     // cwd），动作由 KitSurfaces 每次渲染刷新（闭包带最新 sessionId/cwd）。
-    // 为空 = 浮层还没挂载，命令按 pass 放行不吞键。终端组件的同名入口在它自己包里。
+    // 为空 = 浮层还没挂载，命令按 pass 放行不吞键。
     const shortcutRun = { vault: null };
 
     // ── M4 会话→笔记：vault 路径点击直达知识库标签 ──
@@ -3851,7 +3833,7 @@ ellipsis，窄列只截字不破版 */
         : loadScript("/dsh-wangshu/vendor/richeditor.bundle.js");
     }
 
-    /** 日程图标：日历（圆角框 + 两枚吊耳 + 头部分隔线），与终端/任务描边体系一致 */
+    /** 日程图标：日历（圆角框 + 两枚吊耳 + 头部分隔线），与其它入口图标同一套描边 */
     function SchedIcon(props) {
       const _official = dswIcon("IconAlarmClockOutline16");
       if (_official) return jsxRuntime.jsx(_official, { className: props && props.className });
@@ -3876,7 +3858,7 @@ ellipsis，窄列只截字不破版 */
       );
     }
 
-    /** 知识库图标：书堆（三枚书脊，第三本微倾斜），与终端/任务描边体系一致 */
+    /** 知识库图标：书堆（三枚书脊，第三本微倾斜），与其它入口图标同一套描边 */
     function VaultIcon() {
       return jsxRuntime.jsxs(
         "svg",
@@ -12454,7 +12436,7 @@ ellipsis，窄列只截字不破版 */
     // 数据源：本组件宿主半边 /dsh-wangshu/phone/info|link（网关状态与带令牌链接）。
     // 这些端点挂在主 webserver（只绑回环，LAN 够不到），宿主侧另有同源校验。
     // 二维码用 vendored qrcode-generator（/dsh-wangshu/vendor/qrcode.js），首次打开
-    // 面板时按需加载，与终端组件的 xterm 同策略。
+    // 面板时按需加载。
     function fetchPhoneInfo(signal) {
       // 字段以宿主回包为准：网关状态看 gatewayOn/running
       return kitGetJson("/dsh-wangshu/phone/info", signal, (b) => typeof b.gatewayOn === "boolean");
@@ -14902,841 +14884,6 @@ body.dshk-hide-official-files [data-sidebar-right-guide-entry="files"]{display:n
 // 组件行只有开关、没有配置页——返回条数由宿主 web_search 的 searchMaxResults 决定。
 
 
-    // ── dsh-wangshu/terminal 组件（终端）──
-// dsh-wangshu/terminal 浏览器半边 —— 终端组件的 client 面。
-// 收纳：对话输入行的终端入口（多会话角标）+ 底部停靠多标签终端坞 + xterm 胶水
-// （引擎 = 官方 webTerminals 服务，PTY 归宿主：会话工作区绑定、刷新保活、后台清理）。
-// 入口与坞分属两个槽位（conversation.input.left / shell.overlay），共享 kitBase 的
-// kitUi 跨槽状态（terminals/activeTermId/termDockOpen）；开关读本组件 Config
-// （/dsh-wangshu-terminal/config），键位注册进官方 shortcuts 服务。xterm 静态资源走主包
-// /dsh-wangshu/vendor 白名单（静态口套件共用）。
-    const terminalModule = (kit, require) => {
-    var module = { exports: {} };
-    var exports = module.exports;
-    Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
-    const react = require("react");
-    const jsxRuntime = require("react/jsx-runtime");
-    const dock = kit;
-    const {
-      setKitUi, getKitUi, useKitUi, useCurrentRow,
-      KitTip, attachShortcutCatalog,
-      flashToast, resolveZh, subscribeLocale, getLocaleVersion, kitJson,
-    } = dock;
-
-    // 组件私有文案（本组件自持词典；
-    // 但本包 t() 只看本包词典，用到就得在这里备一份）
-    const zh = {
-      label: "终端",
-      noCwd: "没有可用的会话工作区：先打开或创建一个会话",
-      connecting: "连接中…",
-      exited: "已退出",
-      code: "代码",
-      restart: "重新启动终端",
-      termNew: "新建终端",
-      termHide: "隐藏终端坞（进程继续运行）",
-      termTabClose: "结束此终端",
-      termCloseAll: "结束全部终端",
-      vendorFail: "终端组件加载失败",
-      officialTermUnavailable: "官方终端服务不可用",
-      termLimit: "宿主终端数量已达上限：先结束一些再新建",
-      contentFail: "读取失败",
-      scTerminal: "终端",
-      scTerminalOff: "终端组件已在插件页停用",
-    };
-    const en = {
-      label: "Terminal",
-      noCwd: "No session workspace available: open or create a session first",
-      connecting: "Connecting…",
-      exited: "Exited",
-      code: "code",
-      restart: "Restart terminal",
-      termNew: "New terminal",
-      termHide: "Hide dock (processes keep running)",
-      termTabClose: "Kill this terminal",
-      termCloseAll: "Kill all terminals",
-      vendorFail: "Failed to load terminal components",
-      officialTermUnavailable: "Official terminal service unavailable",
-      termLimit: "Host terminal limit reached: kill some terminals first",
-      contentFail: "Failed to read",
-      scTerminal: "Terminal",
-      scTerminalOff: "Terminal component is disabled on the plugin page",
-    };
-    const lang = () => (resolveZh() ? zh : en);
-    const t = (key) => lang()[key] ?? key;
-
-    // ─────────── 组件配置（/dsh-wangshu-terminal/config）───────
-    // 行开关（插件页组件行 switch）= 唯一开关。拉端点只为可达性——200 = 行启用；
-    // 404（行禁用 → 子模块不物化）= 隐藏入口并结束会话。
-    let cfgSnap = null;
-    const cfgSubs = new Set();
-    const emitCfg = () => {
-      for (const fn of cfgSubs) {
-        try {
-          fn();
-        } catch {
-          /* 订阅者已卸载 */
-        }
-      }
-    };
-    async function loadCfg() {
-      let value = null;
-      try {
-        const v = await kitJson("/dsh-wangshu-terminal/config", undefined, (b) => b !== null && typeof b === "object");
-        value = v;
-      } catch {
-        value = null; // 端点不可达（行禁用 404）：探明不可用
-      }
-      cfgSnap = value && typeof value === "object" ? { status: "ready", value } : { status: "unavailable" };
-      emitCfg();
-      sweepDisabledTerm();
-    }
-    const subscribeCfg = (fn) => {
-      cfgSubs.add(fn);
-      return () => cfgSubs.delete(fn);
-    };
-    const getCfgSnapshot = () => cfgSnap;
-    /** 组件可用性：端点 200（行启用）或未探明（乐观，apply 前的渲染窗口）= true；
-     *  探明 404（行禁用 → 子模块不物化）= false */
-    function cfgFromSnapshot(snap) {
-      return { available: !snap || snap.status === "ready" };
-    }
-    /** 行禁用但会话还开着（entry 重启 / 探针失败翻转）：立即清场——结束全部终端，
-     *  与「行关 = 入口消失」的语义一致。每条配置通道都经 loadCfg，故清场挂在那里 */
-    function sweepDisabledTerm() {
-      if (cfgFromSnapshot(getCfgSnapshot()).available) return;
-      const ui = getKitUi();
-      if (ui.terminals.length > 0 || ui.termDockOpen) {
-        setKitUi({ terminals: [], activeTermId: null, termDockOpen: false });
-      }
-    }
-
-    // ─────────── 组件样式 ───────────
-    /** 终端面板高度（坞高度与让位 padding 共用一个变量） */
-    const DOCK_H = "min(34vh, 330px)";
-    const TERMINAL_CSS = `
-.dshk-dock{position:fixed;left:0;width:100%;bottom:0;height:var(--dshk-dock-h,${DOCK_H});display:flex;flex-direction:column;background:var(--dsw-alias-bg-base);border-top:1px solid var(--dsw-alias-border-l1);box-shadow:0 -6px 20px rgba(0,0,0,.14);z-index:800;pointer-events:auto}
-/* 终端坞标签是固定短文字，不参与弹性：head 里 title 与 spring 双 flex:1 会把空闲
-   空间对半分，宽窗口下标签簇（页签/路径）飘到中间，只有窄窗口看着正常 */
-.dshk-dock-label{flex:0 0 auto}
-.dshk-sub{color:var(--dsw-alias-label-tertiary);font-family:ui-monospace,Consolas,monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:46%}
-.dshk-term{height:100%}
-/* padding 加在 .xterm 元素上：fit addon 从该元素读 padding 并从可用面积扣除，cols/rows 不会算错 */
-.dshk-term .xterm{height:100%;box-sizing:border-box;padding:6px 10px}
-.dshk-term .xterm-viewport::-webkit-scrollbar{width:8px}
-.dshk-term .xterm-viewport::-webkit-scrollbar-thumb{background:rgba(127,127,127,.3);border-radius:4px}
-.dshk-term .xterm-viewport::-webkit-scrollbar-track{background:transparent}
-.dshk-msg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--dsw-alias-label-tertiary);font-size:13px}
-/* 多终端：入口图标数量角标 + 标签条 + 堆叠 pane（隐藏 pane 离屏缓冲输出） */
-/* 品牌主色是单色令牌（浅色主题近黑、深色主题近白），主色底上的文字一律用 bg-base 取反——
-   写死 #fff 在深色主题就是白底白字 */
-.dshk-term-badge{position:absolute;top:-4px;right:-4px;min-width:14px;height:14px;padding:0 3px;box-sizing:border-box;border-radius:999px;background:var(--dsw-alias-brand-primary);color:var(--dsw-alias-bg-base);font-size:9px;line-height:14px;text-align:center;font-weight:600}
-.dshk-tstack{position:relative;flex:1 1 auto;min-height:0}
-.dshk-tpane{position:absolute;inset:0;padding:2px 8px 8px;box-sizing:border-box;display:none}
-.dshk-tpane[data-on]{display:block}
-.dshk-tbody{height:100%;position:relative}
-.dshk-term-note{position:absolute;top:8px;left:50%;transform:translateX(-50%);display:inline-flex;align-items:center;gap:8px;max-width:92%;background:var(--dsw-alias-bg-base);border:1px solid var(--dsw-alias-border-l2);border-radius:999px;padding:3px 12px;font-size:12px;color:var(--dsw-alias-label-secondary);pointer-events:none;z-index:5}
-.dshk-term-note button{pointer-events:auto}
-/* 让位布局：终端打开时把对话列顶起，内容不被遮挡（终端宽度即对话列宽） */
-body.dshk-open [class*="_centerCol"]{padding-bottom:var(--dshk-dock-h,${DOCK_H})}
-/* 面板开合只保留 dock 的 padding-bottom 过渡：margin-right 如果也带过渡动画，
-   每帧都会触发官方对话宽度 ResizeObserver 重发布 + 长消息流重排（卡顿），
-   让位改为瞬时完成一次，视觉缓冲交给面板自身的 width 过渡 */
-[class*="_centerCol"]{transition:padding-bottom .18s ease}
-@media (prefers-reduced-motion:reduce){[class*="_centerCol"]{transition:none}}
-    `;
-    /** 注入本组件样式与 xterm.css（link），幂等 */
-    function injectStyles() {
-      if (typeof document === "undefined") return;
-      if (document.querySelector('style[data-plugin-css="dsh-wangshu-terminal/ui"]') === null) {
-        const tag = document.createElement("style");
-        tag.dataset.plugin = "dsh-wangshu-terminal";
-        tag.dataset.pluginCss = "dsh-wangshu-terminal/ui";
-        tag.textContent = TERMINAL_CSS;
-        document.head.appendChild(tag);
-      }
-      if (document.querySelector('link[data-plugin-css="dsh-wangshu-terminal/xterm"]') === null) {
-        const link = document.createElement("link");
-        link.rel = "stylesheet";
-        link.dataset.plugin = "dsh-wangshu-terminal";
-        link.dataset.pluginCss = "dsh-wangshu-terminal/xterm";
-        link.href = "/dsh-wangshu/vendor/xterm.css";
-        document.head.appendChild(link);
-      }
-    }
-
-    // ─────────── vendor 按需加载 ───────────
-    function loadScript(src) {
-      return new Promise((resolve, reject) => {
-        const s = document.createElement("script");
-        s.src = src;
-        s.onload = () => resolve();
-        s.onerror = () => reject(new Error("load failed: " + src));
-        document.head.appendChild(s);
-      });
-    }
-    let vendorPromise = null;
-    /** 官方预编译 UMD：xterm.js → window.Terminal；addon-fit.js → window.FitAddon.FitAddon */
-    function ensureVendor() {
-      if (vendorPromise === null) {
-        vendorPromise =
-          typeof window.Terminal === "function" && window.FitAddon && typeof window.FitAddon.FitAddon === "function"
-            ? Promise.resolve()
-            : loadScript("/dsh-wangshu/vendor/xterm.js").then(() => loadScript("/dsh-wangshu/vendor/addon-fit.js"));
-      }
-      return vendorPromise;
-    }
-
-    // ─────────── 外观跟随 ───────────
-    /** DSH 主题 presenter 以 body[data-ds-dark-theme] 有无表达明暗 */
-    function isDark() {
-      return typeof document !== "undefined" && document.body.hasAttribute("data-ds-dark-theme");
-    }
-    /** 读令牌 computed 值（xterm 需要具体色值），取不到时退回兜底色 */
-    function tokenColor(name, fallback) {
-      try {
-        const v = getComputedStyle(document.body).getPropertyValue(name).trim();
-        return v !== "" ? v : fallback;
-      } catch {
-        return fallback;
-      }
-    }
-    const ANSI_DARK = {
-      black: "#000000", red: "#cd3131", green: "#0dbc79", yellow: "#e5e510",
-      blue: "#2472c8", magenta: "#bc3fbc", cyan: "#11a8cd", white: "#e5e5e5",
-      brightBlack: "#666666", brightRed: "#f14c4c", brightGreen: "#23d18b", brightYellow: "#f5f543",
-      brightBlue: "#3b8eea", brightMagenta: "#d670d6", brightCyan: "#29b8db", brightWhite: "#ffffff",
-    };
-    const ANSI_LIGHT = {
-      black: "#000000", red: "#cd3131", green: "#00bc00", yellow: "#949800",
-      blue: "#0451a5", magenta: "#bc05bc", cyan: "#0598bc", white: "#555555",
-      brightBlack: "#666666", brightRed: "#cd3131", brightGreen: "#14ce14", brightYellow: "#b2ba00",
-      brightBlue: "#0451a5", brightMagenta: "#bc05bc", brightCyan: "#0598bc", brightWhite: "#a5a5a5",
-    };
-    /** 组装 xterm 调色板：背景/前景跟随应用令牌，ANSI 按明暗取标准套 */
-    function xtermTheme() {
-      const dark = isDark();
-      const fg = tokenColor("--dsw-alias-label-primary", dark ? "#cccccc" : "#333333");
-      return {
-        background: tokenColor("--dsw-alias-bg-base", dark ? "#181818" : "#ffffff"),
-        foreground: fg,
-        cursor: fg,
-        cursorAccent: tokenColor("--dsw-alias-bg-base", dark ? "#181818" : "#ffffff"),
-        selectionBackground: dark ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.25)",
-        ...(dark ? ANSI_DARK : ANSI_LIGHT),
-      };
-    }
-
-    // ── 多终端会话模型 ──
-    // terminals:[{id, sessionId, cwd}] 创建顺序即标签顺序；每个终端在创建那一刻
-    // 绑定当时的会话（官方引擎按会话起 PTY，cwd 定在会话工作区，cwd 只剩标签
-    // 文案用途）。termDockOpen 只管坞的可见性——隐藏不杀进程，后台标签的 shell
-    // 继续跑、xterm 继续缓冲输出；标签 ✕ 才真正结束对应宿主终端。
-    let termSeq = 0;
-    const makeTerm = (sessionId, cwd) => ({ id: `term-${++termSeq}`, sessionId, cwd });
-    /** 入口按钮与快捷键共用：开=恢复视图（无会话则新建绑定当前会话）；关=仅隐藏 */
-    function toggleTermDock(ui, sessionId, cwd) {
-      if (ui.termDockOpen) return { termDockOpen: false };
-      if (ui.terminals.length === 0) {
-        const nt = sessionId ? makeTerm(sessionId, cwd) : null;
-        return nt ? { termDockOpen: true, terminals: [nt], activeTermId: nt.id } : { termDockOpen: true };
-      }
-      return { termDockOpen: true, activeTermId: ui.activeTermId ?? ui.terminals[ui.terminals.length - 1].id };
-    }
-    /** ＋ 新建终端：绑定调用那一刻的当前会话 */
-    function spawnTerm(ui, sessionId, cwd) {
-      const nt = makeTerm(sessionId ?? "", cwd ?? "");
-      return { terminals: [...ui.terminals, nt], activeTermId: nt.id, termDockOpen: true };
-    }
-    /** 标签 ✕：从列表移除（组件卸载即结束宿主终端），激活位顺延邻居 */
-    function killTerm(ui, id) {
-      const idx = ui.terminals.findIndex((x) => x.id === id);
-      if (idx < 0) return {};
-      const rest = ui.terminals.filter((x) => x.id !== id);
-      const patch = { terminals: rest };
-      if (ui.activeTermId === id) {
-        patch.activeTermId = rest.length > 0 ? rest[Math.min(idx, rest.length - 1)].id : null;
-      }
-      if (rest.length === 0) patch.termDockOpen = false;
-      return patch;
-    }
-    // 快捷键的 resolve 在渲染之外调用，闭包拿不到当前会话——由入口/坞渲染期回填
-    let lastSession = { id: null, cwd: null };
-    /** 官方终端模型服务：apply 期 inject 捕获 */
-    let webTerminalsSvc = null;
-
-    // ─────────── 终端坞（多标签）───────────
-    // TerminalPane = 一个终端会话，挂载即接管宿主 TerminalView、卸载即结束进程；
-    // TerminalDock = 底部停靠容器：头部标签条（＋ 新建 / ⟳ 重启 / — 隐藏），body
-    // 纵向堆叠各 pane，仅激活 pane 可见。隐藏的 pane 保持挂载：xterm 离屏继续缓冲
-    // 输出，切回不丢内容（display:none 期间跳过 fit，切回由 ResizeObserver 自动补）。
-    /** execCommand 兜底复制：手机经局域网 http 访问属非安全上下文，navigator.clipboard 不存在 */
-    function execCopyText(text) {
-      const ta = document.createElement("textarea");
-      ta.value = text;
-      ta.style.cssText = "position:fixed;opacity:0";
-      document.body.appendChild(ta);
-      ta.select();
-      try {
-        document.execCommand("copy");
-      } catch {
-        // 尽力而为
-      }
-      ta.remove();
-    }
-    function TerminalPane({ term, visible, restartKey, onRestart, onShell }) {
-      const bodyRef = react.useRef(null);
-      const [state, setState] = react.useState({ phase: "connecting", detail: "" });
-      const visibleRef = react.useRef(visible);
-      visibleRef.current = visible;
-
-      react.useEffect(() => {
-        // 引擎 = 官方 webTerminals（宿主 PTY：系统用户权限、刷新不丢、后台清理）；
-        // 本组件只做 xterm 胶水。
-        const svc = webTerminalsSvc;
-        if (!svc || typeof svc.view !== "function") {
-          setState({ phase: "error", detail: t("officialTermUnavailable") });
-          return undefined;
-        }
-        if (!term.sessionId) {
-          setState({ phase: "error", detail: t("noCwd") });
-          return undefined;
-        }
-        let disposed = false;
-        setState({ phase: "connecting", detail: "" });
-
-        let termInst = null;
-        let host = null;
-        let fitAddon = null;
-        let resizeTimer = 0;
-        let themeObserver = null;
-        let view = null;
-        let cleanupState = null;
-        const detachRef = { current: null };
-
-        const sendResize = () => {
-          if (disposed || !visibleRef.current || !termInst || !fitAddon) return; // 隐藏时不 fit
-          try {
-            fitAddon.fit();
-          } catch {
-            return;
-          }
-          try {
-            view.resize(termInst.cols, termInst.rows);
-          } catch {
-            // 进程可能刚退出
-          }
-        };
-        const scheduleResize = () => {
-          if (resizeTimer || disposed) return;
-          resizeTimer = window.setTimeout(() => {
-            resizeTimer = 0;
-            sendResize();
-          }, 60);
-        };
-        const ro = new ResizeObserver(scheduleResize);
-
-        ensureVendor()
-          .then(() => {
-            if (disposed) return;
-            termInst = new window.Terminal({
-              fontSize: 13,
-              lineHeight: 1.15,
-              fontFamily: 'ui-monospace, Consolas, "Cascadia Mono", "Courier New", monospace',
-              cursorBlink: true,
-              scrollback: 5000,
-              theme: xtermTheme(),
-            });
-            // 有选区时 Ctrl+C = 复制并清选区（随后无选区的 Ctrl+C 恢复中断语义，
-            // 语义）——否则想复制选中文字，^C 直达 shell 把正在运行的
-            // 前台进程停掉。Ctrl+Shift+C 恒为复制
-            termInst.attachCustomKeyEventHandler((ev) => {
-              if (ev.type !== "keydown" || !ev.ctrlKey || ev.altKey) return true;
-              if (ev.key !== "c" && ev.key !== "C") return true;
-              if (!ev.shiftKey && !termInst.hasSelection()) return true;
-              const text = termInst.getSelection();
-              if (text) {
-                if (navigator.clipboard && window.isSecureContext) {
-                  navigator.clipboard.writeText(text).catch(() => execCopyText(text));
-                } else {
-                  execCopyText(text);
-                }
-              }
-              termInst.clearSelection();
-              return false;
-            });
-            // DSH 明暗切换时热更新调色板（presenter 改 body 属性）
-            themeObserver = new MutationObserver(() => {
-              if (!disposed && termInst) {
-                try {
-                  termInst.options.theme = xtermTheme();
-                } catch {
-                  // 忽略
-                }
-              }
-            });
-            themeObserver.observe(document.body, { attributes: true, attributeFilter: ["data-ds-dark-theme"] });
-            fitAddon = new window.FitAddon.FitAddon();
-            termInst.loadAddon(fitAddon);
-            host = document.createElement("div");
-            host.className = "dshk-term";
-            bodyRef.current.appendChild(host);
-            termInst.open(host);
-            try {
-              if (visibleRef.current) fitAddon.fit();
-            } catch {
-              // ResizeObserver 会再触发
-            }
-            termInst.onData((d) => {
-              try {
-                if (view.writable !== false) view.write(d);
-              } catch {
-                // 尚未连接
-              }
-            });
-            ro.observe(bodyRef.current);
-
-            // gen（= restartKey）进 key/contentId：⟳ 换代后旧 view 已 close、
-            // 新 contentId 才会分配全新宿主终端（closed 身份不可复用）
-            const viewKey = `dsh-wangshu-term-${term.id}-g${restartKey}`;
-            const contentId = `dsh-wangshu-term-${term.id}-g${restartKey}`;
-            view = svc.view(term.sessionId, viewKey, contentId);
-            const detach = view.mount();
-            detachRef.current = typeof detach === "function" ? detach : null;
-            let lastAck = -1;
-            let shellLabel = "";
-            let focused = false;
-            const onState = () => {
-              if (disposed) return;
-              const s = view.state.getSnapshot();
-              const render = s.render;
-              if (render && render.revision !== lastAck && termInst) {
-                lastAck = render.revision;
-                const f = render.frame;
-                try {
-                  if (f.type === "snapshot") {
-                    termInst.reset();
-                    termInst.write(f.screen);
-                  } else {
-                    termInst.write(f.data);
-                  }
-                } catch {
-                  // xterm 已释放
-                }
-                try {
-                  view.acknowledge(render.revision);
-                } catch {
-                  // 视图已关闭
-                }
-                if (f.type === "snapshot" && f.info) {
-                  const name = f.info.shell?.name ?? "";
-                  if (name && name !== shellLabel) {
-                    shellLabel = name;
-                    if (onShell) onShell(term.id, name);
-                  }
-                }
-              }
-              if (s.phase === "connected") {
-                setState((prev) => (prev.phase === "ready" ? prev : { phase: "ready", detail: "" }));
-                if (!focused && visibleRef.current && termInst) {
-                  focused = true;
-                  termInst.focus(); // 后台启动的终端不抢焦点
-                }
-              } else if (s.phase === "failed") {
-                const detail = s.issue === "terminalLimit" ? t("termLimit") : String(s.error ?? s.issue ?? "");
-                setState((prev) => (prev.phase === "error" && prev.detail === detail ? prev : { phase: "error", detail }));
-              } else if (s.phase === "closed" || s.phase === "disconnected") {
-                const code = s.info && s.info.exitCode !== null && s.info.exitCode !== undefined ? String(s.info.exitCode) : "";
-                setState((prev) => (prev.phase === "exited" && prev.detail === code ? prev : { phase: "exited", detail: code }));
-              }
-            };
-            const offState = view.state.subscribe(onState);
-            onState();
-            cleanupState = () => {
-              offState();
-              try {
-                svc.close(term.sessionId, viewKey, contentId);
-              } catch {
-                // 服务已释放
-              }
-            };
-          })
-          .catch((error) => {
-            if (!disposed) setState({ phase: "error", detail: `${t("vendorFail")}: ${error?.message ?? error}` });
-          });
-
-        return () => {
-          disposed = true;
-          if (resizeTimer) window.clearTimeout(resizeTimer);
-          ro.disconnect();
-          if (themeObserver) themeObserver.disconnect();
-          if (cleanupState) cleanupState(); // 结束宿主终端（卸载即杀）
-          if (detachRef.current) {
-            try {
-              detachRef.current();
-            } catch {
-              // 已分离
-            }
-          }
-          if (termInst) {
-            try {
-              termInst.dispose();
-            } catch {
-              // 已释放
-            }
-          }
-          if (host) host.remove();
-        };
-      }, [term.id, restartKey, term.sessionId]);
-
-      const statusText =
-        state.phase === "connecting"
-          ? t("connecting")
-          : state.phase === "exited"
-            ? `${t("exited")}${state.detail !== "" ? ` · ${t("code")} ${state.detail}` : ""}`
-            : "";
-
-      return jsxRuntime.jsxs("div", {
-        className: "dshk-tpane",
-        "data-on": visible || undefined,
-        children: [
-          jsxRuntime.jsx("div", { className: "dshk-tbody", ref: bodyRef }),
-          statusText !== "" || state.phase === "error"
-            ? jsxRuntime.jsxs("div", { className: "dshk-term-note", children: [
-                jsxRuntime.jsx("span", {
-                  title: state.detail ?? "",
-                  children: state.phase === "error" ? `${t("contentFail")}：${state.detail}` : statusText,
-                }),
-                state.phase === "exited"
-                  ? jsxRuntime.jsx("button", {
-                      type: "button",
-                      className: "dshk-btn-cancel",
-                      onClick: onRestart,
-                      children: t("restart"),
-                    })
-                  : null,
-              ] })
-            : null,
-        ],
-      });
-    }
-
-    /** 标签文案：工作区目录名；同 cwd 多开时追加序号区分 */
-    function termTabLabel(term, items) {
-      const base = String(term.cwd ?? "").split(/[\\/]/).filter(Boolean).pop() || term.cwd || "?";
-      const same = items.filter((x) => x.cwd === term.cwd);
-      return same.length > 1 ? `${base} ${same.indexOf(term) + 1}` : base;
-    }
-
-    function TerminalDock({ open, cwd, onSpawn, onHide, onActivate, onKill, onKillAll }) {
-      const ui = useKitUi();
-      const items = ui.terminals;
-      const activeId = ui.activeTermId ?? (items.length > 0 ? items[items.length - 1].id : null);
-      const activeItem = items.find((x) => x.id === activeId) ?? null;
-      // 每标签的重启计数（⟳ 触发该 pane 重连）与 shell 名（started 时回填头部展示）
-      const [restartMap, setRestartMap] = react.useState({});
-      const [shells, setShells] = react.useState({});
-      const onShell = (id, label) => setShells((s) => (s[id] === label ? s : { ...s, [id]: label }));
-      // 宽度跟随对话列：测量 _centerCol 的视口位置（侧栏开合/拖宽/窗口缩放都会触发）
-      const [pos, setPos] = react.useState(null);
-
-      react.useLayoutEffect(() => {
-        const el = document.querySelector('[class*="_centerCol"]');
-        if (!el) return undefined;
-        const update = () => {
-          const r = el.getBoundingClientRect();
-          if (r.width > 0) setPos({ left: Math.max(0, r.left), width: r.width });
-        };
-        update();
-        const ro = new ResizeObserver(update);
-        ro.observe(el);
-        return () => ro.disconnect();
-      }, []);
-
-      return jsxRuntime.jsxs("div", {
-        className: "dshk-dock",
-        style: {
-          ...(pos ? { left: pos.left, width: pos.width } : {}),
-          ...(open ? {} : { display: "none" }), // 隐藏≠卸载：后台会话保持运行
-        },
-        children: [
-          jsxRuntime.jsxs("div", {
-            className: "dshk-head",
-            children: [
-              jsxRuntime.jsx("span", { className: "dshk-title dshk-dock-label", children: t("label") }),
-              jsxRuntime.jsxs("span", { className: "dshk-tabs", children: [
-                items.map((tab) =>
-                  jsxRuntime.jsxs("div", {
-                    className: `dshk-tab${tab.id === activeId ? " dshk-tab-on" : ""}`,
-                    title: tab.cwd ?? "",
-                    onClick: () => onActivate(tab.id),
-                    children: [
-                      jsxRuntime.jsx("span", { className: "dshk-tab-label", children: termTabLabel(tab, items) }),
-                      jsxRuntime.jsx(KitTip, {
-                        label: t("termTabClose"),
-                        side: "top",
-                        children: jsxRuntime.jsx("button", {
-                          type: "button",
-                          className: "dshk-tab-x",
-                          onClick: (e) => {
-                            e.stopPropagation();
-                            onKill(tab.id);
-                          },
-                          children: "✕",
-                        }),
-                      }),
-                    ],
-                  }, tab.id),
-                ),
-              ] }),
-              jsxRuntime.jsx(KitTip, {
-                label: t("termNew"),
-                side: "top",
-                children: jsxRuntime.jsx("button", {
-                  type: "button",
-                  className: "dshk-btn",
-                  onClick: onSpawn,
-                  children: "＋",
-                }),
-              }),
-              activeItem
-                ? jsxRuntime.jsx("span", {
-                    className: "dshk-sub",
-                    title: activeItem.cwd ?? "",
-                    children: `${shells[activeItem.id] ? `${shells[activeItem.id]} · ` : ""}${activeItem.cwd ?? ""}`,
-                  })
-                : null,
-              jsxRuntime.jsx("span", { className: "dshk-spring" }),
-              jsxRuntime.jsx(KitTip, {
-                label: t("restart"),
-                side: "top",
-                children: jsxRuntime.jsx("button", {
-                  type: "button",
-                  className: "dshk-btn",
-                  onClick: () => {
-                    if (!activeId) return;
-                    setRestartMap((m) => ({ ...m, [activeId]: (m[activeId] ?? 0) + 1 }));
-                  },
-                  children: "⟳",
-                }),
-              }),
-              jsxRuntime.jsx(KitTip, {
-                label: t("termHide"),
-                side: "top",
-                children: jsxRuntime.jsx("button", {
-                  type: "button",
-                  className: "dshk-btn",
-                  onClick: onHide,
-                  children: "—",
-                }),
-              }),
-              jsxRuntime.jsx(KitTip, {
-                label: t("termCloseAll"),
-                side: "top",
-                children: jsxRuntime.jsx("button", {
-                  type: "button",
-                  className: "dshk-btn",
-                  onClick: onKillAll,
-                  children: "✕",
-                }),
-              }),
-            ],
-          }),
-          // pane 必须挂在 tstack（position:relative）里：绝对定位 inset:0 以它为
-          // 包含块，只盖住头部以下的内容区——直接挂 dock 下会连头部一起盖掉
-          jsxRuntime.jsx("div", {
-            className: "dshk-tstack",
-            children: [
-              items.length === 0 ? jsxRuntime.jsx("div", { className: "dshk-msg", children: t("noCwd") }) : null,
-              ...items.map((tt) =>
-                jsxRuntime.jsx(
-                  TerminalPane,
-                  {
-                    term: tt,
-                    visible: tt.id === activeId,
-                    restartKey: restartMap[tt.id] ?? 0,
-                    onRestart: () => setRestartMap((m) => ({ ...m, [tt.id]: (m[tt.id] ?? 0) + 1 })),
-                    onShell,
-                  },
-                  `pane-${tt.id}`,
-                ),
-              ),
-            ],
-          }),
-        ],
-      });
-    }
-
-    // ─────────── 入口按钮（conversation.input.left）───────────
-    // 只负责开合与按压态；坞本体在本组件注册的 shell.overlay 里渲染
-    // （fixed 定位不受 composer 祖先 stacking context 影响）。
-    /** 终端图标：描边同族（15px / viewBox 16 / 1.2 描边 / currentColor）——与左栏
-     *  形态切换条那几枚（会话列表 / 文件树 / 知识库·日程）同一套画法。
-     *  官方引导条目的实心深色卡（#17191d 底 + 白提示符）在输入行里比其余钮重一大截，
-     *  看着像另一套按钮 */
-    function TerminalIcon() {
-      return jsxRuntime.jsxs(
-        "svg",
-        {
-          width: 15,
-          height: 15,
-          viewBox: "0 0 16 16",
-          "aria-hidden": true,
-          fill: "none",
-          stroke: "currentColor",
-          strokeWidth: 1.2,
-          strokeLinecap: "round",
-          strokeLinejoin: "round",
-          children: [
-            jsxRuntime.jsx("rect", { x: 1.7, y: 2.9, width: 12.6, height: 10.2, rx: 1.8 }),
-            jsxRuntime.jsx("path", { d: "M4.7 6.4l1.9 1.9-1.9 1.9" }),
-            jsxRuntime.jsx("path", { d: "M8.9 10.2h2.6" }),
-          ],
-        },
-      );
-    }
-
-    /** 终端入口：非终端态 → 打开终端坞（无会话则新建并绑定当前会话）；已是 → 隐藏
-     *  （隐藏不杀进程，标签 ✕ 才结束进程） */
-    function TerminalEntry(props) {
-      const ui = useKitUi();
-      const cfg = cfgFromSnapshot(react.useSyncExternalStore(subscribeCfg, getCfgSnapshot));
-      const row = useCurrentRow(props);
-      const sessionId = row?.id ?? null;
-      const cwd = typeof row?.cwd === "string" ? row.cwd : null;
-      lastSession = { id: sessionId, cwd };
-      if (!cfg.available) return null;
-      const count = ui.terminals.length;
-      const dockOn = ui.termDockOpen && count > 0;
-      return jsxRuntime.jsx(KitTip, {
-        label: count > 0 ? `${t("label")} · ${count}` : t("label"),
-        command: "dsh-wangshu.terminal.toggle",
-        side: "top",
-        children: jsxRuntime.jsxs("button", {
-          type: "button",
-          className: "dshk-btn dshk-enbtn",
-          "aria-pressed": dockOn,
-          onClick: () => {
-            // 只开/关终端坞：隐藏不杀进程，后台会话继续跑；无会话时新建并绑定
-            // 当时的当前会话（之后切换会话不影响已开终端）
-            setKitUi(toggleTermDock(getKitUi(), sessionId, cwd));
-          },
-          children: [
-            jsxRuntime.jsx(TerminalIcon, {}),
-            count > 0
-              ? jsxRuntime.jsx("span", { className: "dshk-term-badge", "aria-hidden": true, children: String(count) })
-              : null,
-          ],
-        }),
-      });
-    }
-
-    // ─────────── 浮层宿主（shell.overlay）───────────
-    /** 坞本体 + 让位布局：坞可见时挂 body 类 + 设高度变量，样式把对话列顶起来
-     *  （隐藏/无会话时不顶——后台会话继续跑但不占布局） */
-    function TerminalSurfaces(props) {
-      react.useSyncExternalStore(subscribeLocale, getLocaleVersion);
-      const cfg = cfgFromSnapshot(react.useSyncExternalStore(subscribeCfg, getCfgSnapshot));
-      const ui = useKitUi();
-      const row = useCurrentRow(props);
-      const sessionId = row?.id ?? null;
-      const cwd = typeof row?.cwd === "string" && row.cwd.trim() !== "" ? row.cwd : null;
-      lastSession = { id: sessionId, cwd };
-
-      react.useEffect(() => {
-        if (ui.terminals.length === 0 || !ui.termDockOpen || !cfg.available) return undefined;
-        document.documentElement.style.setProperty("--dshk-dock-h", DOCK_H);
-        document.body.classList.add("dshk-open");
-        return () => {
-          document.body.classList.remove("dshk-open");
-          document.documentElement.style.removeProperty("--dshk-dock-h");
-        };
-      }, [ui.termDockOpen, ui.terminals.length, cfg.available]);
-
-      if (!cfg.available || ui.terminals.length === 0) return null;
-      return jsxRuntime.jsx(TerminalDock, {
-        open: ui.termDockOpen,
-        cwd,
-        onSpawn: () => {
-          if (!sessionId) {
-            flashToast(t("noCwd"));
-            return;
-          }
-          setKitUi(spawnTerm(getKitUi(), sessionId, cwd));
-        },
-        onHide: () => setKitUi({ termDockOpen: false }),
-        onActivate: (id) => setKitUi({ activeTermId: id, termDockOpen: true }),
-        onKill: (id) => setKitUi(killTerm(getKitUi(), id)),
-        onKillAll: () => setKitUi({ terminals: [], activeTermId: null, termDockOpen: false }),
-      });
-    }
-
-    // ─────────── 官方快捷键服务 ───────
-    // 终端命令注册进宿主 shortcuts 服务 = 进官方「快捷键」页（Ctrl+/）：录制、冲突
-    // 检测、跨设备默认值、持久化都归官方；运行期 inject。默认键只给 web:macos/web:windows（web 端放行表只认三键组合或
-    // primary+alt/shift）与 desktop 三档。
-    function registerShortcuts(scCtx) {
-      const shortcuts = scCtx.shortcuts;
-      if (!shortcuts || typeof shortcuts.register !== "function") return;
-      attachShortcutCatalog(shortcuts.catalog);
-      scCtx.effect(() => shortcuts.register({
-        id: "dsh-wangshu.terminal.toggle",
-        label: () => t("scTerminal"),
-        aliases: ["terminal", "terminal dock", "dsh-wangshu"],
-        defaults: {
-          "web:macos": { code: "Backquote", modifiers: ["primary", "alt"] },
-          "web:windows": { code: "Backquote", modifiers: ["primary", "alt"] },
-          "desktop:macos": { code: "Backquote", modifiers: ["primary", "alt"] },
-          "desktop:windows": { code: "Backquote", modifiers: ["primary", "alt"] },
-          "desktop:linux": { code: "Backquote", modifiers: ["primary", "alt"] },
-        },
-        // editable/terminal 都要：聊天输入行里、终端里按都该生效
-        regions: ["page", "editable", "terminal"],
-        modals: [],
-        resolve: () => {
-          if (!cfgFromSnapshot(getCfgSnapshot()).available) return { status: "blocked", reason: t("scTerminalOff") };
-          // 会话在 run 期读：resolve 与 run 之间隔着宿主调度，按钮可能已重渲染换过会话
-          return { status: "handled", run: () => setKitUi(toggleTermDock(getKitUi(), lastSession.id, lastSession.cwd)) };
-        },
-      }), "dsh-wangshu-terminal: shortcut dsh-wangshu.terminal.toggle");
-    }
-
-    // ─────────── 插件体 ───────────
-    function apply(ctx) {
-      // 行禁用（子模块不物化）时本组件 client 面的可达性探针 404，入口与坞自行隐藏
-      // 输入框入口与坞：官方 conversation / shell 挂载期声明槽位，inject 等声明
-      // 落地再注册——直接 register 抛 not declared 且炸掉整个 web boot
-      ctx.slots.inject("conversation.input.left", () =>
-        ctx.slots.register({ name: "conversation.input.left", id: "dsh-wangshu-terminal", order: 14 }, TerminalEntry),
-      );
-      ctx.slots.inject("shell.overlay", () =>
-        ctx.slots.register({ name: "shell.overlay", id: "dsh-wangshu-terminal", order: 910 }, TerminalSurfaces),
-      );
-      // 官方终端模型服务：apply 期 inject 捕获
-      ctx.inject(["webTerminals"], (tctx) => { webTerminalsSvc = tctx.webTerminals; });
-      // 官方快捷键服务：运行期 inject
-      ctx.inject(["shortcuts"], registerShortcuts);
-      void loadCfg(); // 拉配置喂门控（失败保持内置默认）
-      injectStyles();
-    }
-
-    exports.inject = ["slots"];
-    exports.apply = apply;
-    // 渲染级检查与面板引用供测试断言
-    exports.TerminalEntry = TerminalEntry;
-    exports.TerminalDock = TerminalDock;
-    exports.TerminalPane = TerminalPane;
-    exports.TerminalSurfaces = TerminalSurfaces;
-    exports.TerminalIcon = TerminalIcon;
-    exports.termTabLabel = termTabLabel;
-    exports.makeTerm = makeTerm;
-    exports.toggleTermDock = toggleTermDock;
-    exports.spawnTerm = spawnTerm;
-    exports.killTerm = killTerm;
-    exports.cfgFromSnapshot = cfgFromSnapshot;
-    exports.registerShortcuts = registerShortcuts;
-    exports.xtermTheme = xtermTheme;
-    return module.exports;
-};
 
     // ── dsh-wangshu/chat 组件（对话小窗）──
     // 贴边常驻的把手 + 点开成浮窗。内核是宿主官方 conversation.content 工厂的
@@ -16434,8 +15581,7 @@ body.dshk-open [class*="_centerCol"]{padding-bottom:var(--dshk-dock-h,${DOCK_H})
       '.dshk-chat-run{flex:none;width:6px;height:6px;border-radius:50%;background:#37c26b;box-shadow:0 0 0 3px rgba(55,194,107,.18)}',
       '.dshk-chat-body{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}',
       '.dshk-chat-body>*{flex:1;min-height:0}',
-      // 小窗里不显示输入行那枚终端入口钮：终端坞是主界面的面板，在浮窗里点开只会
-      // 把浮窗底下换成别的面板。只藏按钮不够——官方 Tooltip 壳会留一个空占位，
+      // 小窗里不叠主界面的入口钮：只藏按钮不够——官方 Tooltip 壳会留一个空占位，
       // :has 一并收掉。
       '.dshk-chat-panel .dshk-enbtn{display:none}',
       '.dshk-chat-panel :has(> .dshk-enbtn){display:none}',
@@ -16591,12 +15737,11 @@ body.dshk-open [class*="_centerCol"]{padding-bottom:var(--dshk-dock-h,${DOCK_H})
     exports.OfficialIcon = OfficialIcon;
     exports.openTreeFile = openTreeFile;
     exports.registerNavIcon = registerNavIcon;
-    // 组件模块执行（files/monitor/terminal/search/vault/phone）：必须在
+    // 组件模块执行（files/monitor/search/vault/phone）：必须在
     // kitBase 浅拷贝与 root 设施都挂上 exports 之后——组件体执行期会读 dock.createConfigPage 等成员
     exports.files = filesModule(exports, require);
     exports.chat = chatModule(exports, require);
     exports.monitor = monitorModule(exports, require);
-    exports.terminal = terminalModule(exports, require);
     exports.vault = vaultModule(exports, require);
     exports.phone = phoneModule(exports, require);
     exports.inject = ["slots"];
