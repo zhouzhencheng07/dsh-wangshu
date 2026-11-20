@@ -1,7 +1,7 @@
-// dsh-kit-files 浏览器半边渲染级检查：加载真实 dock bundle（root client）+ files
+// dsh-wangshu-files 浏览器半边渲染级检查：加载真实 dock bundle（root client）+ files
 // bundle，直测文件树面板群（TreeNode/FileTreePanel/TreeRowMenu/FileTreeEntry）
 // 与 apply 激活契约（形态条登记/配置页/侧栏分支渲染器座）。
-// 用法（dsh-kit 根）：node tests\render-check-files.cjs
+// 用法（dsh-wangshu 根）：node tests\render-check-files.cjs
 const fs = require("node:fs");
 
 let failed = 0;
@@ -153,7 +153,7 @@ out = comps.FileTreeEntry({});
 check("FileTreeEntry 渲染无异常", !!out && typeof out === "object");
 check(
   "FileTreeEntry 是形态条那枚图标钮（.dshk-sfbtn；名字与键帽走官方气泡，命令 id 对上快捷键注册）",
-  out.type === dockExports.KitTip && out.props.command === "dsh-kit-files.tree.toggle" && typeof out.props.label === "string" &&
+  out.type === dockExports.KitTip && out.props.command === "dsh-wangshu-files.tree.toggle" && typeof out.props.label === "string" &&
     out.props.children.props.className === "dshk-sfbtn",
 );
 {
@@ -211,7 +211,7 @@ async function checkApply() {
   const shortcutCmds = [];
   const seatInjects = [];
   // 宿主 shortcuts 目录（键帽来源）：随服务一起给注册回调
-  const scRows = [{ id: "dsh-kit-files.tree.toggle", keys: ["Ctrl", "+", "Alt", "+", ","], aria: "Control+Alt+," }];
+  const scRows = [{ id: "dsh-wangshu-files.tree.toggle", keys: ["Ctrl", "+", "Alt", "+", ","], aria: "Control+Alt+," }];
   const scCatalogStore = { getSnapshot: () => scRows, subscribe: () => () => {} };
   const ctxStub = {
     inject: (deps, cb) => {
@@ -241,10 +241,10 @@ async function checkApply() {
   const form = (id) => dockExports.sideForms.find((e) => e && e.id === id);
   check(
     "形态条座席：文件树 order 20（组件指到本组件的入口）",
-    !!form("dsh-kit-filetree") && form("dsh-kit-filetree").order === 20 && form("dsh-kit-filetree").Component === comps.FileTreeEntry,
+    !!form("dsh-wangshu-filetree") && form("dsh-wangshu-filetree").order === 20 && form("dsh-wangshu-filetree").Component === comps.FileTreeEntry,
   );
   const cfgKeys = registered.filter((s) => s.name === "plugins.row.config").map((s) => s.key);
-  check("files 配置页挂本组件行（单包单口径 key）", cfgKeys.includes("dsh-kit#files") && cfgKeys.length === 1);
+  check("files 配置页挂本组件行（单包单口径 key）", cfgKeys.includes("dsh-wangshu#files") && cfgKeys.length === 1);
   // 官方「工作区文件」入口掩码随本组件配置走（字段从根包 Config 迁来）：apply 期按
   // 快照切 body 标记类，内置默认 false → 不挂
   check(
@@ -265,7 +265,7 @@ async function checkApply() {
   );
   // 官方快捷键注册（不经自挂 keydown）：文件树那条命令进官方「快捷键」页
   const sc = (id) => shortcutCmds.find((c) => c.id === id);
-  const treeCmd = sc("dsh-kit-files.tree.toggle");
+  const treeCmd = sc("dsh-wangshu-files.tree.toggle");
   check("files apply 向官方 shortcuts 注册文件树命令", !!treeCmd && typeof treeCmd.label === "function");
   check(
     // 文件树 web 档是 Mod+Shift+,：宿主「打开设置」在 web 占 Mod+Alt+,，register 跨档查重会直接抛
@@ -275,7 +275,7 @@ async function checkApply() {
     treeCmd.defaults["web:macos"].modifiers[0] === "primary" && treeCmd.defaults["web:macos"].modifiers[1] === "shift" &&
     !!treeCmd.defaults["desktop:linux"] && ["page", "editable", "terminal"].every((r) => treeCmd.regions.includes(r)),
   );
-  check("源代码管理那条命令整体退场", shortcutCmds.every((c) => c.id !== "dsh-kit-files.scm.toggle"));
+  check("源代码管理那条命令整体退场", shortcutCmds.every((c) => c.id !== "dsh-wangshu-files.scm.toggle"));
   // resolve 门控：组件配置在测试里未就绪 → 走内置默认（功能开）→ handled
   const before = JSON.stringify({ tree: dockExports.getKitUi().treeOpen });
   const resolved = treeCmd.resolve({ region: "page", modal: null });
@@ -301,7 +301,7 @@ async function checkApply() {
   check("渲染器座收起态（wide=false）返回 null", renderer({ ui: { treeOpen: true }, cwd: null, owner: { wide: false } }) === null);
   // 键帽座跨包共享：files 注册期把宿主 shortcuts 目录挂上 kitBase 的共享座，
   // root 的 KitTip 因此读得到本组件命令当前生效的键（不是把默认键写死在按钮上）
-  const tipEl = dockExports.KitTip({ label: "文件树", command: "dsh-kit-files.tree.toggle", children: jsxRuntimeStub.jsx("button", { type: "button" }) });
+  const tipEl = dockExports.KitTip({ label: "文件树", command: "dsh-wangshu-files.tree.toggle", children: jsxRuntimeStub.jsx("button", { type: "button" }) });
   check("键帽座跨包共享：root 的 KitTip 读得到 files 命令的键位", tipEl.type === primStub.Tooltip && tipEl.props.shortcutKeys.join("") === "Ctrl+Alt+," && tipEl.props.children.props["aria-keyshortcuts"] === "Control+Alt+,");
 }
 

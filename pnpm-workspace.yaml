@@ -1,0 +1,3 @@
+# 本目录在 wangshu 仓库内，但不是它的 pnpm workspace 成员：
+# 自成 workspace 根，pnpm 才不会去父目录找配置（DSH 按独立包安装）
+packages: []

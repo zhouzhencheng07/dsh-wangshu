@@ -1,6 +1,6 @@
-// dsh-kit-monitor 浏览器半边渲染级检查：加载真实 dock bundle + monitor bundle，
+// dsh-wangshu-monitor 浏览器半边渲染级检查：加载真实 dock bundle + monitor bundle，
 // 断言导出面与峰谷判定（U 系列，随 UsageLine 从根 render-check 迁入）。
-// 用法（dsh-kit 根）：node tests\render-check-monitor.cjs
+// 用法（dsh-wangshu 根）：node tests\render-check-monitor.cjs
 const fs = require("node:fs");
 
 let failed = 0;
@@ -149,10 +149,10 @@ async function checkApply() {
   check("U apply 声明 modelDirectories/sessions/remote 依赖", JSON.stringify(injects[0]) === JSON.stringify(["modelDirectories"]) && injects.some((d) => d[0] === "sessions") && injects.some((d) => d[0] === "remote" && d[1] === "sessions"));
   check("U apply 槽位与配置页都经 slots.inject 等声明", seatInjects.filter((k) => k === "conversation.composer.dock").length === 1 && seatInjects.includes("plugins.row.config") && !seatInjects.includes("conversation.session.header.actions"));
   const seat = (id) => registered.find((s) => s.id === id);
-  check("U 槽位座席：用量芯片 composer.dock order 6", seat("dsh-kit-usage") && seat("dsh-kit-usage").order === 6);
-  check("U 头部状态条座位已随 429 机制退役", seat("dsh-kit-monitor-bg") === undefined);
+  check("U 槽位座席：用量芯片 composer.dock order 6", seat("dsh-wangshu-usage") && seat("dsh-wangshu-usage").order === 6);
+  check("U 头部状态条座位已随 429 机制退役", seat("dsh-wangshu-monitor-bg") === undefined);
   const cfgKeys = registered.filter((s) => s.name === "plugins.row.config").map((s) => s.key);
-  check("U 配置页挂本组件行（单包单口径 key）", cfgKeys.includes("dsh-kit#monitor") && cfgKeys.length === 1);
+  check("U 配置页挂本组件行（单包单口径 key）", cfgKeys.includes("dsh-wangshu#monitor") && cfgKeys.length === 1);
 }
 
 // 10d) 会话通知判定核心（notifyDiffCore 依赖注入直测）：running true→false 的沿

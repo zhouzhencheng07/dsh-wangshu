@@ -1,6 +1,6 @@
 [English](README.en.md) | 中文
 
-# dsh-kit
+# dsh-wangshu
 
 面向 DeepSeek Harness (dsh) 的**页面能力套件插件**：给 DSH 的浏览器界面加装可选能力，每个能力独立、互不依赖；全部关闭时 DSH 保持原版。工作台住在官方右侧边栏（一个内容一张 dock 签）。
 
@@ -19,7 +19,7 @@
 - 每个组件行一枚开关（侧栏「插件」页）：关行 = 该能力整体退场（宿主端点 404、界面入口消失）。
 - 需要调参数的行带自己的「配置」页；保存即写入 profile 并热生效。
 - 文件树 / 知识库 · 日程 / 终端 / 对话小窗的快捷键注册在宿主「快捷键」页（Ctrl+/）。
-- 运行数据在 `<DSH_HOME>/dsh-kit/`：知识库默认根、日程等；知识库根目录可在行配置页里改。
+- 运行数据在 `<DSH_HOME>/dsh-wangshu/`：知识库默认根、日程等；知识库根目录可在行配置页里改。
 
 ## 环境要求
 
@@ -29,7 +29,7 @@
 ## 工作原理
 
 - 单包 + `cordis.patch.yml` 的组件行（行 name 走 exports 子路径），宿主按行加载；行关则宿主端点不物化、client 半边不注册。
-- 宿主半边是 `src/*.ts`（tsc 出 `dist/`），浏览器半边是手写 `client/bundle.js`（零构建）；xterm / TipTap / pdf.js / KaTeX / mermaid / 二维码等按需从 `/dsh-kit/vendor/*` 加载。
+- 宿主半边是 `src/*.ts`（tsc 出 `dist/`），浏览器半边是手写 `client/bundle.js`（零构建）；xterm / TipTap / pdf.js / KaTeX / mermaid / 二维码等按需从 `/dsh-wangshu/vendor/*` 加载。
 
 ## 许可证
 

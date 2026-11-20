@@ -90,7 +90,7 @@ export declare function mondayOf(dateStr: string): string;
 /** 标题统一上限（面板输入框 maxLength/计数器与写入同一口径）：标题只放
  *  重要信息，细节写备注——周网格块内标题是识别主体，长标题展示必然截断 */
 export declare const SCHED_TITLE_MAX = 16;
-/** 日程数据目录：固定 $DSH_HOME/dsh-kit/schedule/（一条一文件），与知识库（vaultRoot）
+/** 日程数据目录：固定 $DSH_HOME/dsh-wangshu/schedule/（一条一文件），与知识库（vaultRoot）
  *  无关——日程是独立能力，知识库未配置也照常可用 */
 export declare function resolveScheduleDir(): string;
 export declare class ScheduleStore {

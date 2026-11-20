@@ -4,7 +4,7 @@ interface KitCtx {
     inject(deps: string[], cb: (svc: any) => void): void;
     effect?(fn: () => void | (() => void), label?: string): void;
 }
-export declare const name = "dsh-kit/vault";
+export declare const name = "dsh-wangshu/vault";
 export declare const Config: any;
 export declare function apply(ctx: KitCtx, config?: KitSettings): Promise<void>;
 export {};

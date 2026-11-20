@@ -1,4 +1,4 @@
-// dsh-kit 网页搜索：web seam 接线（引擎链见 ./engine-chain.ts，引擎在 ./engines/）
+// dsh-wangshu 网页搜索：web seam 接线（引擎链见 ./engine-chain.ts，引擎在 ./engines/）
 //
 // 注册 id 为 'free-search' 的搜索 provider——Tavily 免 key 优先，Bing RSS / Sogou /
 // GitHub / arXiv / StackExchange / HN 自动故障转移；原生引用卡片照常渲染（seam 直接
@@ -127,6 +127,6 @@ export function applyWebSearch(ctx, options = {}) {
                     /* 已注销 */
                 }
             }
-        }, 'dsh-kit-search.teardown');
+        }, 'dsh-wangshu-search.teardown');
     }
 }

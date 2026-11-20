@@ -1,7 +1,7 @@
-// dsh-kit 宿主半边日志：只写控制台，不落盘。
+// dsh-wangshu 宿主半边日志：只写控制台，不落盘。
 // 组件半边一律经 kitLogger('<组件>') 打，代码里不再直接 console。
 //
-// 一行一事：时间 级别 组件 [作用域] "消息" key=value…；级别走环境变量 DSH_KIT_LOG
+// 一行一事：时间 级别 组件 [作用域] "消息" key=value…；级别走环境变量 DSH_WANGSHU_LOG
 // （off/error/warn/info/debug，默认 warn——info/debug 只在排查时打开）。
 // op() 作用域内的每一行自动带作用域路径，失败那行自己说清「当时在做什么」。
 
@@ -33,7 +33,7 @@ const LEVELS: readonly string[] = ['error', 'warn', 'info', 'debug']
 const RANK: Record<KitLogLevel, number> = { error: 0, warn: 1, info: 2, debug: 3 }
 const FIELD_MAX = 200
 
-const rawLevel = (process.env.DSH_KIT_LOG ?? '').trim().toLowerCase()
+const rawLevel = (process.env.DSH_WANGSHU_LOG ?? '').trim().toLowerCase()
 const LEVEL: KitLogLevel | 'off' = rawLevel === 'off' || rawLevel === 'none' || rawLevel === 'silent'
   ? 'off'
   : LEVELS.includes(rawLevel) ? (rawLevel as KitLogLevel) : 'warn'

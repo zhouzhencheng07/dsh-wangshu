@@ -1,4 +1,4 @@
-// dsh-kit 网页搜索组件（宿主半边入口）
+// dsh-wangshu 网页搜索组件（宿主半边入口）
 //
 // 免费引擎链替换 base 层默认钉的官方搜索 provider：seam 接管与 provider 注册见
 // ./web-search.ts，引擎实现在 ./engines/。组件行关闭 = 本模块不物化 = 不接管 seam，
@@ -16,7 +16,7 @@ interface KitCtx {
   effect?(fn: () => void | (() => void), label?: string): void
 }
 
-export const name = 'dsh-kit/search'
+export const name = 'dsh-wangshu/search'
 
 export async function apply(ctx: KitCtx): Promise<void> {
   applyWebSearch(ctx, { log: (message) => log.warn(message) })

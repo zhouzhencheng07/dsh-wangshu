@@ -1,31 +1,31 @@
-# dsh-kit bundle patch：把一行载体行与八个组件行 insert 进 bundle 层。
-# 组件行是同一个包（单包组件化）的 exports 子路径：行 name = dsh-kit/<行id>，exports 与
+# dsh-wangshu bundle patch：把一行载体行与八个组件行 insert 进 bundle 层。
+# 组件行是同一个包（单包组件化）的 exports 子路径：行 name = dsh-wangshu/<行id>，exports 与
 # locale/<行id>/*.json 由 package.json 声明；行的中文显示名由宿主按行 name 解析 locale
 # meta（子路径名查不到包 → 回退显示 name 原文）。
 # 行序 = 插件页「包含的组件」的显示顺序（宿主按 insert 原样渲染、不排序），也是
 # locale/*.json 里卡片描述的枚举顺序。
-# 这里不 patch 任何官方行：网页搜索对 web seam 的接管由 dsh-kit/search 组件在加载时完成
+# 这里不 patch 任何官方行：网页搜索对 web seam 的接管由 dsh-wangshu/search 组件在加载时完成
 # ——静态把 web 行的 searchProvider 钉成 free-search 会让「关掉该组件行」变成搜索直接抛
 # WEB_PROVIDER_CONFIGURED_MISSING（详见 src/search/web-search.ts 头注释）。
 - insert:
     # 组件行 id 用短语义名（官方同款，如 agent-team）：插件页组件行显示「显示名 +
     # 行id + 模块名」，id 与包名同文会两行重复
     - id: files
-      name: dsh-kit/files
+      name: dsh-wangshu/files
     - id: chat
-      name: dsh-kit/chat
+      name: dsh-wangshu/chat
     - id: vault
-      name: dsh-kit/vault
+      name: dsh-wangshu/vault
     - id: terminal
-      name: dsh-kit/terminal
+      name: dsh-wangshu/terminal
     - id: phone
-      name: dsh-kit/phone
+      name: dsh-wangshu/phone
     - id: monitor
-      name: dsh-kit/monitor
+      name: dsh-wangshu/monitor
     - id: search
-      name: dsh-kit/search
+      name: dsh-wangshu/search
     # 载体行（name 恰好等于包名）：**不能删**，它不伺服任何能力，只是浏览器半边的挂载点。
-    # 宿主把包的客户端半边挂在「name 等于包名」的那一行上——子路径行（dsh-kit/vault 之类）
+    # 宿主把包的客户端半边挂在「name 等于包名」的那一行上——子路径行（dsh-wangshu/vault 之类）
     # 不带 client 半边（实测：改名成子路径、给子路径补 ./client 导出都不挂）。删掉这一行 =
     # 插件页各行都在、宿主端点都通，浏览器半边整包不加载。
     # id 写成**数字**字面量（YAML 非字符串）且必须写死，两件事各有一个原因：
@@ -40,4 +40,4 @@
     # 它不对应任何功能，故排在功能行之后。
     # vendor 静态资源归用它的组件行（终端 / 手机访问 / 知识库）。
     - id: 1
-      name: dsh-kit
+      name: dsh-wangshu

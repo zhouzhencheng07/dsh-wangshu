@@ -8,7 +8,7 @@ interface KitWebCtx {
         }): () => void;
     };
 }
-export declare const name = "dsh-kit/terminal";
+export declare const name = "dsh-wangshu/terminal";
 export declare function apply(ctx: {
     inject(deps: string[], cb: (svc: KitWebCtx) => void): void;
     effect(fn: () => void | (() => void), label?: string): void;

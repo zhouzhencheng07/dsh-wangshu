@@ -1,5 +1,5 @@
 // readable-roots 单测：根集合（请求 cwd + 组件注册的根）与包含判定。
-// 用法（dsh-kit 根）：node tests\test-readable-roots.mjs
+// 用法（dsh-wangshu 根）：node tests\test-readable-roots.mjs
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'

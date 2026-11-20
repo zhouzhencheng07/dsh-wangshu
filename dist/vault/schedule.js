@@ -1,7 +1,7 @@
-// dsh-kit/vault 组件的日程半边——结构化存储与查询派生（schedule.ts）
+// dsh-wangshu/vault 组件的日程半边——结构化存储与查询派生（schedule.ts）
 //
 // 职责：日程/待办的结构化数据持有者（一条一文件、单文件原子落盘，固定
-// $DSH_HOME/dsh-kit/schedule/，与知识库 vaultRoot 互不相干），以及派生层：
+// $DSH_HOME/dsh-wangshu/schedule/，与知识库 vaultRoot 互不相干），以及派生层：
 // 区间重复展开、统计。UI 组件（可编辑面板）在 client/bundle.js 的 vaultModule；
 // HTTP 端点（读写，UI 的写路径）在 src/vault/index.ts。agent 侧不注册工具——
 // 日程编辑由 agent 直接改 events/<id>.json（格式与校验见本文件）。
@@ -287,7 +287,7 @@ function validateScheduleEvent(ev) {
     }
 }
 // ── Store ───────────────────────────────────────────────────────────────────
-/** 日程数据目录：固定 $DSH_HOME/dsh-kit/schedule/（一条一文件），与知识库（vaultRoot）
+/** 日程数据目录：固定 $DSH_HOME/dsh-wangshu/schedule/（一条一文件），与知识库（vaultRoot）
  *  无关——日程是独立能力，知识库未配置也照常可用 */
 export function resolveScheduleDir() {
     return kitPath('schedule');

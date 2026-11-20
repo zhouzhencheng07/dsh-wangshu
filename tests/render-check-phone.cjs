@@ -1,8 +1,8 @@
-// dsh-kit/phone 浏览器半边渲染级检查：加载真实 root client bundle（kitBase 随 factory
+// dsh-wangshu/phone 浏览器半边渲染级检查：加载真实 root client bundle（kitBase 随 factory
 // 执行）后直测组件导出面、本组件行配置页、设置页「手机访问」渲染、apply 装配门控
 // （行关闭 = 探针 404 = 一个槽都不注册）与宿主半边源哨兵（含远程视图置灰判据）。
 // 组件 = 单包内模块（root client 的 exports.phone），无独立 bundle。
-// 用法（dsh-kit 根）：node tests\render-check-phone.cjs
+// 用法（dsh-wangshu 根）：node tests\render-check-phone.cjs
 const fs = require("node:fs");
 
 let failed = 0;
@@ -203,7 +203,7 @@ async function checkApply() {
     const slotInjects = [];
     const origFetch = global.fetch;
     global.fetch = async (url) => {
-      if (String(url).indexOf("/dsh-kit-phone/config") >= 0) {
+      if (String(url).indexOf("/dsh-wangshu-phone/config") >= 0) {
         if (!available) return { ok: false, status: 404, json: async () => ({ error: "HTTP 404" }) };
         return { ok: true, status: 200, json: async () => ({ phonePort: 3090, phoneRemoteDomain: "", phoneKeepGatewayOn: false }) };
       }
@@ -218,13 +218,13 @@ async function checkApply() {
     return { registered, slotInjects, error };
   };
   const off = await run(false);
-  check("行关闭（/dsh-kit-phone/config 404）：一个槽、一个槽位注入都不发生", off.error === null && off.registered.length === 0 && off.slotInjects.length === 0);
+  check("行关闭（/dsh-wangshu-phone/config 404）：一个槽、一个槽位注入都不发生", off.error === null && off.registered.length === 0 && off.slotInjects.length === 0);
   const on = await run(true);
   check("apply 激活不抛错且只注入 settings.section / plugins.row.config", on.error === null && on.slotInjects.every((k) => k === "settings.section" || k === "plugins.row.config"));
   const seat = on.registered.find((s) => s && s.name === "settings.section");
   check("设置页整块注册：id=kit-phone、order=45、label 取本组件词条", !!seat && seat.id === "kit-phone" && seat.order === 45 && typeof seat.label === "function" && ["手机访问", "Phone access"].includes(seat.label()));
   const keys = on.registered.filter((s) => s && s.name === "plugins.row.config").map((s) => s.key);
-  check("配置页挂本组件行（单包单口径 key）", keys.includes("dsh-kit#phone") && keys.length === 1);
+  check("配置页挂本组件行（单包单口径 key）", keys.includes("dsh-wangshu#phone") && keys.length === 1);
 }
 
 // 5) 源哨兵：宿主半边搬进组件目录、主包与 client 摘干净、端点与配置齐备、
@@ -252,9 +252,9 @@ async function checkApply() {
   const hostCode = hostSrc.replace(/\/\/[^\n]*/g, "").replace(/\/\*[\s\S]*?\*\//g, "");
   check(
     "别的组件行不装配手机访问（无网关/端点/端口/配置）",
-    !hostCode.includes("phone-gateway") && !hostCode.includes("startPhoneGateway") && !hostCode.includes("/dsh-kit/phone/") &&
+    !hostCode.includes("phone-gateway") && !hostCode.includes("startPhoneGateway") && !hostCode.includes("/dsh-wangshu/phone/") &&
       !hostCode.includes("phonePort") && !hostCode.includes("phoneEnabled") && !hostCode.includes("PHONE_PORT") &&
-      !hostCode.includes("dsh-kit/config"),
+      !hostCode.includes("dsh-wangshu/config"),
   );
   check(
     "别的组件行不夹带配置页骨架（Config 字段表只在各组件自己的行里，client 根也不再持有）",
@@ -264,14 +264,14 @@ async function checkApply() {
   );
   check(
     "二维码静态资源归本行注册（行关 = 没有 qrcode.js），不夹带别家的资源",
-    compSrc.includes("registerVendorFiles") && compSrc.includes("['/dsh-kit/vendor/qrcode.js', 'qrcode.js']") &&
+    compSrc.includes("registerVendorFiles") && compSrc.includes("['/dsh-wangshu/vendor/qrcode.js', 'qrcode.js']") &&
       !/xterm[.]js|richeditor|katex|pdf[.]/.test(compSrc),
   );
   check(
     "组件入口自持端点与配置，且带探针（404 = 行关闭）",
-    compSrc.includes("name = 'dsh-kit/phone'") && compSrc.includes("/dsh-kit-phone/config") &&
-      compSrc.includes("/dsh-kit/phone/info") && compSrc.includes("/dsh-kit/phone/link") &&
-      compSrc.includes("/dsh-kit/phone/rotate") && compSrc.includes("/dsh-kit/phone/gateway") && compSrc.includes("/dsh-kit/phone/remote") &&
+    compSrc.includes("name = 'dsh-wangshu/phone'") && compSrc.includes("/dsh-wangshu-phone/config") &&
+      compSrc.includes("/dsh-wangshu/phone/info") && compSrc.includes("/dsh-wangshu/phone/link") &&
+      compSrc.includes("/dsh-wangshu/phone/rotate") && compSrc.includes("/dsh-wangshu/phone/gateway") && compSrc.includes("/dsh-wangshu/phone/remote") &&
       compSrc.includes("phoneRemoteDomain") && compSrc.includes("phoneRemoteCommand") && compSrc.includes("phonePort") && compSrc.includes("phoneKeepGatewayOn") &&
       compSrc.includes("lockPickerEntries") && compSrc.includes("from './gateway.ts'") && compSrc.includes("from './tunnel.ts'"),
   );
@@ -280,7 +280,7 @@ async function checkApply() {
     bundleSrc.includes("const phoneModule = (kit, require) => {") &&
       bundleSrc.includes("exports.phone = phoneModule(exports, require);") &&
       !sliceBetween("const UI_CSS = ", "const PHONE_CSS = ").includes("dshk-phone") &&
-      bundleSrc.includes('style[data-plugin-css="dsh-kit-phone/ui"]'),
+      bundleSrc.includes('style[data-plugin-css="dsh-wangshu-phone/ui"]'),
   );
   check(
     "远程视图置灰判据用语义属性 data-open-target（覆盖会话头部/预览/交付卡的打开入口）",
@@ -293,7 +293,7 @@ async function checkApply() {
       gwSrc.includes("const OPEN_DOCUMENT_RE = '^(?:打开配置文件|Open configuration file)$'") &&
       gwSrc.includes("const PICKER_LOCKED = ["),
   );
-  check("组件行声明 + exports 子路径 + locale 齐备", patchSrc.includes("name: dsh-kit/phone") && !!pkg.exports["./phone"] && !!pkg.exports["./phone/locale/*.json"] && fs.existsSync(__dirname + "/../locale/phone/zh.json") && fs.existsSync(__dirname + "/../locale/phone/en.json"));
+  check("组件行声明 + exports 子路径 + locale 齐备", patchSrc.includes("name: dsh-wangshu/phone") && !!pkg.exports["./phone"] && !!pkg.exports["./phone/locale/*.json"] && fs.existsSync(__dirname + "/../locale/phone/zh.json") && fs.existsSync(__dirname + "/../locale/phone/en.json"));
   check(
     "组件行中文名与描述在 locale/phone（宿主按行 name 全串解析）",
     read("locale/phone/zh.json").includes("手机访问") && read("locale/phone/en.json").includes("Phone access"),

@@ -1,10 +1,10 @@
-// dsh-kit/vault 浏览器半边渲染级检查：加载真实 root client bundle（kitBase 随 factory
+// dsh-wangshu/vault 浏览器半边渲染级检查：加载真实 root client bundle（kitBase 随 factory
 // 执行）后直测组件导出面、本组件行配置页、右栏两张签 + 快捷键与左栏底部入口钮、apply 装配门控
 //（行关闭 = 探针 404 = 一个槽都不注册）与宿主半边源哨兵。
 // 组件 = 单包内模块（root client 的 exports.vault），无独立 bundle；
 // 知识库/日程的行为级渲染检查（VaultRootView/VaultPagePane/ScheduleView/纯函数）
 // 仍在根 render-check.cjs（harness 合并 exports.vault 后直测同一份代码）。
-// 用法（dsh-kit 根）：node tests\render-check-vault.cjs
+// 用法（dsh-wangshu 根）：node tests\render-check-vault.cjs
 const fs = require("node:fs");
 
 let failed = 0;
@@ -540,10 +540,10 @@ async function checkStudyPageAbs() {
   const statAsked = [];
   global.fetch = async (url) => {
     const u = String(url);
-    if (u.includes("/dsh-kit/vault/index")) {
+    if (u.includes("/dsh-wangshu/vault/index")) {
       return { ok: true, status: 200, json: async () => ({ root: "D:/v", pages: [{ rel: "物理/力学.md", path: "D:/v/物理/力学.md" }] }) };
     }
-    if (u.includes("/dsh-kit/vault/stat")) {
+    if (u.includes("/dsh-wangshu/vault/stat")) {
       const p = decodeURIComponent(u.slice(u.indexOf("path=") + 5));
       statAsked.push(p);
       return { ok: true, status: 200, json: async () => (p.endsWith(".md") ? { gone: true } : { mtimeMs: 1, size: 2 }) };
@@ -578,11 +578,11 @@ async function checkApply() {
     global.fetch = async (url, opts) => {
       const u = String(url);
       fetchCalls.push({ url: u, method: (opts && opts.method) || "GET" });
-      if (u.includes("/dsh-kit-vault/config")) {
+      if (u.includes("/dsh-wangshu-vault/config")) {
         if (!available) return { ok: false, status: 404, json: async () => ({ error: "HTTP 404" }) };
         return { ok: true, status: 200, json: async () => ({ vaultRoot: "" }) };
       }
-      if (u.includes("/dsh-kit/vault/study-sync") && available) {
+      if (u.includes("/dsh-wangshu/vault/study-sync") && available) {
         // created>0 → 前端要 bump 日程总线（复习待办是真实条目）
         return { ok: true, status: 200, json: async () => ({ created: 2 }) };
       }
@@ -609,14 +609,14 @@ async function checkApply() {
     return { registered, slotInjects, svcInjects, shortcutCmds, clickListeners, fetchCalls };
   };
   const off = await run(false);
-  check("行关闭（/dsh-kit-vault/config 404）：一个槽、一个服务注入都不发生", off.registered.length === 0 && off.slotInjects.length === 0 && off.svcInjects.length === 0);
+  check("行关闭（/dsh-wangshu-vault/config 404）：一个槽、一个服务注入都不发生", off.registered.length === 0 && off.slotInjects.length === 0 && off.svcInjects.length === 0);
   const on = await run(true);
   check("apply 激活不抛错且等 sidebarRightTabs/shortcuts 声明（inject 而非直读）", on.svcInjects.includes("sidebarRightTabs") && on.svcInjects.includes("shortcuts"));
   // 启动对齐：物化后拍一次 study-sync（记录可能在别端 / agent 写下）；created>0 要 bump 日程总线
   const syncBefore = comps.schedBus.getVersion();
-  const syncCall = on.fetchCalls.find((c) => c.url.includes("/dsh-kit/vault/study-sync"));
+  const syncCall = on.fetchCalls.find((c) => c.url.includes("/dsh-wangshu/vault/study-sync"));
   check(
-    "启动对齐：apply 里 POST /dsh-kit/vault/study-sync（补建复习待办）",
+    "启动对齐：apply 里 POST /dsh-wangshu/vault/study-sync（补建复习待办）",
     !!syncCall && syncCall.method === "POST",
   );
   await new Promise((r) => setTimeout(r, 0));
@@ -625,14 +625,14 @@ async function checkApply() {
   const on2 = await run(true);
   check(
     "启动对齐防重入：apply 重跑不再发 state-sync 请求",
-    !on2.fetchCalls.some((c) => c.url.includes("/dsh-kit/vault/study-sync")),
+    !on2.fetchCalls.some((c) => c.url.includes("/dsh-wangshu/vault/study-sync")),
   );
   const keys = on.registered.filter((s) => s && s.name === "plugins.row.config").map((s) => s.key);
-  check("配置页挂本组件行（单包单口径 key）", keys.includes("dsh-kit#vault") && keys.length === 1);
+  check("配置页挂本组件行（单包单口径 key）", keys.includes("dsh-wangshu#vault") && keys.length === 1);
   check(
     "右栏两签注册：kind=dshk-vault/dshk-schedule + pane 正文槽位",
-    on.registered.some((s) => s && s.kind === "dshk-vault" && s.id === "dsh-kit-vault") &&
-      on.registered.some((s) => s && s.kind === "dshk-schedule" && s.id === "dsh-kit-schedule") &&
+    on.registered.some((s) => s && s.kind === "dshk-vault" && s.id === "dsh-wangshu-vault") &&
+      on.registered.some((s) => s && s.kind === "dshk-schedule" && s.id === "dsh-wangshu-schedule") &&
       on.slotInjects.includes("sidebar.right.pane.tab"),
   );
   check(
@@ -642,15 +642,15 @@ async function checkApply() {
   check(
     "对话区那枚知识库入口钮已退场 + 常驻壳挂 shell.overlay（id 稳定）",
     on.registered.every((s) => !(s && s.name === "conversation.input.left")) &&
-      on.registered.some((s) => s && s.name === "shell.overlay" && s.id === "dsh-kit-vault"),
+      on.registered.some((s) => s && s.name === "shell.overlay" && s.id === "dsh-wangshu-vault"),
   );
   check(
-    "入口钮登记进左栏形态切换条（dsh-kit-vault / order 40；整条归 root 渲染，本组件不再自己占槽）",
-    dockExports.sideForms.some((e) => e && e.id === "dsh-kit-vault" && e.order === 40 && e.Component === comps.VaultFooterEntry) &&
+    "入口钮登记进左栏形态切换条（dsh-wangshu-vault / order 40；整条归 root 渲染，本组件不再自己占槽）",
+    dockExports.sideForms.some((e) => e && e.id === "dsh-wangshu-vault" && e.order === 40 && e.Component === comps.VaultFooterEntry) &&
       !on.slotInjects.includes("sidebar.footer.action"),
   );
   check("对话文件点击路由挂 document capture 监听", on.clickListeners.some((c) => c[0] === "click" && c[1] === true));
-  const vaultCmd = on.shortcutCmds.find((c) => c.id === "dsh-kit.vault.toggle");
+  const vaultCmd = on.shortcutCmds.find((c) => c.id === "dsh-wangshu.vault.toggle");
   check(
     "知识库命令注册进官方 shortcuts（label/别名/Ctrl+Alt+/，region 覆盖 page/editable/terminal）",
     !!vaultCmd && typeof vaultCmd.label() === "string" && Array.isArray(vaultCmd.aliases) &&
@@ -687,7 +687,7 @@ async function checkApply() {
   const raw = renderEntry();
   check(
     "那一枚是图标钮：名字与键帽走官方气泡（三枚一行，不出文字）",
-    raw.type === dockExports.KitTip && typeof raw.props.label === "string" && raw.props.command === "dsh-kit.vault.toggle" &&
+    raw.type === dockExports.KitTip && typeof raw.props.label === "string" && raw.props.command === "dsh-wangshu.vault.toggle" &&
       walk(raw, (n) => n.type === "span").length === 0,
   );
   const vBtn = btnOf(raw);
@@ -729,13 +729,13 @@ async function checkApply() {
   check(
     "别的组件行不装配知识库与日程（无 scanner / vault-fs / schedule / 端点）",
     !hostCode.includes("VaultScanner") && !hostCode.includes("createEntry") && !hostCode.includes("syncScheduleStore") &&
-      !hostCode.includes("/dsh-kit/vault/") && !hostCode.includes("/dsh-kit/schedule/"),
+      !hostCode.includes("/dsh-wangshu/vault/") && !hostCode.includes("/dsh-wangshu/schedule/"),
   );
   check(
     "阅读面的第三方库路由归知识库行注册（pdf.js / TipTap / mermaid / KaTeX + fonts 前缀），不夹带别家的资源",
     compSrc.includes("registerVendorFiles") && compSrc.includes("registerVendorSubdir") &&
-      ["/dsh-kit/vendor/pdf.min.mjs", "/dsh-kit/vendor/pdf.worker.min.mjs", "/dsh-kit/vendor/richeditor.bundle.js", "/dsh-kit/vendor/mermaid.min.js", "/dsh-kit/vendor/katex.min.js", "/dsh-kit/vendor/katex.min.css"].every((u) => compSrc.includes("['" + u + "',")) &&
-      compSrc.includes("'/dsh-kit/vendor/fonts'") && !/xterm[.]js|qrcode[.]js/.test(compSrc),
+      ["/dsh-wangshu/vendor/pdf.min.mjs", "/dsh-wangshu/vendor/pdf.worker.min.mjs", "/dsh-wangshu/vendor/richeditor.bundle.js", "/dsh-wangshu/vendor/mermaid.min.js", "/dsh-wangshu/vendor/katex.min.js", "/dsh-wangshu/vendor/katex.min.css"].every((u) => compSrc.includes("['" + u + "',")) &&
+      compSrc.includes("'/dsh-wangshu/vendor/fonts'") && !/xterm[.]js|qrcode[.]js/.test(compSrc),
   );
   // 代码盒正文可编辑的命门：node view 的 ignoreMutation 判据必须收在「控件区」——
   // 写成「contentDOM 之外的都忽略」会把浏览器删空代码块时摘 <code> 的结构改动一起吞掉，
@@ -841,10 +841,10 @@ async function checkApply() {
   );
   check(
     "组件入口自持端点与配置（日程不注册 agent 工具）",
-    compSrc.includes("name = 'dsh-kit/vault'") && compSrc.includes("syncScheduleStore()") &&
+    compSrc.includes("name = 'dsh-wangshu/vault'") && compSrc.includes("syncScheduleStore()") &&
       !compSrc.includes("defineTool") && !compSrc.includes("buildScheduleTools") &&
-      compSrc.includes("/dsh-kit-vault/config") && compSrc.includes("/dsh-kit/vault/index") &&
-      compSrc.includes("/dsh-kit/schedule/data") && compSrc.includes("vaultRoot"),
+      compSrc.includes("/dsh-wangshu-vault/config") && compSrc.includes("/dsh-wangshu/vault/index") &&
+      compSrc.includes("/dsh-wangshu/schedule/data") && compSrc.includes("vaultRoot"),
   );
   check(
     "root 的 open/closeRightbarTab 按 tabKinds 座查 kind（组件行不靠静态 RB_FEATURES）",
@@ -857,7 +857,7 @@ async function checkApply() {
       bundleSrc.includes("exports.vaultView = { renderer: null }") &&
       bundleSrc.includes("exports.vaultRoute = { open: null }"),
   );
-  check("组件行声明 + exports 子路径 + locale 齐备", patchSrc.includes("name: dsh-kit/vault") && !!pkg.exports["./vault"] && !!pkg.exports["./vault/locale/*.json"]);
+  check("组件行声明 + exports 子路径 + locale 齐备", patchSrc.includes("name: dsh-wangshu/vault") && !!pkg.exports["./vault"] && !!pkg.exports["./vault/locale/*.json"]);
   check(
     "组件行中文名与描述在 locale/vault（宿主按行 name 全串解析）",
     read("locale/vault/zh.json").includes("知识库 · 日程") && read("locale/vault/en.json").includes("Knowledge base · Schedule"),
@@ -880,10 +880,10 @@ async function checkApply() {
   const quizFsSrc = read("src/vault/fs.ts");
   check(
     "宿主测验端点九件套 + 伴生文件跟随（改名/移动/删除/覆盖带走 .quiz）",
-    compSrc.includes("/dsh-kit/vault/quiz-scope") && compSrc.includes("/dsh-kit/vault/quiz-progress") &&
-      compSrc.includes("/dsh-kit/vault/quiz-revision") && compSrc.includes("/dsh-kit/vault/quiz-save") &&
-      compSrc.includes("/dsh-kit/vault/quiz-record") && compSrc.includes("/dsh-kit/vault/quiz-mark") &&
-      compSrc.includes("/dsh-kit/vault/quiz-forget") && compSrc.includes("/dsh-kit/vault/quiz-threshold") &&
+    compSrc.includes("/dsh-wangshu/vault/quiz-scope") && compSrc.includes("/dsh-wangshu/vault/quiz-progress") &&
+      compSrc.includes("/dsh-wangshu/vault/quiz-revision") && compSrc.includes("/dsh-wangshu/vault/quiz-save") &&
+      compSrc.includes("/dsh-wangshu/vault/quiz-record") && compSrc.includes("/dsh-wangshu/vault/quiz-mark") &&
+      compSrc.includes("/dsh-wangshu/vault/quiz-forget") && compSrc.includes("/dsh-wangshu/vault/quiz-threshold") &&
       quizFsSrc.includes("followPage") && quizFsSrc.includes("siblingsForDelete") && quizFsSrc.includes("discard(root, "),
   );
   check(
@@ -908,7 +908,7 @@ async function checkApply() {
     "刷题只记会话内连对：浮层有刷题逻辑与两个入口，不落盘",
     bundleSrc.includes("function qzDrillAnswer(") && bundleSrc.includes("function qzDrillPass(") &&
       bundleSrc.includes('t("qzDrill")') && bundleSrc.includes("onDrill: startDrill") &&
-      !bundleSrc.includes('/dsh-kit/vault/drill'),
+      !bundleSrc.includes('/dsh-wangshu/vault/drill'),
   );
   // 范围面板：掌握阈值输入退役（改它要按新阈值重判整库掌握度，不跟一次测验走），
   // 只留只读小字；刷题开局先问每轮题数与过关连对，阈值只这一次会话有效
@@ -935,8 +935,8 @@ async function checkApply() {
     "掌握阈值收在面板工具条 ⋯ 菜单：1–20 输入 + 重判说明，确定后 POST quiz-threshold 再重取掌握度",
     bundleSrc.includes('t("qzThresholdMenu")') &&
       bundleSrc.includes("VaultQuizThresholdDialog, { onClose: () => setThrOpen(false) }") &&
-      thrDlgBody.includes('"/dsh-kit/vault/quiz-progress?dir="') &&
-      thrDlgBody.includes('"/dsh-kit/vault/quiz-threshold"') &&
+      thrDlgBody.includes('"/dsh-wangshu/vault/quiz-progress?dir="') &&
+      thrDlgBody.includes('"/dsh-wangshu/vault/quiz-threshold"') &&
       thrDlgBody.includes("min: 1") && thrDlgBody.includes("max: 20") &&
       thrDlgBody.includes('t("qzThresholdNote")') && thrDlgBody.includes("qzProgressBump()"),
   );
@@ -974,7 +974,7 @@ async function checkApply() {
     bundleSrc.includes("jsxRuntime.jsx(VaultQuizOverlay, {})") &&
       bundleSrc.includes("jsxRuntime.jsx(VaultQuizEntry, { path, root, active })") &&
       /key: "qz", label: t\("qzEntry"\)/.test(bundleSrc) &&
-      bundleSrc.includes('"/dsh-kit/vault/quiz-record"') && bundleSrc.includes('"/dsh-kit/vault/quiz-save"'),
+      bundleSrc.includes('"/dsh-wangshu/vault/quiz-record"') && bundleSrc.includes('"/dsh-wangshu/vault/quiz-save"'),
   );
   // 测验浮层自己认 Esc：设置 / 作答 / 小结三个阶段都关（不整层关的那一层是「编辑题目」，
   // 那是带未保存内容的输入面，退出走 ✕）
@@ -995,15 +995,15 @@ async function checkApply() {
   const homePaneSrc = sliceBetween("function HomePagePane() {", "─────────── 本组件生效配置");
   check(
     "首页签注册三处（RB_TABS / RB_BODY / tabKinds 补登）+ 工具条入口开签",
-    bundleSrc.includes('{ id: "dsh-kit-home", kind: "dshk-home", feature: "home", titleKey: "homeTab" }') &&
+    bundleSrc.includes('{ id: "dsh-wangshu-home", kind: "dshk-home", feature: "home", titleKey: "homeTab" }') &&
       bundleSrc.includes("home: HomePagePane") &&
-      bundleSrc.includes('dock.tabKinds.home = { id: "dsh-kit-home", kind: "dshk-home" }') &&
+      bundleSrc.includes('dock.tabKinds.home = { id: "dsh-wangshu-home", kind: "dshk-home" }') &&
       bundleSrc.includes('openRightbarTab("home")'),
   );
   check(
     "首页签数据面：自取索引 + 每集 quiz-scope/progress 汇总 + 浮层关闭重拉（不挂轮询）",
-    homePaneSrc.includes('kitJson("/dsh-kit/vault/index"') &&
-      homePaneSrc.includes('"/dsh-kit/vault/quiz-scope?"') && homePaneSrc.includes('"/dsh-kit/vault/quiz-progress?"') &&
+    homePaneSrc.includes('kitJson("/dsh-wangshu/vault/index"') &&
+      homePaneSrc.includes('"/dsh-wangshu/vault/quiz-scope?"') && homePaneSrc.includes('"/dsh-wangshu/vault/quiz-progress?"') &&
       homePaneSrc.includes("qzStatOf(qzQuestionsOf(") &&
       homePaneSrc.includes("if (req === null) setNonce"),
   );
@@ -1015,7 +1015,7 @@ async function checkApply() {
   );
   check(
     "首页知识集行：学习统计（待复习 / 在学）与「学习计划」文字钮（在测验钮之前）+ 总览浮层随开随挂",
-    homePaneSrc.includes('"/dsh-kit/vault/study-scope?"') &&
+    homePaneSrc.includes('"/dsh-wangshu/vault/study-scope?"') &&
       homePaneSrc.includes("studyScopeCounts(") &&
       homePaneSrc.includes('t("homeStudyActive")') && homePaneSrc.includes('t("homeStudyDue")') &&
       homePaneSrc.includes('t("homeStudyTip")') &&
@@ -1075,15 +1075,15 @@ async function checkApply() {
   check(
     "学习端点九件套（记录读写 + 动作 + 启动对齐）",
     [
-      "/dsh-kit/vault/study",
-      "/dsh-kit/vault/study-scope",
-      "/dsh-kit/vault/study-first",
-      "/dsh-kit/vault/study-complete",
-      "/dsh-kit/vault/study-adjust",
-      "/dsh-kit/vault/study-finish",
-      "/dsh-kit/vault/study-restart",
-      "/dsh-kit/vault/study-remove",
-      "/dsh-kit/vault/study-sync",
+      "/dsh-wangshu/vault/study",
+      "/dsh-wangshu/vault/study-scope",
+      "/dsh-wangshu/vault/study-first",
+      "/dsh-wangshu/vault/study-complete",
+      "/dsh-wangshu/vault/study-adjust",
+      "/dsh-wangshu/vault/study-finish",
+      "/dsh-wangshu/vault/study-restart",
+      "/dsh-wangshu/vault/study-remove",
+      "/dsh-wangshu/vault/study-sync",
     ].every((u) => compSrc.includes("'" + u + "'")),
   );
   check(
@@ -1122,9 +1122,9 @@ async function checkApply() {
     "复习待办在清单/浮层/提示三处认 studyRel（父目录第二行 + 打开页面 + 完成走学习端点）",
     bundleSrc.includes('className: "dshk-sched-taskparent"') &&
       bundleSrc.includes('className: "dshk-sched-rtoast"') &&
-      bundleSrc.includes('"/dsh-kit/vault/study-complete"') &&
-      bundleSrc.includes('"/dsh-kit/vault/study-finish"') &&
-      bundleSrc.includes('"/dsh-kit/vault/study-adjust"') &&
+      bundleSrc.includes('"/dsh-wangshu/vault/study-complete"') &&
+      bundleSrc.includes('"/dsh-wangshu/vault/study-finish"') &&
+      bundleSrc.includes('"/dsh-wangshu/vault/study-adjust"') &&
       bundleSrc.includes("openStudyPage(rel)"),
   );
   check(
@@ -1144,7 +1144,7 @@ async function checkApply() {
   );
   check(
     "启动 / 同步对齐：物化后一次性 POST study-sync，补建了条目才 bump 日程总线",
-    bundleSrc.includes('"/dsh-kit/vault/study-sync"') &&
+    bundleSrc.includes('"/dsh-wangshu/vault/study-sync"') &&
       bundleSrc.includes("studySyncRequested") &&
       /Number\(body && body\.created\) > 0\) schedBus\.bump\(\)/.test(bundleSrc),
   );

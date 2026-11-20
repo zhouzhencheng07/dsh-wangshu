@@ -1,0 +1,7 @@
+# 文本文件一律 LF：按行切分的检查（patch 行解析、快照切片）遇到 CRLF 会静默失配
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.wasm binary
+*.woff2 binary
+*.ico binary

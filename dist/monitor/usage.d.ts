@@ -24,6 +24,6 @@ export interface UsageDeps {
     /** llm-pi-ai entry 配置现读（configEditor 现读），缺服务时回 null */
     readProviderConfig: () => unknown;
 }
-/** 注册 /dsh-kit/usage；返回注销函数（插件卸载时撤路由） */
+/** 注册 /dsh-wangshu/usage；返回注销函数（插件卸载时撤路由） */
 export declare function registerUsageRoutes(deps: UsageDeps): () => void;
 export {};

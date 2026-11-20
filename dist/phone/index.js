@@ -1,4 +1,4 @@
-// dsh-kit 手机访问组件（宿主半边入口）
+// dsh-wangshu 手机访问组件（宿主半边入口）
 //
 // 能力本体在 ./gateway.ts（唯一对外监听口 0.0.0.0:<phonePort> + 令牌授权反代 + 远程视图
 // 辅助脚本）；本文件是组件的装配面：网关启停/令牌/链接端点与组件配置。
@@ -6,15 +6,15 @@
 // （设置页「手机访问」整块、组件配置页与设置导航图标全不出现）——行开关就是总开关。
 // 配置：phonePort（对外端口）、phoneRemoteDomain（远程域名）、phoneRemoteCommand
 // （本机隧道客户端的启动命令）、phoneKeepGatewayOn（重启后是否自动拉起网关）。网关启停本身
-// 走 /dsh-kit/phone/gateway + 状态文件，远程隧道启停走 /dsh-kit/phone/remote + 同一状态文件，
+// 走 /dsh-wangshu/phone/gateway + 状态文件，远程隧道启停走 /dsh-wangshu/phone/remote + 同一状态文件，
 // 都不经 settings（settings 读取器回填有时序滞后，实测开关写了但 reader 仍报旧值）。
 // 远程隧道进程由本组件按命令拉起（./tunnel.ts），不依赖操作系统的开机任务：远程没开就不启动。
 //
 // 端点（同源校验；主 webserver 只绑 loopback，本网关是唯一对外口）：
-//   GET  /dsh-kit-phone/config      —— 生效配置快照（client 门控与可达性探针：404 = 行关闭）
-//   GET  /dsh-kit/phone/info|link   —— 网关/隧道状态与带令牌链接
-//   POST /dsh-kit/phone/rotate|gateway|remote —— 轮换令牌 / 热启停网关 / 启停远程隧道
-//   GET  /dsh-kit/vendor/qrcode.js  —— 设置页二维码用的 vendored 生成器，随本行伺服
+//   GET  /dsh-wangshu-phone/config      —— 生效配置快照（client 门控与可达性探针：404 = 行关闭）
+//   GET  /dsh-wangshu/phone/info|link   —— 网关/隧道状态与带令牌链接
+//   POST /dsh-wangshu/phone/rotate|gateway|remote —— 轮换令牌 / 热启停网关 / 启停远程隧道
+//   GET  /dsh-wangshu/vendor/qrcode.js  —— 设置页二维码用的 vendored 生成器，随本行伺服
 import fs from 'node:fs';
 import http from 'node:http';
 import https from 'node:https';
@@ -28,7 +28,7 @@ import { kitLogger } from "../core/log.js";
 const log = kitLogger('phone');
 /** 手机访问网关对外端口（0.0.0.0）的默认值，可在组件配置页改（phonePort，1-65535） */
 const PHONE_PORT = 3090;
-export const name = 'dsh-kit/phone';
+export const name = 'dsh-wangshu/phone';
 // ── 组件设置 schema（声明式模型）──
 // **字段必须 .volatile()**（SettingsForms 只投影 volatile 字段进表单）；volatile 写入 =
 // 热提交（fiber config 里的稳定 ref），readSettings 统一解引用后每次现读。
@@ -60,14 +60,14 @@ export async function apply(ctx, config = {}) {
         webCtx.effect(() => {
             // ── 二维码生成器：手机访问页面的静态资源，跟本行走 ──
             const disposeVendor = registerVendorFiles(webCtx.webServer, new Map([
-                ['/dsh-kit/vendor/qrcode.js', 'qrcode.js'],
+                ['/dsh-wangshu/vendor/qrcode.js', 'qrcode.js'],
             ]));
             // ── 生效配置只读端点（client 门控与可达性探针）──
             // client 启动拉一次喂 cfgFromSnapshot；行关闭时本端点随模块不物化而 404，
             // client 探到 404 就整体不注册（设置页「手机访问」整块不出现）。
             const disposePhoneConfig = webCtx.webServer.register({
                 kind: 'exact',
-                path: '/dsh-kit-phone/config',
+                path: '/dsh-wangshu-phone/config',
                 handler: (_req, res) => {
                     res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-cache' });
                     res.end(JSON.stringify(readSettings()));
@@ -76,7 +76,7 @@ export async function apply(ctx, config = {}) {
             // ── 手机访问网关（./gateway.ts）──
             // 网关启用位以状态文件直管（loadGatewayState/enabled 字段）：settings 读取器
             // 回填有时序滞后（实测开关写了但 reader 仍报旧值，重进设置页"恢复未开启"），
-            // 手机访问页的启停按钮走 /dsh-kit/phone/gateway 端点，不经过 settings。
+            // 手机访问页的启停按钮走 /dsh-wangshu/phone/gateway 端点，不经过 settings。
             const stateFile = defaultStateFile();
             const phoneRemoteDomain = () => String(readSettings().phoneRemoteDomain ?? '').trim();
             /** 网关端口：设置里读，缺失/非法回落默认 3090 */
@@ -337,7 +337,7 @@ export async function apply(ctx, config = {}) {
             };
             // 启动评估（配置在本 entry 加载时已解析，无时序差）
             bootEvalGateway();
-            /** 改启用位（持久化到状态文件 + 热启停）；由 /dsh-kit/phone/gateway 端点调用。
+            /** 改启用位（持久化到状态文件 + 热启停）；由 /dsh-wangshu/phone/gateway 端点调用。
              *  令牌轮换只经 rotate 端点（页内「刷新链接」按钮）手动触发，重启/重开沿用同一
              *  令牌（已授权设备不掉线） */
             const setGatewayEnabled = (on) => {
@@ -392,7 +392,7 @@ export async function apply(ctx, config = {}) {
             };
             const disposePhoneInfo = webCtx.webServer.register({
                 kind: 'exact',
-                path: '/dsh-kit/phone/info',
+                path: '/dsh-wangshu/phone/info',
                 handler: (req, res) => {
                     if (!phoneGuardGet(req, res))
                         return;
@@ -414,7 +414,7 @@ export async function apply(ctx, config = {}) {
             });
             const disposePhoneLink = webCtx.webServer.register({
                 kind: 'exact',
-                path: '/dsh-kit/phone/link',
+                path: '/dsh-wangshu/phone/link',
                 handler: (req, res) => {
                     if (!phoneGuardGet(req, res))
                         return;
@@ -430,7 +430,7 @@ export async function apply(ctx, config = {}) {
             // （启停不轮换，见 setGatewayEnabled）。
             const disposePhoneRotate = webCtx.webServer.register({
                 kind: 'exact',
-                path: '/dsh-kit/phone/rotate',
+                path: '/dsh-wangshu/phone/rotate',
                 handler: (req, res) => {
                     // POST 走 JSON content-type：跨源必触发 CORS 预检被拦，Origin 存在时
                     // 仍做同源校验（剥 Origin 的网关链路也能用）
@@ -452,7 +452,7 @@ export async function apply(ctx, config = {}) {
             });
             const disposePhoneGateway = webCtx.webServer.register({
                 kind: 'exact',
-                path: '/dsh-kit/phone/gateway',
+                path: '/dsh-wangshu/phone/gateway',
                 handler: (req, res) => {
                     if (req.method !== 'POST') {
                         phoneJson(res, 405, { error: 'method not allowed' });
@@ -498,7 +498,7 @@ export async function apply(ctx, config = {}) {
             });
             const disposePhoneRemote = webCtx.webServer.register({
                 kind: 'exact',
-                path: '/dsh-kit/phone/remote',
+                path: '/dsh-wangshu/phone/remote',
                 handler: (req, res) => {
                     if (req.method !== 'POST') {
                         phoneJson(res, 405, { error: 'method not allowed' });
@@ -547,6 +547,6 @@ export async function apply(ctx, config = {}) {
                 writeRemotePid(null);
                 process.off('exit', killTunnelOnExit);
             };
-        }, 'dsh-kit/phone: config/phone endpoints');
+        }, 'dsh-wangshu/phone: config/phone endpoints');
     });
 }

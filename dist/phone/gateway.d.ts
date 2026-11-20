@@ -92,7 +92,7 @@ export declare function dshSessionCookie({ secret, authority, issuedAt, maxAgeMs
 /** 极简 Cookie 解析（只需要取一个名值对） */
 export declare function parseCookies(header: unknown): Record<string, string>;
 /**
- * 默认令牌持久化文件：<DSH_HOME>/dsh-kit/phone-gateway.json。
+ * 默认令牌持久化文件：<DSH_HOME>/dsh-wangshu/phone-gateway.json。
  * 重启 dsh 后令牌不变，手机端 Cookie 继续有效；文件损坏则重新生成
  * （等价于一次轮换，旧链接失效属预期）。
  */
@@ -106,7 +106,7 @@ export interface GatewayState {
 /**
  * 状态文件读写（令牌 + 网关启用位）。启用位独立于 settings 通道：
  * 设置读取器回填有时序滞后，网关开关用文件直管，见 index.ts 的
- * /dsh-kit/phone/gateway 端点。
+ * /dsh-wangshu/phone/gateway 端点。
  */
 export declare function loadGatewayState(stateFile: string, log?: (msg: string) => void): GatewayState;
 export declare function saveGatewayState(stateFile: string, { token, enabled, remote }: GatewayState, log?: (msg: string) => void): void;

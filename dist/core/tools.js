@@ -1,4 +1,4 @@
-// dsh-kit 组件间共享的宿主侧工具库：@deepseek-ai/dsh-tools 的类型契约与加载。
+// dsh-wangshu 组件间共享的宿主侧工具库：@deepseek-ai/dsh-tools 的类型契约与加载。
 //
 // 各组件的工具装配（搜索、用量等）共用这一份
 // defineTool 契约与模块加载。dsh-tools 是 ESM（type: module），加载走两锚点：裸
@@ -35,6 +35,6 @@ export async function loadToolsModule(log = () => { }) {
             // 都失败
         }
     }
-    log('dsh-kit: @deepseek-ai/dsh-tools 不可达，工具未注册（其余功能不受影响）');
+    log('dsh-wangshu: @deepseek-ai/dsh-tools 不可达，工具未注册（其余功能不受影响）');
     return null;
 }

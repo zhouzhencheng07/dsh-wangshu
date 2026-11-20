@@ -619,13 +619,13 @@ test('可清空字段三态：parentId 空串与 null 都清空（空串落盘�
   fs.rmSync(dir, { recursive: true, force: true })
 })
 
-test('存储位置：固定 $DSH_HOME/dsh-kit/schedule/（一条一文件目录），与知识库无关', () => {
+test('存储位置：固定 $DSH_HOME/wangshu/schedule/（一条一文件目录），与知识库无关', () => {
   const dir = tmp()
   const home = path.join(dir, 'home')
   const prevHome = process.env.DSH_HOME
   process.env.DSH_HOME = home
   try {
-    assert.equal(resolveScheduleDir(), path.join(home, 'dsh-kit', 'schedule'))
+    assert.equal(resolveScheduleDir(), path.join(home, 'wangshu', 'schedule'))
   } finally {
     if (prevHome === undefined) delete process.env.DSH_HOME
     else process.env.DSH_HOME = prevHome

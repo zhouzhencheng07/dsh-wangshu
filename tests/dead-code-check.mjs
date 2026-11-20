@@ -7,7 +7,7 @@
 //     （模板串拼出来的类名按前缀豁免，前缀从源码里现扫）
 // 判据是启发式而非编译器级——宁可漏报也不误报；任何一段找不到扫描锚点都直接报错
 // 退出，避免"扫描失效但静默通过"。
-// 用法（dsh-kit 根）：node tests/dead-code-check.mjs
+// 用法（dsh-wangshu 根）：node tests/dead-code-check.mjs
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'

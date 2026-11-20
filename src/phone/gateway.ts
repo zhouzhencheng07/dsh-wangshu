@@ -1,4 +1,4 @@
-// dsh-kit 手机访问网关 —— 唯一对外监听口（默认 0.0.0.0:3090），把已授权的
+// dsh-wangshu 手机访问网关 —— 唯一对外监听口（默认 0.0.0.0:3090），把已授权的
 // 手机浏览器请求透传给本机回环上的 dsh web 主端口。
 //
 // 为什么必须有这个进程：dsh web 有意只绑 127.0.0.1（CLI 显式拒绝
@@ -393,7 +393,7 @@ export function parseCookies(header: unknown): Record<string, string> {
 }
 
 /**
- * 默认令牌持久化文件：<DSH_HOME>/dsh-kit/phone-gateway.json。
+ * 默认令牌持久化文件：<DSH_HOME>/dsh-wangshu/phone-gateway.json。
  * 重启 dsh 后令牌不变，手机端 Cookie 继续有效；文件损坏则重新生成
  * （等价于一次轮换，旧链接失效属预期）。
  */
@@ -411,7 +411,7 @@ export interface GatewayState {
 /**
  * 状态文件读写（令牌 + 网关启用位）。启用位独立于 settings 通道：
  * 设置读取器回填有时序滞后，网关开关用文件直管，见 index.ts 的
- * /dsh-kit/phone/gateway 端点。
+ * /dsh-wangshu/phone/gateway 端点。
  */
 export function loadGatewayState(stateFile: string, log: (msg: string) => void = () => {}): GatewayState {
   try {
@@ -670,7 +670,7 @@ export function startPhoneGateway({ port, upstreamPort, stateFile = defaultState
       if (!res.headersSent) {
         res.writeHead(502, { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' })
       }
-      res.end('dsh-kit phone gateway: upstream unavailable')
+      res.end('dsh-wangshu phone gateway: upstream unavailable')
     })
     res.on('close', () => up.destroy())
     req.pipe(up)

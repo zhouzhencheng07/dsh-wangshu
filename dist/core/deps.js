@@ -1,4 +1,4 @@
-// dsh-kit 组件入口共用的宿主运行时依赖加载（schemastery / ws 这类不在本包
+// dsh-wangshu 组件入口共用的宿主运行时依赖加载（schemastery / ws 这类不在本包
 // dependencies 里，按宿主 profile 的 node_modules 解析）。
 //
 // 三锚点：本模块 require（dev 目录直装时命中工作区）→ dsh 本体锚点（process.argv[1]，

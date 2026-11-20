@@ -1,4 +1,4 @@
-// 插件数据根：宿主只保证 DSH_HOME，自家的东西一律落 <DSH_HOME>/dsh-kit/ 下——
+// 插件数据根：宿主只保证 DSH_HOME，自家的东西一律落 <DSH_HOME>/wangshu/ 下——
 // 手机网关状态、知识库默认根与日程数据都在那儿，备份与清理只看一个目录。
 import os from 'node:os';
 import path from 'node:path';
@@ -7,9 +7,9 @@ export function dshHome() {
     const env = process.env.DSH_HOME;
     return env && env.trim() !== '' ? env.trim() : path.join(os.homedir(), '.dsh');
 }
-/** <DSH_HOME>/dsh-kit —— 自家数据的根（具体路径一律经 kitPath 拼） */
+/** <DSH_HOME>/wangshu —— 自家数据的根（具体路径一律经 kitPath 拼） */
 function kitDir() {
-    return path.join(dshHome(), 'dsh-kit');
+    return path.join(dshHome(), 'wangshu');
 }
 export function kitPath(...parts) {
     return path.join(kitDir(), ...parts);

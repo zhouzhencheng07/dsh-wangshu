@@ -1,4 +1,4 @@
-// dsh-kit/vault 组件（宿主半边入口）——知识库 · 日程
+// dsh-wangshu/vault 组件（宿主半边入口）——知识库 · 日程
 //
 // 能力本体在 ./scanner.ts（VaultScanner：md 目录扫描索引 / wikilink 提取 / 全文
 // 搜索，只读）、./fs.ts（树上的新建 / 重命名 / 移动 / 导入 / 删除，删除走回收站）
@@ -9,33 +9,33 @@
 // 这块能力的总开关。
 // 配置：vaultRoot（知识库根目录绝对路径，留空用默认根）、builtinPdf（库内 PDF
 // 走自带阅读器，默认关）；编辑面在插件页本组件行的
-// 「配置」。日程存储固定 $DSH_HOME/dsh-kit/schedule/（一条一文件），与知识库根无关，
+// 「配置」。日程存储固定 $DSH_HOME/dsh-wangshu/schedule/（一条一文件），与知识库根无关，
 // 无配置门槛。
 //
 // 端点（同源校验；webserver 默认只绑 loopback）：
-//   GET  /dsh-kit-vault/config      —— 生效配置快照（client 门控与可达性探针：404 = 行关闭）
-//   GET  /dsh-kit/vault/index       —— 索引（root / folders / pages / library）
-//   GET  /dsh-kit/vault/stat        —— 单文件 mtime/size（外部修改轮询；PDF 阅读器
+//   GET  /dsh-wangshu-vault/config      —— 生效配置快照（client 门控与可达性探针：404 = 行关闭）
+//   GET  /dsh-wangshu/vault/index       —— 索引（root / folders / pages / library）
+//   GET  /dsh-wangshu/vault/stat        —— 单文件 mtime/size（外部修改轮询；PDF 阅读器
 //                                     拿它当内容身份的一部分）
-//   GET  /dsh-kit/vault/search      —— 全文搜索
-//   GET  /dsh-kit/vault/file?path=  —— 库内 PDF 原始字节（自带阅读器取数）
-//   POST /dsh-kit/vault/create|rename|move|import|delete —— 目录级文件管理
-//   POST /dsh-kit/vault/refs    —— 知识集标记与挂载清单（op=set|unmark）
-//   GET  /dsh-kit/vault/quiz|quiz-scope|quiz-progress|quiz-revision —— 测验：一页的
+//   GET  /dsh-wangshu/vault/search      —— 全文搜索
+//   GET  /dsh-wangshu/vault/file?path=  —— 库内 PDF 原始字节（自带阅读器取数）
+//   POST /dsh-wangshu/vault/create|rename|move|import|delete —— 目录级文件管理
+//   POST /dsh-wangshu/vault/refs    —— 知识集标记与挂载清单（op=set|unmark）
+//   GET  /dsh-wangshu/vault/quiz|quiz-scope|quiz-progress|quiz-revision —— 测验：一页的
 //                                     题目 / 范围汇总 / 掌握度 / 外部改动指纹
-//   POST /dsh-kit/vault/quiz-save|quiz-record|quiz-mark|quiz-forget|quiz-threshold
+//   POST /dsh-wangshu/vault/quiz-save|quiz-record|quiz-mark|quiz-forget|quiz-threshold
 //                              —— 出题写回 / 记作答 / 标掌握 / 遗忘 / 改阈值
-//   GET  /dsh-kit/vault/study|study-scope —— 学习/复习：一页记录 / 范围汇总
-//   POST /dsh-kit/vault/study-first|study-complete|study-adjust|study-finish|
+//   GET  /dsh-wangshu/vault/study|study-scope —— 学习/复习：一页记录 / 范围汇总
+//   POST /dsh-wangshu/vault/study-first|study-complete|study-adjust|study-finish|
 //                       study-restart|study-remove|study-sync
 //                              —— 学习动作（记录与复习待办同一拍维护）
-//   POST /dsh-kit/vault/write  —— 正文写回（mtime CAS，不符回 modified）
-//   POST /dsh-kit/vault/attach —— 编辑面粘贴的图片进 attachments/（内容寻址）
-//   GET  /dsh-kit/schedule/data     —— 事件 + 区间展开 + 独立计时段 + 进行中的计时
-//   GET  /dsh-kit/schedule/stats    —— 统计
-//   GET  /dsh-kit/schedule/timer    —— 进行中的计时（悬浮球轮询用）
-//   POST /dsh-kit/schedule/op       —— 面板写路径（建/改/删/完成/起停表/计时段增改删）
-//   GET  /dsh-kit/vendor/{richeditor.bundle,mermaid.min,katex.min,katex.min.css,
+//   POST /dsh-wangshu/vault/write  —— 正文写回（mtime CAS，不符回 modified）
+//   POST /dsh-wangshu/vault/attach —— 编辑面粘贴的图片进 attachments/（内容寻址）
+//   GET  /dsh-wangshu/schedule/data     —— 事件 + 区间展开 + 独立计时段 + 进行中的计时
+//   GET  /dsh-wangshu/schedule/stats    —— 统计
+//   GET  /dsh-wangshu/schedule/timer    —— 进行中的计时（悬浮球轮询用）
+//   POST /dsh-wangshu/schedule/op       —— 面板写路径（建/改/删/完成/起停表/计时段增改删）
+//   GET  /dsh-wangshu/vendor/{richeditor.bundle,mermaid.min,katex.min,katex.min.css,
 //                          pdf.min.mjs,pdf.worker.min.mjs}.js|.mjs|.css
 //                                —— 阅读面懒加载的第三方库（pdf.js / TipTap / mermaid /
 //                                   KaTeX）与 fonts/ 字体，随本行伺服
@@ -115,7 +115,7 @@ interface KitWebCtx {
   effect(fn: () => void | (() => void), label?: string): void
 }
 
-export const name = 'dsh-kit/vault'
+export const name = 'dsh-wangshu/vault'
 
 // ── 组件设置 schema（声明式模型）──
 // **字段必须 .volatile()**（SettingsForms 只投影 volatile 字段进表单）；volatile
@@ -152,7 +152,7 @@ export async function apply(ctx: KitCtx, config: KitSettings = {}): Promise<void
 
   // ── 日程模块（./schedule.ts）：结构化日程 / 待办 ──
   //   agent 侧不注册工具——日程编辑由 agent 直接改 events/<id>.json；
-  //   面板在 client/bundle.js 的 vaultModule，读写经下面的 /dsh-kit/schedule/* 端点。
+  //   面板在 client/bundle.js 的 vaultModule，读写经下面的 /dsh-wangshu/schedule/* 端点。
   const scheduleStore = syncScheduleStore()
 
   // ── 知识库扫描器（./scanner.ts）：提到 apply 级——webServer 注入可能重进，
@@ -170,7 +170,7 @@ export async function apply(ctx: KitCtx, config: KitSettings = {}): Promise<void
   // /raw，端点限根后靠这条放行（根随配置热改，所以提供方现求值不缓存）
   ctx.effect?.(
     () => registerReadableRoot('vault', () => vaultScanner.root()),
-    'dsh-kit/vault: readable root',
+    'dsh-wangshu/vault: readable root',
   )
 
   // webServer 可能在本组件 apply 之后才挂载，用动态注入等它就绪
@@ -179,22 +179,22 @@ export async function apply(ctx: KitCtx, config: KitSettings = {}): Promise<void
       // ── 阅读面的第三方库：pdf.js / TipTap / mermaid / KaTeX 与字体，跟本行走 ──
       const disposeVendor = registerVendorFiles(webCtx.webServer, new Map([
         // vault 页面渲染器（TipTap 引擎只读态；懒加载）
-        ['/dsh-kit/vendor/richeditor.bundle.js', 'richeditor.bundle.js'],
+        ['/dsh-wangshu/vendor/richeditor.bundle.js', 'richeditor.bundle.js'],
         // mermaid 流程图渲染（```mermaid 围栏出图；宿主与 app.asar 都不带这个库，
         // 编辑器只认 window.__dshkMermaidLoad，缺了图就退化成代码块。懒加载）
-        ['/dsh-kit/vendor/mermaid.min.js', 'mermaid.min.js'],
+        ['/dsh-wangshu/vendor/mermaid.min.js', 'mermaid.min.js'],
         // KaTeX 数学公式（vault 阅读态渲染 $...$ / $$...$$；懒加载）
-        ['/dsh-kit/vendor/katex.min.js', 'katex.min.js'],
-        ['/dsh-kit/vendor/katex.min.css', 'katex.min.css'],
+        ['/dsh-wangshu/vendor/katex.min.js', 'katex.min.js'],
+        ['/dsh-wangshu/vendor/katex.min.css', 'katex.min.css'],
         // pdf.js（知识库自带 PDF 阅读器：解析库 + worker；只在 PDF 签内懒加载）
-        ['/dsh-kit/vendor/pdf.min.mjs', 'pdf.min.mjs'],
-        ['/dsh-kit/vendor/pdf.worker.min.mjs', 'pdf.worker.min.mjs'],
+        ['/dsh-wangshu/vendor/pdf.min.mjs', 'pdf.min.mjs'],
+        ['/dsh-wangshu/vendor/pdf.worker.min.mjs', 'pdf.worker.min.mjs'],
       ]))
       // KaTeX 字体：css 里以 fonts/ 相对路径引用，磁盘上隔离在 katex_fonts/ 免得和
       // 未来其他字体混放
       const disposeVendorFonts = registerVendorSubdir(
         webCtx.webServer,
-        '/dsh-kit/vendor/fonts',
+        '/dsh-wangshu/vendor/fonts',
         'katex_fonts',
       )
 
@@ -202,7 +202,7 @@ export async function apply(ctx: KitCtx, config: KitSettings = {}): Promise<void
       // client 启动拉一次；行关闭时本端点随模块不物化而 404，client 据此整体不注册。
       const disposeConfig = webCtx.webServer.register({
         kind: 'exact',
-        path: '/dsh-kit-vault/config',
+        path: '/dsh-wangshu-vault/config',
         handler: (req, res) => {
           if (!sameOrigin(req)) {
             json(res, 403, { error: 'cross-origin denied' })
@@ -236,7 +236,7 @@ export async function apply(ctx: KitCtx, config: KitSettings = {}): Promise<void
               json(res, 403, { error: 'cross-origin denied' })
               return
             }
-            handler(req, res, new URL(req.url ?? '/', 'http://dsh-kit.local'))
+            handler(req, res, new URL(req.url ?? '/', 'http://dsh-wangshu.local'))
           },
         })
 
@@ -272,7 +272,7 @@ export async function apply(ctx: KitCtx, config: KitSettings = {}): Promise<void
           req.on('aborted', () => done({}))
         })
 
-      // ── 日程端点：/dsh-kit/schedule/*（./schedule.ts 单例 store）──
+      // ── 日程端点：/dsh-wangshu/schedule/*（./schedule.ts 单例 store）──
       //   GET data?from&to → { events(raw 全量), occurrences(区间展开,带 endDate/state),
       //   orphans, runningTimer }；GET stats?scope&date → 统计；GET timer → 进行中的表；
       //   POST op → 面板写路径（同一份 store，agent 工具也走它，规则不分叉）。store 每次
@@ -294,7 +294,7 @@ export async function apply(ctx: KitCtx, config: KitSettings = {}): Promise<void
       }
       const disposeSchedule: Array<() => void> = []
       disposeSchedule.push(
-        route('/dsh-kit/schedule/data', (req, res, url) => {
+        route('/dsh-wangshu/schedule/data', (req, res, url) => {
           if (req.method !== 'GET') return json(res, 405, { error: 'method not allowed' })
           const from = schedDateParam(url, 'from')
           const to = schedDateParam(url, 'to')
@@ -308,13 +308,13 @@ export async function apply(ctx: KitCtx, config: KitSettings = {}): Promise<void
         }),
       )
       disposeSchedule.push(
-        route('/dsh-kit/schedule/timer', (req, res) => {
+        route('/dsh-wangshu/schedule/timer', (req, res) => {
           if (req.method !== 'GET') return json(res, 405, { error: 'method not allowed' })
           json(res, 200, { runningTimer: scheduleStore.getRunningTimer() })
         }),
       )
       disposeSchedule.push(
-        route('/dsh-kit/schedule/stats', (req, res, url) => {
+        route('/dsh-wangshu/schedule/stats', (req, res, url) => {
           if (req.method !== 'GET') return json(res, 405, { error: 'method not allowed' })
           const rawScope = url.searchParams.get('scope') ?? 'day'
           const scope = rawScope === 'week' || rawScope === 'month' ? rawScope : 'day'
@@ -326,7 +326,7 @@ export async function apply(ctx: KitCtx, config: KitSettings = {}): Promise<void
       // 走的是同一份实现——两边不会长出两套规则。
       // 错误语义：参数/规则不合法（store 抛错）回 400，按 id 定位不到回 404。
       disposeSchedule.push(
-        route('/dsh-kit/schedule/op', (req, res) => {
+        route('/dsh-wangshu/schedule/op', (req, res) => {
           if (req.method !== 'POST') return json(res, 405, { error: 'method not allowed' })
           void readBody(req, SCHED_BODY_LIMIT).then((body) => {
             if (body === null) {
@@ -403,7 +403,7 @@ export async function apply(ctx: KitCtx, config: KitSettings = {}): Promise<void
         }
         return root
       }
-      vaultRoute('/dsh-kit/vault/index', (req, res) => {
+      vaultRoute('/dsh-wangshu/vault/index', (req, res) => {
         if (req.method !== 'GET') return json(res, 405, { error: 'method not allowed' })
         const root = vaultGuard(res)
         if (root === null) return
@@ -414,7 +414,7 @@ export async function apply(ctx: KitCtx, config: KitSettings = {}): Promise<void
       })
       // 外部修改实时刷新：只回打开页的 mtime，不读正文——前端轮询发现 mtime 变化
       // 且本地无脏改即自动重读整页（AI / 编辑器改文件零手动刷新）
-      vaultRoute('/dsh-kit/vault/stat', (req, res, url) => {
+      vaultRoute('/dsh-wangshu/vault/stat', (req, res, url) => {
         if (req.method !== 'GET') return json(res, 405, { error: 'method not allowed' })
         const root = vaultGuard(res)
         if (root === null) return
@@ -430,9 +430,9 @@ export async function apply(ctx: KitCtx, config: KitSettings = {}): Promise<void
         }
       })
       // 库内 PDF 原始字节：自带阅读器取数用（builtinPdf 开）。库外一律 400——
-      // 准入判据是 resolveInside 的库内判定，不是可读根集合（那是 /dsh-kit/raw 的口径）。
+      // 准入判据是 resolveInside 的库内判定，不是可读根集合（那是 /dsh-wangshu/raw 的口径）。
       // 字节上限由 pdf.js 那边兜（见 client 的 PDF_MAX_BYTES），端点不截断。
-      vaultRoute('/dsh-kit/vault/file', (req, res, url) => {
+      vaultRoute('/dsh-wangshu/vault/file', (req, res, url) => {
         if (req.method !== 'GET') return json(res, 405, { error: 'method not allowed' })
         const root = vaultGuard(res)
         if (root === null) return
@@ -465,7 +465,7 @@ export async function apply(ctx: KitCtx, config: KitSettings = {}): Promise<void
         sendRawFile(req, res, { path: target, size: stat.size, type: 'application/pdf', download: false, fileName: path.basename(target) }, fail)
       })
 
-      vaultRoute('/dsh-kit/vault/search', (req, res, url) => {
+      vaultRoute('/dsh-wangshu/vault/search', (req, res, url) => {
         if (req.method !== 'GET') return json(res, 405, { error: 'method not allowed' })
         const root = vaultGuard(res)
         if (root === null) return
@@ -513,10 +513,10 @@ export async function apply(ctx: KitCtx, config: KitSettings = {}): Promise<void
           })
         })
       }
-      vaultPost('/dsh-kit/vault/create', (body, root) =>
+      vaultPost('/dsh-wangshu/vault/create', (body, root) =>
         createEntry(root, String(body.dir ?? ''), body.name, body.kind === 'dir' ? 'dir' : 'page'),
       )
-      vaultPost('/dsh-kit/vault/rename', async (body, root) => {
+      vaultPost('/dsh-wangshu/vault/rename', async (body, root) => {
         // 双链改写要用**操作前**的页面集合（改完名字旧页已不在索引里，判重名会走偏）
         const index = await vaultScanner.scan()
         const targetPath = String(body.path ?? '')
@@ -527,7 +527,7 @@ export async function apply(ctx: KitCtx, config: KitSettings = {}): Promise<void
         if (oldRel !== null && newRel !== null && oldRel !== newRel) moveReviewLinks(scheduleStore, oldRel, newRel)
         return result
       })
-      vaultPost('/dsh-kit/vault/move', async (body, root) => {
+      vaultPost('/dsh-wangshu/vault/move', async (body, root) => {
         const index = await vaultScanner.scan()
         const targetPath = String(body.path ?? '')
         const oldRel = relOfEntry(root, targetPath)
@@ -539,7 +539,7 @@ export async function apply(ctx: KitCtx, config: KitSettings = {}): Promise<void
         return result
       })
       vaultPost(
-        '/dsh-kit/vault/import',
+        '/dsh-wangshu/vault/import',
         async (body, root) => {
           const data = typeof body.dataBase64 === 'string' && body.dataBase64 !== '' ? Buffer.from(body.dataBase64, 'base64') : undefined
           return importEntry(root, {
@@ -553,7 +553,7 @@ export async function apply(ctx: KitCtx, config: KitSettings = {}): Promise<void
         },
         VAULT_IMPORT_LIMIT,
       )
-      vaultPost('/dsh-kit/vault/delete', async (body, root) => {
+      vaultPost('/dsh-wangshu/vault/delete', async (body, root) => {
         const paths = Array.isArray(body.paths) ? body.paths : []
         // rel 要在删前算（删完路径就不在了）；删除成功的页面 / 目录，它名下所有复习待办
         // 一并删掉——记录已随页面进了回收站，留着的待办只是一条指不到页面的脏条目
@@ -569,7 +569,7 @@ export async function apply(ctx: KitCtx, config: KitSettings = {}): Promise<void
       })
       // 知识集：目录体内的 .refs.json 是标记 + 挂载清单（见 fs.ts）。set 全量写回
       // 清单、unmark 删标记；嵌套 / 空目录 / 库根都在 fs.ts 里拦，前端只发动作。
-      vaultPost('/dsh-kit/vault/refs', (body, root) => {
+      vaultPost('/dsh-wangshu/vault/refs', (body, root) => {
         const dir = String(body.dir ?? '')
         if (body.op === 'unmark') {
           unmarkFolder(root, dir)
@@ -587,13 +587,13 @@ export async function apply(ctx: KitCtx, config: KitSettings = {}): Promise<void
       //   裁决（覆盖 / 读盘上），插件不静默覆盖也不存档（不碰 git，见知识库页）；
       //   文件已不在回 missing，那次写丢弃（改名 / 删除后卸载兜底不写活旧页）。
       //   attach：粘贴图片内容寻址落 attachments/，同内容复用不重写。
-      vaultPost('/dsh-kit/vault/write', (body, root) =>
+      vaultPost('/dsh-wangshu/vault/write', (body, root) =>
         writePage(root, String(body.path ?? ''), body.content, body.baseMtime),
         // 正文上限 1MB + frontmatter 与 JSON 转义余量
         4 * 1024 * 1024,
       )
       vaultPost(
-        '/dsh-kit/vault/attach',
+        '/dsh-wangshu/vault/attach',
         (body, root) => {
           const data = typeof body.dataBase64 === 'string' && body.dataBase64 !== '' ? Buffer.from(body.dataBase64, 'base64') : null
           if (data === null) throw new Error('缺少图片内容')
@@ -621,24 +621,24 @@ export async function apply(ctx: KitCtx, config: KitSettings = {}): Promise<void
             json(res, 400, { error: error instanceof Error ? error.message : String(error) })
           }
         }
-      vaultRoute('/dsh-kit/vault/quiz', quizRead((url, root) => readPage(root, url.searchParams.get('rel') ?? '')))
-      vaultRoute('/dsh-kit/vault/quiz-scope', quizRead((url, root) => readScope(root, url.searchParams.get('dir') ?? '')))
+      vaultRoute('/dsh-wangshu/vault/quiz', quizRead((url, root) => readPage(root, url.searchParams.get('rel') ?? '')))
+      vaultRoute('/dsh-wangshu/vault/quiz-scope', quizRead((url, root) => readScope(root, url.searchParams.get('dir') ?? '')))
       vaultRoute(
-        '/dsh-kit/vault/quiz-progress',
+        '/dsh-wangshu/vault/quiz-progress',
         quizRead((url, root) => readProgress(root, url.searchParams.get('rel'), url.searchParams.get('dir'))),
       )
       vaultRoute(
-        '/dsh-kit/vault/quiz-revision',
+        '/dsh-wangshu/vault/quiz-revision',
         quizRead((url, root) => revision(root, url.searchParams.get('rel'), url.searchParams.get('dir'))),
       )
-      vaultPost('/dsh-kit/vault/quiz-save', (body, root) => savePage(root, String(body.rel ?? ''), body.questions, body.edit ?? null), VAULT_QUIZ_LIMIT)
-      vaultPost('/dsh-kit/vault/quiz-record', (body, root) => {
+      vaultPost('/dsh-wangshu/vault/quiz-save', (body, root) => savePage(root, String(body.rel ?? ''), body.questions, body.edit ?? null), VAULT_QUIZ_LIMIT)
+      vaultPost('/dsh-wangshu/vault/quiz-record', (body, root) => {
         if (typeof body.correct !== 'boolean') throw new Error('correct 必须是布尔')
         return record(root, String(body.rel ?? ''), String(body.id ?? ''), body.correct)
       })
-      vaultPost('/dsh-kit/vault/quiz-mark', (body, root) => markMastered(root, String(body.rel ?? ''), String(body.id ?? '')))
-      vaultPost('/dsh-kit/vault/quiz-forget', (body, root) => forget(root, String(body.rel ?? ''), String(body.id ?? '')))
-      vaultPost('/dsh-kit/vault/quiz-threshold', (body, root) => {
+      vaultPost('/dsh-wangshu/vault/quiz-mark', (body, root) => markMastered(root, String(body.rel ?? ''), String(body.id ?? '')))
+      vaultPost('/dsh-wangshu/vault/quiz-forget', (body, root) => forget(root, String(body.rel ?? ''), String(body.id ?? '')))
+      vaultPost('/dsh-wangshu/vault/quiz-threshold', (body, root) => {
         if (typeof body.value !== 'number' || !Number.isFinite(body.value)) throw new Error('阈值必须是数字')
         return { threshold: setThreshold(root, body.value) }
       })
@@ -649,11 +649,11 @@ export async function apply(ctx: KitCtx, config: KitSettings = {}): Promise<void
       //   两者——记录是间隔与历史的真源，待办只是它的排期投影。
       setStudyWarn(kitLogger('vault').warn)
       vaultRoute(
-        '/dsh-kit/vault/study',
+        '/dsh-wangshu/vault/study',
         quizRead((url, root) => ({ state: studyGet(root, url.searchParams.get('rel') ?? '') })),
       )
       vaultRoute(
-        '/dsh-kit/vault/study-scope',
+        '/dsh-wangshu/vault/study-scope',
         quizRead((url, root) => ({ items: studyScope(root, url.searchParams.get('dir') ?? '') })),
       )
       /** 写请求体上限：一次学习动作只有 rel / nextInterval / mode 几个短字段 */
@@ -669,7 +669,7 @@ export async function apply(ctx: KitCtx, config: KitSettings = {}): Promise<void
       /** 写动作的 rel 统一先过守卫（与记录里的规范形一致；复习待办的 studyRel 也用它） */
       const studyRelOf = (body: Record<string, unknown>): string => safeStudyRel(String(body.rel ?? ''))
       vaultPost(
-        '/dsh-kit/vault/study-first',
+        '/dsh-wangshu/vault/study-first',
         (body, root) => {
           const rel = studyRelOf(body)
           const state = studyFirst(root, rel)
@@ -687,7 +687,7 @@ export async function apply(ctx: KitCtx, config: KitSettings = {}): Promise<void
         STUDY_BODY_LIMIT,
       )
       vaultPost(
-        '/dsh-kit/vault/study-complete',
+        '/dsh-wangshu/vault/study-complete',
         (body, root) => {
           const rel = studyRelOf(body)
           const state = studyComplete(root, rel, nextIntervalOf(body.nextInterval))
@@ -698,7 +698,7 @@ export async function apply(ctx: KitCtx, config: KitSettings = {}): Promise<void
         STUDY_BODY_LIMIT,
       )
       vaultPost(
-        '/dsh-kit/vault/study-adjust',
+        '/dsh-wangshu/vault/study-adjust',
         (body, root) => {
           const rel = studyRelOf(body)
           const next = nextIntervalOf(body.nextInterval)
@@ -711,7 +711,7 @@ export async function apply(ctx: KitCtx, config: KitSettings = {}): Promise<void
         STUDY_BODY_LIMIT,
       )
       vaultPost(
-        '/dsh-kit/vault/study-finish',
+        '/dsh-wangshu/vault/study-finish',
         (body, root) => {
           const rel = studyRelOf(body)
           const state = studyFinish(root, rel)
@@ -721,7 +721,7 @@ export async function apply(ctx: KitCtx, config: KitSettings = {}): Promise<void
         STUDY_BODY_LIMIT,
       )
       vaultPost(
-        '/dsh-kit/vault/study-restart',
+        '/dsh-wangshu/vault/study-restart',
         (body, root) => {
           const rel = studyRelOf(body)
           const mode = body.mode === 'last' ? 'last' : body.mode === 'first' ? 'first' : null
@@ -734,7 +734,7 @@ export async function apply(ctx: KitCtx, config: KitSettings = {}): Promise<void
         STUDY_BODY_LIMIT,
       )
       vaultPost(
-        '/dsh-kit/vault/study-remove',
+        '/dsh-wangshu/vault/study-remove',
         (body, root) => {
           const rel = studyRelOf(body)
           const removed = studyRemove(root, rel)
@@ -745,7 +745,7 @@ export async function apply(ctx: KitCtx, config: KitSettings = {}): Promise<void
       )
       // 启动 / 同步后对齐：记录可能在别端 / agent 写下，靠这一拍补齐复习待办
       vaultPost(
-        '/dsh-kit/vault/study-sync',
+        '/dsh-wangshu/vault/study-sync',
         (_body, root) => ({ created: syncReviewEvents(scheduleStore, studyListActive(root, '')) }),
         STUDY_BODY_LIMIT,
       )
@@ -757,6 +757,6 @@ export async function apply(ctx: KitCtx, config: KitSettings = {}): Promise<void
         for (const dispose of disposeSchedule) dispose()
         for (const dispose of disposeVault) dispose()
       }
-    }, 'dsh-kit/vault: config/vault/schedule endpoints')
+    }, 'dsh-wangshu/vault: config/vault/schedule endpoints')
   })
 }

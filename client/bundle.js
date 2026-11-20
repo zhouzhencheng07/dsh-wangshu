@@ -1,4 +1,4 @@
-// dsh-kit 浏览器半边 —— 手写 client bundle，与官方 lib/client.js 产物同形，
+// dsh-wangshu 浏览器半边 —— 手写 client bundle，与官方 lib/client.js 产物同形，
 // 无构建步骤：改完本文件刷新浏览器即生效（本地目录 junction 直装）。
 //
 // 结构：
@@ -6,7 +6,7 @@
 //     知识库·日程三枚一行，管的是侧栏那一格显示哪个形态（三形态天然互斥）。
 //     整条归 root 渲染（SideFormBar），组件那几枚由各自的组件半边
 //     物化期登记进 kitBase.sideForms。composer 工具行只剩终端一枚
-//     （conversation.input.left，dsh-kit/terminal 自注册）；日程的家是右栏 dock 签。
+//     （conversation.input.left，dsh-wangshu/terminal 自注册）；日程的家是右栏 dock 签。
 //   右栏（唯一工作台形态）：sidebarRightTabs 注册四类 dock 签，
 //     pane 正文经 slots.inject（sidebar.right.pane.tab）按 id 提供，pane 内自管
 //     pane 正文。dock 签本身没有按钮：知识库/日程都是被动签（树/对话
@@ -19,7 +19,7 @@
 //     （入口按钮选中态与角标读它）。「开着哪些内容」与「哪张签激活」都不在这儿存
 //     ——那是官方签表，经 rightbarItems/useRightbarItems/activeRightbarItem 读。
 //     索引类视图（知识库目录树）住侧栏 sidebar.workspaces 单槽，点条目开对应右栏签。
-//   文件树：面板群与宿主端点归 dsh-kit/files 组件半边（端点路径 /dsh-kit/*），
+//   文件树：面板群与宿主端点归 dsh-wangshu/files 组件半边（端点路径 /dsh-wangshu/*），
 //     侧栏浏览区的文件树分支经 kitBase.sidebarView 座回到本包的 sidebar.workspaces
 //     渲染器单槽分发。
 //     文件点击改投官方右栏文件签（sidebarRight.openResource，kit 不自建
@@ -28,12 +28,12 @@
 //     各自一个 xModule 隔离壳（本 factory 尾部组装完成后执行），激活由根 apply 尾部
 //     循环触发——行禁用只摘宿主半边端点，探针 404 的组件整体不注册。
 // 第三方大库（xterm / pdf.js / TipTap / mermaid / KaTeX / 二维码）都不打进 bundle，
-// 由用它们的组件行伺服 /dsh-kit/vendor/* 静态资源（行关 = 连资源一起没有），各自
+// 由用它们的组件行伺服 /dsh-wangshu/vendor/* 静态资源（行关 = 连资源一起没有），各自
 // 首次用到时按需加载。
 //
 // 外观跟随：面板 chrome 全部用 --dsw-alias-* 令牌（随 DSH 明暗主题自动切换）。
 window.__ModuleLoader__.load({
-  id: "dsh-kit",
+  id: "dsh-wangshu",
   factory: (require) => {
     var module = { exports: {} };
     var exports = module.exports;
@@ -204,7 +204,7 @@ window.__ModuleLoader__.load({
     // 页面白屏这类现象看控制台即可，不需要一条常驻的上报管线。
     /** 组件 logger：kitLogger('files').warn(msg, fields) */
     function kitLogger(component) {
-      const tag = "[dsh-kit/" + component + "]";
+      const tag = "[dsh-wangshu/" + component + "]";
       const call = (level) => (msg, fields) => {
         if (fields === undefined) console[level](tag, msg);
         else console[level](tag, msg, fields);
@@ -213,7 +213,7 @@ window.__ModuleLoader__.load({
     }
     const clientLog = kitLogger("client");
 
-    /** GET /dsh-kit/*，按 validate 校验回包形状（形状不符 = 失败，不当半个成功）；
+    /** GET /dsh-wangshu/*，按 validate 校验回包形状（形状不符 = 失败，不当半个成功）；
         （如写文件的 409 冲突） */
     async function kitGetJson(url, signal, validate) {
       const res = await fetch(url, { signal });
@@ -227,7 +227,7 @@ window.__ModuleLoader__.load({
       }
       return body;
     }
-    /** POST /dsh-kit/*（JSON body，缺省 {}）；显式 ok:false 也算失败 */
+    /** POST /dsh-wangshu/*（JSON body，缺省 {}）；显式 ok:false 也算失败 */
     async function kitPostJson(url, payload, validate) {
       const res = await fetch(url, {
         method: "POST",
@@ -508,7 +508,7 @@ window.__ModuleLoader__.load({
     // 侧栏那一格是单槽：tree / git / 知识库·日程 三者互斥。知识库与日程同属一个组件、
     // 共占那一格，槽内切哪一面由 vaultSideTab 记（tab 条画在组件自己的侧栏渲染器里）。
     let kitUi = { treeOpen: false, vaultSideOpen: false, vaultSideTab: "vault", terminals: [], activeTermId: null, termDockOpen: false, vaultOpen: false };
-    // terminals/activeTermId/termDockOpen 是 dsh-kit-terminal 组件的水位（入口与坞
+    // terminals/activeTermId/termDockOpen 是 dsh-wangshu-terminal 组件的水位（入口与坞
     // 分属两个槽位，状态必须共享一份）。
     const kitUiListeners = new Set();
     function setKitUi(patch) {
@@ -818,7 +818,7 @@ window.__ModuleLoader__.load({
     exports.rightbarSeat = rightbarSeat;
     exports.useRightbarSeat = useRightbarSeat;
     exports.attachSeatSignal = attachSeatSignal;
-    // 跨组件服务座：文件树组件（dsh-kit/files）物化期接管。
+    // 跨组件服务座：文件树组件（dsh-wangshu/files）物化期接管。
     // 必须是**座对象**而非直接给 exports 加键：kitBase 到 module.exports 是工厂尾部
     // 的一次性浅拷贝，组件后写的键只落在 module.exports 上，root 读 kitBase 读不到
     // （对象引用拷贝之前的键才能共享，后加组件只改得了座里的字段）
@@ -838,7 +838,7 @@ window.__ModuleLoader__.load({
       if (!entry || entry.id === undefined) return;
       if (!exports.sideForms.some((e) => e.id === entry.id)) exports.sideForms.push(entry);
     };
-    // 知识库那两处与 root 的接线：座对象由 dsh-kit/vault 组件物化期填字段（root 只读）
+    // 知识库那两处与 root 的接线：座对象由 dsh-wangshu/vault 组件物化期填字段（root 只读）
     exports.vaultView = { renderer: null }; // 侧栏知识库目录索引视图（root 单槽分发）
     exports.vaultRoute = { open: null }; // 文件树行点击的 vault 改道（命中返回 true）
     // 底座是活动 entry：client runner 按 client 插件形状物化本模块，必须带 apply
@@ -936,7 +936,7 @@ window.__ModuleLoader__.load({
     }
     /** 文件树行点击：vault 内 → 知识库（只读阅读视图）；其余 → 官方
      *  右栏文件签。
-     *  vault 那一支归 dsh-kit/vault 组件（经 dock.vaultRoute 座接管）：组件不在场
+     *  vault 那一支归 dsh-wangshu/vault 组件（经 dock.vaultRoute 座接管）：组件不在场
      *  （未装 / 行关闭）时座里是 null，整条改道随之消失 */
     function openTreeFile(path) {
       if (dock.vaultRoute.open !== null && dock.vaultRoute.open(path) === true) return;
@@ -1027,7 +1027,7 @@ window.__ModuleLoader__.load({
     // 锚点只用官方 data 属性（类名是 CSS-modules 哈希逐版会变）：预览根
     // [data-textpreview-url]，路径取头部 [data-textpreview-path] 的 title——那是宿主
     // 解析好的绝对路径；meta 未到时是相对路径，非绝对先不挂（meta 到了头部重渲，
-    // 观察器再进来补）。下载走 /dsh-kit/raw 的 dl 模式（服务端发 attachment，
+    // 观察器再进来补）。下载走 /dsh-wangshu/raw 的 dl 模式（服务端发 attachment，
     // iOS 不认 <a download>）。
     function injectPreviewDownload(root) {
       const pathEl = root.querySelector("[data-textpreview-path]");
@@ -1055,7 +1055,7 @@ window.__ModuleLoader__.load({
         // 读端点限根：工作区那一根由当前会话的 cwd 带上；知识库根由 vault 组件注册
         const cwd = currentSessionCwd();
         const a = document.createElement("a");
-        a.href = `/dsh-kit/raw?path=${encodeURIComponent(p)}&dl=1${cwd === "" ? "" : `&cwd=${encodeURIComponent(cwd)}`}`;
+        a.href = `/dsh-wangshu/raw?path=${encodeURIComponent(p)}&dl=1${cwd === "" ? "" : `&cwd=${encodeURIComponent(cwd)}`}`;
         a.download = "";
         document.body.appendChild(a);
         a.click();
@@ -1905,10 +1905,10 @@ ellipsis，窄列只截字不破版 */
     /** 注入本插件样式（style），幂等 */
     function injectStyles() {
       if (typeof document === "undefined") return;
-      if (document.querySelector('style[data-plugin-css="dsh-kit/ui"]') === null) {
+      if (document.querySelector('style[data-plugin-css="dsh-wangshu/ui"]') === null) {
         const tag = document.createElement("style");
-        tag.dataset.plugin = "dsh-kit";
-        tag.dataset.pluginCss = "dsh-kit/ui";
+        tag.dataset.plugin = "dsh-wangshu";
+        tag.dataset.pluginCss = "dsh-wangshu/ui";
         tag.textContent = UI_CSS;
         document.head.appendChild(tag);
       }
@@ -2156,7 +2156,7 @@ ellipsis，窄列只截字不破版 */
 
 
     // ─────────── 入口按钮（conversation.input.left）───────────
-    // 输入行只剩终端一枚（dsh-kit/terminal 组件自注册）；文件树与知识库·日程
+    // 输入行只剩终端一枚（dsh-wangshu/terminal 组件自注册）；文件树与知识库·日程
     // 都已改挂左栏底部的形态切换条（见上面的 SideFormBar）。
     // 选中态标记：aria-pressed 属性选择器命中 .dshk-enbtn[aria-pressed="true"]
     // 规则（底色 + 品牌色图标）；形态条那几枚是同款观感的 .dshk-sfbtn 规则。
@@ -2230,7 +2230,7 @@ ellipsis，窄列只截字不破版 */
           dispose = slotsCtx.slots.register({ name: "sidebar.workspaces", priority: -1000 }, (owner) => {
             const side = owner ?? {};
             if (side.wide === false) return null;
-            // 文件树分支归 dsh-kit/files、知识库·日程归 dsh-kit/vault，
+            // 文件树分支归 dsh-wangshu/files、知识库·日程归 dsh-wangshu/vault，
             // 各经 kitBase 的座对象接管；两者都不在场（未装 / 行关闭）时不占槽
             const branch = dock.sidebarView.renderer ? dock.sidebarView.renderer({ ui, cwd, owner }) : null;
             if (branch) return branch;
@@ -2254,7 +2254,7 @@ ellipsis，窄列只截字不破版 */
       // 环境级 Esc 就是同一个按键干两件事——终端里会把 ESC 与坞一起收掉，跑回复时第一下
       // 顺手关掉知识库/文件页签。页签关、侧栏视图关、终端坞收起各有自己的钮与快捷键。
 
-      // 知识库/日程的面板本体归 dsh-kit/vault 自己的壳（见该组件的 VaultShell），
+      // 知识库/日程的面板本体归 dsh-wangshu/vault 自己的壳（见该组件的 VaultShell），
       // 根壳只留 shellShare 桥与手机访问页的座位门控
       return null;
     }
@@ -2350,15 +2350,15 @@ ellipsis，窄列只截字不破版 */
       // KitSurfaces（根作用域常驻，fiber 上下文内做动态 register/dispose）。
       ctx.slots.inject("shell.overlay", () =>
         ctx.slots.register(
-          { name: "shell.overlay", id: "dsh-kit-surfaces", order: 900 },
+          { name: "shell.overlay", id: "dsh-wangshu-surfaces", order: 900 },
           KitSurfaces,
         ),
       );
       // 侧栏底部形态切换条：整条归 root 渲染（各组件往 dock.sideForms 登记自己那
       // 一枚）。「会话列表」是根形态、不归任何组件行，在这里登记
-      dock.registerSideForm({ id: "dsh-kit-sessions", order: 10, Component: SideFormSessions });
+      dock.registerSideForm({ id: "dsh-wangshu-sessions", order: 10, Component: SideFormSessions });
       ctx.slots.inject("sidebar.footer.action", () =>
-        ctx.slots.register({ name: "sidebar.footer.action", id: "dsh-kit-sideforms", order: 10 }, SideFormBar),
+        ctx.slots.register({ name: "sidebar.footer.action", id: "dsh-wangshu-sideforms", order: 10 }, SideFormBar),
       );
       // 官方右侧边栏：功能 dock 签 + 引导页清单。只在宿主
       // 提供该服务时生效（缺服务 = 只剩 getKitUi() 存在性补丁，签不出现）。用 inject
@@ -2391,13 +2391,13 @@ ellipsis，窄列只截字不破版 */
       }
     }
 
-    // ── dsh-kit/vault 组件（知识库 · 日程）──
-// dsh-kit/vault 浏览器半边 —— 知识库 · 日程组件的 client 面。
+    // ── dsh-wangshu/vault 组件（知识库 · 日程）──
+// dsh-wangshu/vault 浏览器半边 —— 知识库 · 日程组件的 client 面。
 // 收纳：侧栏那一格（顶部 tab 条切 知识库 目录索引 / 日程 待办清单）、右栏知识库页阅读面
 // （vendor RTE 编辑态 + 双链 / 反链 / 目录导航）、右栏日程签（周时间网格 + 统计）、
 // 开/关侧栏那一格（宿主快捷键）、对话文件路径改投知识库标签、组件配置页与快捷键。
-// 数据走本组件宿主半边 /dsh-kit/vault/* 与 /dsh-kit/schedule/*；行开关即总开关：
-// 宿主半边不物化时 /dsh-kit-vault/config 404，apply 直接不注册任何槽位与监听
+// 数据走本组件宿主半边 /dsh-wangshu/vault/* 与 /dsh-wangshu/schedule/*；行开关即总开关：
+// 宿主半边不物化时 /dsh-wangshu-vault/config 404，apply 直接不注册任何槽位与监听
 //（侧栏、右栏签、对话改投全不出现）。
     const vaultModule = (kit, require) => {
     var module = { exports: {} };
@@ -2488,7 +2488,7 @@ ellipsis，窄列只截字不破版 */
       // 左栏底部那枚入口钮的名：它开的是整格（知识库 + 日程两 tab），不是某一个 tab
       vaultEntryTitle: "知识库·日程",
       vaultNotConfigured: "未配置知识库目录",
-      vaultNotConfiguredHint: "在 设置 → 插件 → dsh-kit 里填写「知识库目录」后即可使用：目录内一切 md 文件即页面，支持双链跳转与全文搜索",
+      vaultNotConfiguredHint: "在 设置 → 插件 → dsh-wangshu 里填写「知识库目录」后即可使用：目录内一切 md 文件即页面，支持双链跳转与全文搜索",
       vaultIndexFail: "索引失败：{error}",
       vaultSearchPh: "搜索笔记 / 资料库",
       vaultSearchEmpty: "无结果",
@@ -2917,7 +2917,7 @@ ellipsis，窄列只截字不破版 */
       vaultTitle: "Knowledge base",
       vaultEntryTitle: "Knowledge base · Schedule",
       vaultNotConfigured: "Knowledge base directory not configured",
-      vaultNotConfiguredHint: "Set the knowledge base directory in Settings → Plugins → dsh-kit: every md file inside becomes a page, with wiki-links and full-text search",
+      vaultNotConfiguredHint: "Set the knowledge base directory in Settings → Plugins → dsh-wangshu: every md file inside becomes a page, with wiki-links and full-text search",
       vaultIndexFail: "Index failed: {error}",
       vaultSearchPh: "Search notes / library",
       vaultSearchEmpty: "No results",
@@ -3397,7 +3397,7 @@ ellipsis，窄列只截字不破版 */
     function ensureVaultRootHint() {
       if (vaultRootHint !== null) return Promise.resolve(vaultRootHint);
       if (vaultRootHintFetching === null) {
-        vaultRootHintFetching = kitJson("/dsh-kit/vault/index")
+        vaultRootHintFetching = kitJson("/dsh-wangshu/vault/index")
           .then((body) => {
             vaultRootHint = body && typeof body.root === "string" && body.root !== "" ? body.root : null;
             vaultIndexPagesHint = Array.isArray(body && body.pages) ? body.pages : null;
@@ -3828,11 +3828,11 @@ ellipsis，窄列只截字不破版 */
     /** KaTeX 公式按需加载（RTE 阅读与编辑都要）：js + css 一起上，重复调用只下一次 */
     function ensureKatex() {
       const jobs = [];
-      if (typeof window.katex === "undefined") jobs.push(loadScript("/dsh-kit/vendor/katex.min.js"));
+      if (typeof window.katex === "undefined") jobs.push(loadScript("/dsh-wangshu/vendor/katex.min.js"));
       if (!document.querySelector('link[data-dshk-katex]')) {
         const link = document.createElement("link");
         link.rel = "stylesheet";
-        link.href = "/dsh-kit/vendor/katex.min.css";
+        link.href = "/dsh-wangshu/vendor/katex.min.css";
         link.setAttribute("data-dshk-katex", "1");
         document.head.appendChild(link);
       }
@@ -3843,13 +3843,13 @@ ellipsis，窄列只截字不破版 */
       // 宿主与 app.asar 都不带这个库，本插件自带一份，编辑器第一次碰到流程图才下
       if (typeof window.__dshkMermaidLoad !== "function") {
         window.__dshkMermaidLoad = () =>
-          loadScript("/dsh-kit/vendor/mermaid.min.js").then(() => {
+          loadScript("/dsh-wangshu/vendor/mermaid.min.js").then(() => {
             window.DshRTE && typeof window.DshRTE.mermaidReady === "function" && window.DshRTE.mermaidReady();
           });
       }
       return typeof window.DshRTE === "object" && window.DshRTE !== null
         ? Promise.resolve()
-        : loadScript("/dsh-kit/vendor/richeditor.bundle.js");
+        : loadScript("/dsh-wangshu/vendor/richeditor.bundle.js");
     }
 
     /** 日程图标：日历（圆角框 + 两枚吊耳 + 头部分隔线），与终端/任务描边体系一致 */
@@ -4039,12 +4039,12 @@ ellipsis，窄列只截字不破版 */
 
 
     // ─────────── 日程模块（左栏待办清单 + 右栏周时间网格 + 全局计时悬浮球）───────────
-    // 数据走宿主 /dsh-kit/schedule/* 端点：raw 全量 events + 区间展开 occurrences
+    // 数据走宿主 /dsh-wangshu/schedule/* 端点：raw 全量 events + 区间展开 occurrences
     // （重复展开与 state 派生都在宿主做，这里只渲染）+ orphans + 进行中的计时。
     // 块颜色只表达状态（浅底深字）：还没到橙 / 进行中绿 / 已过去蓝 / 逾期红——
     // 不按标题散列取色（color 字段不读）；已闭合计时段按已过去蓝展示。
     // 写路径：面板的建 / 改 / 删 / 完成 / 计时 / 计时段编辑都走 POST
-    // /dsh-kit/schedule/op，落盘走统一契约（events/<id>.json、
+    // /dsh-wangshu/schedule/op，落盘走统一契约（events/<id>.json、
     // entries/<id>.json、timer.json，一条一文件 + 原子写）。字段白名单与校验
     // 只在宿主做——面板再抄一份，两处就会长出两套规则。
 
@@ -4075,7 +4075,7 @@ ellipsis，窄列只截字不破版 */
 
     /** 走一次日程写端点；成功即广播。失败把宿主给的原因抛出去（面板据此提示） */
     async function schedOp(payload) {
-      const body = await kitPostJson("/dsh-kit/schedule/op", payload, (b) => b !== null && typeof b === "object");
+      const body = await kitPostJson("/dsh-wangshu/schedule/op", payload, (b) => b !== null && typeof b === "object");
       schedBus.bump();
       return body;
     }
@@ -4337,7 +4337,7 @@ ellipsis，窄列只截字不破版 */
       if (ev !== null && typeof ev.studyRel === "string" && ev.studyRel !== "") {
         const rel = ev.studyRel;
         const completeReview = () => {
-          studyOp("/dsh-kit/vault/study-complete", { rel })
+          studyOp("/dsh-wangshu/vault/study-complete", { rel })
             .then((body) => {
               const rec = body && body.state && body.state.record ? body.state.record : null;
               flashToast(rec === null
@@ -4592,7 +4592,7 @@ ellipsis，窄列只截字不破版 */
         try {
           // 窗口对齐桌面侧栏（−90 ~ +180 天）：清单「全部」档与跨月翻看都要看全
           const body = await kitJson(
-            `/dsh-kit/schedule/data?from=${encodeURIComponent(schedAddDays(schedToday(), -90))}&to=${encodeURIComponent(schedAddDays(schedToday(), 180))}`,
+            `/dsh-wangshu/schedule/data?from=${encodeURIComponent(schedAddDays(schedToday(), -90))}&to=${encodeURIComponent(schedAddDays(schedToday(), 180))}`,
           );
           setData({
             events: Array.isArray(body.events) ? body.events : [],
@@ -4608,7 +4608,7 @@ ellipsis，窄列只截字不破版 */
       }, []);
       const fetchStats = react.useCallback(async () => {
         try {
-          setStats(await kitJson(`/dsh-kit/schedule/stats?scope=week&date=${encodeURIComponent(statsDate ?? schedToday())}`));
+          setStats(await kitJson(`/dsh-wangshu/schedule/stats?scope=week&date=${encodeURIComponent(statsDate ?? schedToday())}`));
         } catch {
           setStats(null);
           return false;
@@ -4695,7 +4695,7 @@ ellipsis，窄列只截字不破版 */
           initial,
           onCancel: onClose,
           onSave: (days) => {
-            studyOp("/dsh-kit/vault/study-adjust", { rel, nextInterval: days })
+            studyOp("/dsh-wangshu/vault/study-adjust", { rel, nextInterval: days })
               .then((body) => {
                 const due = body && body.state && body.state.record ? String(body.state.record.dueAt ?? "") : "";
                 flashToast(t("studyAdjustDone").replace("{date}", due));
@@ -4740,7 +4740,7 @@ ellipsis，窄列只截字不破版 */
       /** 复习待办勾完成 = 推进学习记录（study-complete 归档旧待办并建下一条），
        *  不是普通待办的 completedAt——走学习端点，面板靠 schedBus 跟新 */
       const completeReview = (rel) => {
-        studyOp("/dsh-kit/vault/study-complete", { rel })
+        studyOp("/dsh-wangshu/vault/study-complete", { rel })
           .then((body) => {
             const rec = body && body.state && body.state.record ? body.state.record : null;
             if (rec === null) return;
@@ -4754,7 +4754,7 @@ ellipsis，窄列只截字不破版 */
           .catch((e) => flashToast(t("studyOpFail").replace("{error}", e && e.message ? e.message : "?")));
       };
       const finishReview = (rel) => {
-        studyOp("/dsh-kit/vault/study-finish", { rel })
+        studyOp("/dsh-wangshu/vault/study-finish", { rel })
           .then(() => flashToast(t("studyFinishDone")))
           .catch((e) => flashToast(t("studyOpFail").replace("{error}", e && e.message ? e.message : "?")));
       };
@@ -5094,7 +5094,7 @@ ellipsis，窄列只截字不破版 */
             .catch((e) => flashToast(t("schedOpFail").replace("{error}", e && e.message ? e.message : "?")));
           return;
         }
-        studyOp("/dsh-kit/vault/study-complete", { rel })
+        studyOp("/dsh-wangshu/vault/study-complete", { rel })
           .then((body) => {
             const rec = body && body.state && body.state.record ? body.state.record : null;
             flashToast(rec === null
@@ -5319,7 +5319,7 @@ ellipsis，窄列只截字不破版 */
      * 计时悬浮球（全局常驻，不进任何槽位）：有表在跑才出现，每秒走秒。
      *  入口在侧栏、停表在这里是刻意分开的两个位置——面板关掉、切到别的签时
      *  那只表还在跑，看不见表就等于这段时间没有着落。
-     *  状态源是宿主 /dsh-kit/schedule/timer（10s 一轮 + 本端写完立刻重取）：
+     *  状态源是宿主 /dsh-wangshu/schedule/timer（10s 一轮 + 本端写完立刻重取）：
      *  别处起的表也走同一份 timer.json，这里跟着走。
      */
     function SchedTimerBall() {
@@ -5332,7 +5332,7 @@ ellipsis，窄列只截字不破版 */
         let alive = true;
         const load = async () => {
           try {
-            const body = await kitJson("/dsh-kit/schedule/timer");
+            const body = await kitJson("/dsh-wangshu/schedule/timer");
             if (alive) setTimer(body && body.runningTimer ? body.runningTimer : null);
           } catch {
             /* 端点不可达（组件行关了）就保持上一次，别把已经在跑的球撤掉 */
@@ -5414,7 +5414,7 @@ ellipsis，窄列只截字不破版 */
     // 往返、[[wikilink]]/公式/未知块 HTML 原样保留）。VaultRootView 单实例挂在组件壳里，
     // 两半经 portal 分投侧栏与右栏 pane 宿主。
     // 编辑面：目录 / 搜索 / 双链 / 反链 / 大纲导航 + 正文所见即所得（自动保存走
-    // POST /dsh-kit/vault/write，mtime CAS 防覆盖别处改动）；盘上被别处改（stat 轮询
+    // POST /dsh-wangshu/vault/write，mtime CAS 防覆盖别处改动）；盘上被别处改（stat 轮询
     // 发现 mtime 变化）就整页静默重读。全文搜索走本组件宿主端点（路径 8 / 文件名 5 / 正文 2）。
 
     /** 拆 frontmatter：返回 { fmText, rest }。fmText = "---…---" 块（含随后的
@@ -5670,7 +5670,7 @@ ellipsis，窄列只截字不破版 */
     // 三个都在文件树那边定义
 
     // 行开关是唯一门槛（探针 404 = 本组件整体不注册，压根走不到这里）；根目录是否
-    // 配置好由 VaultRootView 从 /dsh-kit/vault/index 自取——那才是两端一致的配置源
+    // 配置好由 VaultRootView 从 /dsh-wangshu/vault/index 自取——那才是两端一致的配置源
     function VaultView() {
       return jsxRuntime.jsx(VaultRootView, {});
     }
@@ -5819,7 +5819,7 @@ ellipsis，窄列只截字不破版 */
     /** 知识库页面编辑器（一页一个实例，挂右栏签）：vendor RTE 可编辑态
      *  （editable:true），斜杠菜单 / 泡泡菜单 / 自动保存（2s 防抖 + Ctrl+S +
      *  卸载保底 + 冲突暂停）收在这里；落盘由 onSave(md, mode) 承担
-     *  （POST /dsh-kit/vault/write，mtime CAS），mode ∈ auto|manual|overwrite，
+     *  （POST /dsh-wangshu/vault/write，mtime CAS），mode ∈ auto|manual|overwrite，
      *  返回 'ok'|'conflict'|'gone'|'fail'。conflict / gone 都暂停自动保存：
      *  直到父层重载（docTick bump 重挂）或 overwrite 成功。
      *  ctlRef 暴露 { dirty, flush, flushManual, overwrite } 供切签与冲突条用。 */
@@ -7157,7 +7157,7 @@ ellipsis，窄列只截字不破版 */
 
       const loadIndex = react.useCallback(async () => {
         try {
-          const body = await kitJson("/dsh-kit/vault/index");
+          const body = await kitJson("/dsh-wangshu/vault/index");
           setIndex(body);
           setIndexErr(body && body.root ? "" : "vault-not-configured");
           // M4：同步给对话拦截器做 vault 路径路由判定
@@ -7183,7 +7183,7 @@ ellipsis，窄列只截字不破版 */
         const lib = libRootRef.current;
         const all = lib !== null && relUnder(lib, dir) !== null;
         try {
-          const body = await kitJson(`/dsh-kit/tree?path=${encodeURIComponent(dir)}`);
+          const body = await kitJson(`/dsh-wangshu/tree?path=${encodeURIComponent(dir)}`);
           const usable = (body.entries ?? []).filter((e) => {
             if (e.name.startsWith(".")) return false;
             // 库扁平后侧栏不铺资料库子树（资料入口收敛到知识集与搜索）；任意深度的
@@ -7331,7 +7331,7 @@ ellipsis，窄列只截字不破版 */
         setSearchIdx(0);
         setSearchRect(searchRef.current ? searchRef.current.getBoundingClientRect() : null);
         try {
-          const body = await kitJson(`/dsh-kit/vault/search?q=${encodeURIComponent(q)}`);
+          const body = await kitJson(`/dsh-wangshu/vault/search?q=${encodeURIComponent(q)}`);
           // 笔记命中来自宿主全文搜索；目录与资料库按名字匹配在本地合成（同一张表）
           if (seq === searchSeq.current) setSearchRes(vaultSearchHits(q, root, body.results ?? [], index?.folders ?? [], libItems));
         } catch (error) {
@@ -7466,7 +7466,7 @@ ellipsis，窄列只截字不破版 */
       const materialsCandidates = materialsDir === null ? [] : libItems.filter((it) => it.dir !== true && !materialsRefs.includes(it.rel) && (refQueryLower === "" || it.rel.toLowerCase().includes(refQueryLower))).slice(0, 50);
       /** 写挂载清单（全量回写）：成功后重拉索引与已展开目录，树上立刻反映 */
       const writeKsRefs = async (dirPath, refs, describe) => {
-        const res = await runVaultOp(() => vaultOp("/dsh-kit/vault/refs", { op: "set", dir: dirPath, refs }), describe);
+        const res = await runVaultOp(() => vaultOp("/dsh-wangshu/vault/refs", { op: "set", dir: dirPath, refs }), describe);
         if (res === null) return false;
         await reloadData();
         return true;
@@ -7487,7 +7487,7 @@ ellipsis，窄列只截字不破版 */
         void writeKsRefs(dirPath, refs.filter((r) => r !== rel), () => t("vaultKsRemoved"));
       };
       const unmarkFolderKs = async (entry) => {
-        const res = await runVaultOp(() => vaultOp("/dsh-kit/vault/refs", { op: "unmark", dir: entry.path }), () => t("vaultKsUnmarked"));
+        const res = await runVaultOp(() => vaultOp("/dsh-wangshu/vault/refs", { op: "unmark", dir: entry.path }), () => t("vaultKsUnmarked"));
         if (res === null) return;
         setDialog(null);
         await reloadData();
@@ -7532,7 +7532,7 @@ ellipsis，窄列只截字不破版 */
         try {
           for (const file of files) {
             try {
-              const r = await vaultOp("/dsh-kit/vault/import", {
+              const r = await vaultOp("/dsh-wangshu/vault/import", {
                 dest: libDest,
                 name: file.name,
                 fileName: file.name,
@@ -7558,7 +7558,7 @@ ellipsis，窄列只截字不破版 */
         const item = libItemsByRel.get(rel);
         const name = String(rawName ?? "").trim();
         if (item === undefined || name === "" || name === libLabel(item.rel)) return;
-        const res = await runVaultOp(() => vaultOp("/dsh-kit/vault/rename", { path: item.path, name }), () => t("renamed"));
+        const res = await runVaultOp(() => vaultOp("/dsh-wangshu/vault/rename", { path: item.path, name }), () => t("renamed"));
         if (res === null) return;
         vaultTabsRetarget(item.path, res.path, false);
         await reloadData();
@@ -7643,7 +7643,7 @@ ellipsis，窄列只截字不破版 */
         if (name === "") return;
         const dir = createAt;
         const res = await runVaultOp(
-          () => vaultOp("/dsh-kit/vault/create", { dir, name, kind: wantDir ? "dir" : "page" }),
+          () => vaultOp("/dsh-wangshu/vault/create", { dir, name, kind: wantDir ? "dir" : "page" }),
           (r) => (r.exists === true ? t("vaultExists") : t("created")),
         );
         if (res === null) return;
@@ -7661,7 +7661,7 @@ ellipsis，窄列只截字不破版 */
         const name = String(rawValue ?? "").trim();
         if (name === "" || name === currentLabel) return;
         const res = await runVaultOp(
-          () => vaultOp("/dsh-kit/vault/rename", { path: entry.path, name }),
+          () => vaultOp("/dsh-wangshu/vault/rename", { path: entry.path, name }),
           (r) => `${t("renamed")}${r.links > 0 ? t("vaultLinks").replace("{n}", String(r.links)) : ""}`,
         );
         if (res === null) return;
@@ -7678,7 +7678,7 @@ ellipsis，窄列只截字不破版 */
         const d = dialog;
         if (d === null || d.kind !== "move") return;
         const res = await runVaultOp(
-          () => vaultOp("/dsh-kit/vault/move", { path: d.entry.path, dest: d.dest, conflict: d.conflict }),
+          () => vaultOp("/dsh-wangshu/vault/move", { path: d.entry.path, dest: d.dest, conflict: d.conflict }),
           (r) => (r.skipped ? t("vaultMoveSkipped") : `${t("moved")}${r.links > 0 ? t("vaultLinks").replace("{n}", String(r.links)) : ""}`),
         );
         if (res === null) return;
@@ -7721,7 +7721,7 @@ ellipsis，窄列只截字不破版 */
                 dataBase64: await fileToBase64(job.file),
                 conflict: d.conflict,
               };
-              const r = await vaultOp("/dsh-kit/vault/import", payload);
+              const r = await vaultOp("/dsh-wangshu/vault/import", payload);
               if (r.skipped === true) skipped += 1;
               else imported += 1;
               images += r.images ?? 0;
@@ -7753,7 +7753,7 @@ ellipsis，窄列只截字不破版 */
         const d = dialog;
         if (d === null || d.kind !== "delete") return;
         const res = await runVaultOp(
-          () => vaultOp("/dsh-kit/vault/delete", { paths: [d.entry.path] }),
+          () => vaultOp("/dsh-wangshu/vault/delete", { paths: [d.entry.path] }),
           (r) => (r.failed && r.failed.length > 0 ? `${t("deleted")} ${r.deleted}／${t("skOpFail")}：${r.failed.join("、")}` : `${t("deleted")} ${r.deleted}`),
         );
         if (res === null) return;
@@ -8519,7 +8519,7 @@ ellipsis，窄列只截字不破版 */
       const loadCurrent = react.useCallback(async () => {
         setConflict(null);
         try {
-          const body = await kitJson(`/dsh-kit/read?path=${encodeURIComponent(path)}&maxBytes=${VAULT_PAGE_MAX_BYTES}`);
+          const body = await kitJson(`/dsh-wangshu/read?path=${encodeURIComponent(path)}&maxBytes=${VAULT_PAGE_MAX_BYTES}`);
           const raw = body.binary ? "" : (body.content ?? "");
           const { fmText, rest } = body.binary ? { fmText: "", rest: "" } : vaultSplitFrontmatter(raw);
           fmRef.current = fmText;
@@ -8554,7 +8554,7 @@ ellipsis，窄列只截字不破版 */
           const content = fmRef.current + bodyMd;
           const base = mode === "overwrite" ? (conflictRef.current?.diskMtime ?? mtimeRef.current) : mtimeRef.current;
           try {
-            const body = await kitJson("/dsh-kit/vault/write", {
+            const body = await kitJson("/dsh-wangshu/vault/write", {
               method: "POST",
               headers: { "content-type": "application/json" },
               body: JSON.stringify({ path, content, baseMtime: base }),
@@ -8612,7 +8612,7 @@ ellipsis，窄列只截字不破版 */
         const timer = setInterval(() => {
           if (document.visibilityState === "hidden") return;
           if (conflictRef.current !== null || (rteCtlRef.current && rteCtlRef.current.dirty())) return;
-          void kitJson(`/dsh-kit/vault/stat?path=${encodeURIComponent(path)}`)
+          void kitJson(`/dsh-wangshu/vault/stat?path=${encodeURIComponent(path)}`)
             .then((body) => {
               if (body.gone === true) {
                 if (goneRef.current) return;
@@ -8631,14 +8631,14 @@ ellipsis，窄列只截字不破版 */
         return () => clearInterval(timer);
       }, [active, path, loadCurrent]);
 
-      /** 图片入库并插到光标处：浏览器侧先按阈值压缩 → POST /dsh-kit/vault/attach
+      /** 图片入库并插到光标处：浏览器侧先按阈值压缩 → POST /dsh-wangshu/vault/attach
        *  进 attachments/（内容寻址，同内容不重写）→ 光标处插图片节点。
        *  粘贴与斜杠菜单「附件 → 图片」共用这一条管线（落库规则因此只有一套） */
       const attachAndInsert = async (files) => {
         for (const f of files) {
           try {
             const img = await shrinkPastedImage(f);
-            const body = await kitJson("/dsh-kit/vault/attach", {
+            const body = await kitJson("/dsh-wangshu/vault/attach", {
               method: "POST",
               headers: { "content-type": "application/json" },
               body: JSON.stringify({ dataBase64: await blobToBase64(img.blob), fileName: `paste.${img.ext}` }),
@@ -9042,7 +9042,7 @@ ellipsis，窄列只截字不破版 */
                       if (!isPathInsideVaultRoot(root, abs)) return "";
                       // 相对地址（不带 origin）：桌面版页面在 dsh-app://app/ 下，图片走
                       // 宿主的应用协议转发才带得上鉴权；绝对 http://<host> 在桌面没有 cookie
-                      return `/dsh-kit/raw?path=${encodeURIComponent(abs)}`;
+                      return `/dsh-wangshu/raw?path=${encodeURIComponent(abs)}`;
                     },
                     // 相对/站内链接：库内 md 按页打开，库内非 md（文献/图片）走官方
                     // 文件右栏——只读阅读面不开 PDF，拦下来又不给去处就是死点击
@@ -9154,8 +9154,8 @@ ellipsis，窄列只截字不破版 */
     // 落位 / 改栏宽 / 页码跳转 / 当前页。锚点只由用户滚动与页码跳转改写，改栏宽
     // 一律按它钉回去——改宽那一刻回读 scrollTop 量到的是「页高已经换了、位置还没
     // 钉回来」的中间态，记下来等于把漂移固化（页码就会没规律地跳）。
-    const PDF_LIB_URL = "/dsh-kit/vendor/pdf.min.mjs";
-    const PDF_WORKER_URL = "/dsh-kit/vendor/pdf.worker.min.mjs";
+    const PDF_LIB_URL = "/dsh-wangshu/vendor/pdf.min.mjs";
+    const PDF_WORKER_URL = "/dsh-wangshu/vendor/pdf.worker.min.mjs";
     /** 整文件字节护栏：端点不截断，超了在这里拦（几百 MB 的 PDF 会把一个签撑爆）；
      *  远高于官方那条 32 MiB，库里��� PDF 基本碰不到 */
     const PDF_MAX_BYTES = 256 * 1024 * 1024;
@@ -9463,7 +9463,7 @@ ellipsis，窄列只截字不破版 */
         anchorRef.current = null;
         (async () => {
           const pdfLib = await ensurePdfLib();
-          const stat = await kitJson("/dsh-kit/vault/stat?path=" + encodeURIComponent(path));
+          const stat = await kitJson("/dsh-wangshu/vault/stat?path=" + encodeURIComponent(path));
           if (!alive) return;
           if (stat === null || typeof stat !== "object" || stat.gone === true) {
             setError(t("pdfMissing"));
@@ -9483,7 +9483,7 @@ ellipsis，窄列只截字不破版 */
           bootRef.current = Math.max(1, pending ?? pdfLastPosGet(key) ?? 1);
           let entry = pdfDocGet(key);
           if (entry === null) {
-            const resp = await fetch("/dsh-kit/vault/file?path=" + encodeURIComponent(path), {
+            const resp = await fetch("/dsh-wangshu/vault/file?path=" + encodeURIComponent(path), {
               credentials: "same-origin",
             });
             if (!resp.ok) throw new Error("HTTP " + resp.status);
@@ -9772,7 +9772,7 @@ ellipsis，窄列只截字不破版 */
       react.useEffect(() => {
         if (path === "" || reader.root !== null || own !== null) return undefined;
         let alive = true;
-        kitJson("/dsh-kit/vault/index", undefined, (b) => !!b)
+        kitJson("/dsh-wangshu/vault/index", undefined, (b) => !!b)
           .then((body) => {
             if (!alive) return;
             setOwn({
@@ -9851,7 +9851,7 @@ ellipsis，窄列只截字不破版 */
       react.useEffect(() => schedBus.subscribe(() => setNonce((n) => n + 1)), []);
       react.useEffect(() => {
         let alive = true;
-        kitJson("/dsh-kit/vault/index", undefined, (b) => !!b)
+        kitJson("/dsh-wangshu/vault/index", undefined, (b) => !!b)
           .then((body) => {
             if (!alive) return;
             setIdx({
@@ -9881,10 +9881,10 @@ ellipsis，窄列只截字不破版 */
             const query = "dir=" + encodeURIComponent(dir);
             try {
               const [scope, pg, study] = await Promise.all([
-                kitJson("/dsh-kit/vault/quiz-scope?" + query, undefined, (b) => !!b),
-                kitJson("/dsh-kit/vault/quiz-progress?" + query, undefined, (b) => !!b),
+                kitJson("/dsh-wangshu/vault/quiz-scope?" + query, undefined, (b) => !!b),
+                kitJson("/dsh-wangshu/vault/quiz-progress?" + query, undefined, (b) => !!b),
                 // 学习统计跟测验统计同一拍取；这一路取不到就退化（不连累测验数字）
-                kitJson("/dsh-kit/vault/study-scope?" + query, undefined, (b) => !!b).catch(() => null),
+                kitJson("/dsh-wangshu/vault/study-scope?" + query, undefined, (b) => !!b).catch(() => null),
               ]);
               return [dir, {
                 quiz: qzStatOf(qzQuestionsOf(Array.isArray(scope?.pages) ? scope.pages : []), pg?.progress ?? {}),
@@ -10027,7 +10027,7 @@ ellipsis，窄列只截字不破版 */
 
     // ─────────── 本组件生效配置（声明式模型）───────────
     // 配置真源 = 本组件宿主 Config（src/vault/index.ts）。client 启动拉
-    // /dsh-kit-vault/config 喂快照；行开关关闭时该端点随宿主半边不物化而 404，
+    // /dsh-wangshu-vault/config 喂快照；行开关关闭时该端点随宿主半边不物化而 404，
     // apply 据此整体不注册（侧栏索引、右栏签、入口按钮、对话改投全不出现）。
     let vSnap = null;
     let vAvailable = false;
@@ -10074,7 +10074,7 @@ ellipsis，窄列只截字不破版 */
     /** 拉生效配置；返回 false = 宿主半边不可达（行关闭）= 本组件 client 面整体不注册 */
     async function loadCfg() {
       try {
-        const body = await kitJson("/dsh-kit-vault/config");
+        const body = await kitJson("/dsh-wangshu-vault/config");
         vAvailable = !!(body && typeof body === "object");
         vSnap = vAvailable ? { status: "ready", value: body } : null;
       } catch {
@@ -10106,9 +10106,9 @@ ellipsis，窄列只截字不破版 */
     // dsh.client.inject。知识库是「一页一签」的内容类页类型：按 dsh-resource
     // 地址认领，签名取页名；日程仍是单张功能签（签里是周网格，没有多实例形态）
     const VAULT_RB_TABS = [
-      { id: "dsh-kit-vault", kind: "dshk-vault", feature: "vault", titleKey: "vaultTitle", perItem: true, keepMounted: true },
-      { id: "dsh-kit-schedule", kind: "dshk-schedule", feature: "schedule", titleKey: "schedTab" },
-      { id: "dsh-kit-home", kind: "dshk-home", feature: "home", titleKey: "homeTab" },
+      { id: "dsh-wangshu-vault", kind: "dshk-vault", feature: "vault", titleKey: "vaultTitle", perItem: true, keepMounted: true },
+      { id: "dsh-wangshu-schedule", kind: "dshk-schedule", feature: "schedule", titleKey: "schedTab" },
+      { id: "dsh-wangshu-home", kind: "dshk-home", feature: "home", titleKey: "homeTab" },
     ];
     const VAULT_RB_BODY = { vault: VaultPaneBody, schedule: SchedulePaneBody, home: HomePagePane };
     function registerRightbar(rbCtx) {
@@ -10122,11 +10122,11 @@ ellipsis，窄列只截字不破版 */
           ...(f.perItem === true ? { patterns: ["dsh-resource://dshk-vault/**"], keepMounted: true } : {}),
           title: (address) =>
             f.perItem === true ? pageBasename(rightbarItem(f.feature, address) ?? "") || t(f.titleKey) : t(f.titleKey),
-        }), "dsh-kit-vault: rightbar tab type " + f.kind);
+        }), "dsh-wangshu-vault: rightbar tab type " + f.kind);
         rbCtx.effect(() => rbCtx.slots.inject("sidebar.right.pane.tab", () => rbCtx.slots.register({
           name: "sidebar.right.pane.tab",
           key: f.id,
-        }, Body)), "dsh-kit-vault: rightbar pane body " + f.kind);
+        }, Body)), "dsh-wangshu-vault: rightbar pane body " + f.kind);
       }
     }
 
@@ -10146,9 +10146,9 @@ ellipsis，窄列只截字不破版 */
       if (!shortcuts || typeof shortcuts.register !== "function") return;
       attachShortcutCatalog(shortcuts.catalog);
       scCtx.effect(() => shortcuts.register({
-        id: "dsh-kit.vault.toggle",
+        id: "dsh-wangshu.vault.toggle",
         label: () => t("scVault"),
-        aliases: ["vault", "knowledge base", "dsh-kit"],
+        aliases: ["vault", "knowledge base", "dsh-wangshu"],
         defaults: VAULT_SHORTCUT_DEFAULTS("Slash"),
         // editable/terminal 都要：聊天输入行里、终端里按都该生效
         regions: ["page", "editable", "terminal"],
@@ -10160,7 +10160,7 @@ ellipsis，窄列只截字不破版 */
           if (run == null) return { status: "pass" };
           return { status: "handled", run };
         },
-      }), "dsh-kit-vault: shortcut dsh-kit.vault.toggle");
+      }), "dsh-wangshu-vault: shortcut dsh-wangshu.vault.toggle");
     }
 
     // ─────────── 侧栏形态切换条上的那一枚 ───────────
@@ -10176,7 +10176,7 @@ ellipsis，窄列只截字不破版 */
       if (!seatUp) return null;
       return jsxRuntime.jsx(KitTip, {
         label: t("vaultEntryTitle"),
-        command: "dsh-kit.vault.toggle",
+        command: "dsh-wangshu.vault.toggle",
         side: "top",
         children: jsxRuntime.jsx("button", {
           type: "button",
@@ -10211,7 +10211,7 @@ ellipsis，窄列只截字不破版 */
     // ─────────── 测验（与桌面端同一份 .quiz 数据）───────────
     // 题目在页面所在目录的 .quiz/<页名>.md、掌握度在 .quiz/<页名>.progress.json
     // （按题目内容哈希记，页面改名/移动不丢）、阈值在库根 .quiz-state/settings.json，
-    // 读写全走宿主半边 /dsh-kit/vault/quiz*。入口：页条「测验」钮 + 树行 ⋯ 菜单
+    // 读写全走宿主半边 /dsh-wangshu/vault/quiz*。入口：页条「测验」钮 + 树行 ⋯ 菜单
     // 「测验」（目录 = 范围、页 = 单页）；浮层只在 VaultShell 挂一份，模块级请求状态。
     // 会话不落盘：范围设置 → 逐题作答（即时判题）→ 小结；页面入口再给「编辑题目」。
     // 阈值是整库一份（改动按新阈值重判已掌握），设置入口收在面板工具条 ⋯；
@@ -10463,7 +10463,7 @@ ellipsis，窄列只截字不破版 */
       const [busy, setBusy] = react.useState(false);
       react.useEffect(() => {
         let alive = true;
-        kitJson("/dsh-kit/vault/quiz-progress?dir=", undefined, (b) => !!b)
+        kitJson("/dsh-wangshu/vault/quiz-progress?dir=", undefined, (b) => !!b)
           .then((body) => {
             const v = Math.min(Math.max(Math.round(Number(body?.threshold) || 3), 1), 20);
             if (alive) setValue(v);
@@ -10479,7 +10479,7 @@ ellipsis，窄列只截字不破版 */
         if (busy === true) return;
         const next = Math.min(Math.max(Math.round(Number(value) || 1), 1), 20);
         setBusy(true);
-        vaultOp("/dsh-kit/vault/quiz-threshold", { value: next })
+        vaultOp("/dsh-wangshu/vault/quiz-threshold", { value: next })
           .then(() => {
             qzProgressBump();
             onClose();
@@ -10611,8 +10611,8 @@ ellipsis，窄列只截字不破版 */
           try {
             const query = `rel=${encodeURIComponent(rel)}`;
             const [body, pg] = await Promise.all([
-              kitJson(`/dsh-kit/vault/quiz?${query}`, undefined, (b) => !!b),
-              kitJson(`/dsh-kit/vault/quiz-progress?${query}`, undefined, (b) => !!b),
+              kitJson(`/dsh-wangshu/vault/quiz?${query}`, undefined, (b) => !!b),
+              kitJson(`/dsh-wangshu/vault/quiz-progress?${query}`, undefined, (b) => !!b),
             ]);
             const qs = Array.isArray(body.questions) ? body.questions.filter(qzAnswerable) : [];
             const prog = pg?.progress ?? {};
@@ -10623,7 +10623,7 @@ ellipsis，窄列只截字不破版 */
         };
         const tick = async () => {
           try {
-            const rev = await kitJson(`/dsh-kit/vault/quiz-revision?rel=${encodeURIComponent(rel)}`, undefined, (b) => !!b);
+            const rev = await kitJson(`/dsh-wangshu/vault/quiz-revision?rel=${encodeURIComponent(rel)}`, undefined, (b) => !!b);
             const key = `${rev.files}:${rev.mtimeMs}`;
             if (key !== revKey) {
               revKey = key;
@@ -10672,7 +10672,7 @@ ellipsis，窄列只截字不破版 */
       const base = /^attachments[\\/]/i.test(raw) || dirRel === "" ? String(root) : joinRelPath(root, dirRel);
       const abs = absJoinUnder(base, raw);
       if (isPathInsideVaultRoot(root, abs) === false) return "";
-      return `/dsh-kit/raw?path=${encodeURIComponent(abs)}`;
+      return `/dsh-wangshu/raw?path=${encodeURIComponent(abs)}`;
     };
     // ── 浮层主体：范围设置（测验 / 刷题）→ 逐题作答 → 小结；页面入口再给「编辑题目」──
     //    测验把整池按「每轮题数」切轮（每轮完了给一次小结），答对记掌握度；
@@ -10720,7 +10720,7 @@ ellipsis，窄列只截字不破版 */
       react.useEffect(() => {
         if (reader.root !== null || ownRoot !== null) return undefined;
         let alive = true;
-        kitJson("/dsh-kit/vault/index", undefined, (b) => !!b)
+        kitJson("/dsh-wangshu/vault/index", undefined, (b) => !!b)
           .then((body) => {
             if (alive) setOwnRoot(typeof body?.root === "string" ? body.root : "");
           })
@@ -10741,8 +10741,8 @@ ellipsis，窄列只截字不破版 */
         const loadAll = async () => {
           try {
             const [data, prog] = await Promise.all([
-              kitJson(`/dsh-kit/vault/${isPage === true ? "quiz" : "quiz-scope"}?${query}`, undefined, (b) => !!b),
-              kitJson(`/dsh-kit/vault/quiz-progress?${query}`, undefined, (b) => !!b),
+              kitJson(`/dsh-wangshu/vault/${isPage === true ? "quiz" : "quiz-scope"}?${query}`, undefined, (b) => !!b),
+              kitJson(`/dsh-wangshu/vault/quiz-progress?${query}`, undefined, (b) => !!b),
             ]);
             if (!alive) return;
             setPages(isPage === true ? [data] : Array.isArray(data.pages) ? data.pages : []);
@@ -10757,7 +10757,7 @@ ellipsis，窄列只截字不破版 */
         loaderRef.current = loadAll;
         const tick = async () => {
           try {
-            const rev = await kitJson(`/dsh-kit/vault/quiz-revision?${query}`, undefined, (b) => !!b);
+            const rev = await kitJson(`/dsh-wangshu/vault/quiz-revision?${query}`, undefined, (b) => !!b);
             const key = `${rev.files}:${rev.mtimeMs}`;
             if (key !== revKey) {
               revKey = key;
@@ -10856,7 +10856,7 @@ ellipsis，窄列只截字不破版 */
           return;
         }
         setChecked({ correct, outcome: null });
-        void vaultOp("/dsh-kit/vault/quiz-record", { rel: item.rel, id: item.q.id, correct })
+        void vaultOp("/dsh-wangshu/vault/quiz-record", { rel: item.rel, id: item.q.id, correct })
           .then((outcome) => {
             setChecked((c) => (c !== null ? { ...c, outcome } : c));
             account(item.q.id, outcome);
@@ -10909,7 +10909,7 @@ ellipsis，窄列只截字不破版 */
       };
       const markMastered = () => {
         if (item === undefined || drill !== null) return;
-        void vaultOp("/dsh-kit/vault/quiz-mark", { rel: item.rel, id: item.q.id })
+        void vaultOp("/dsh-wangshu/vault/quiz-mark", { rel: item.rel, id: item.q.id })
           .then((outcome) => {
             setChecked((c) => (c !== null ? { ...c, outcome } : c));
             account(item.q.id, outcome);
@@ -10918,7 +10918,7 @@ ellipsis，窄列只截字不破版 */
       };
       const forget = () => {
         if (item === undefined || drill !== null) return;
-        void vaultOp("/dsh-kit/vault/quiz-forget", { rel: item.rel, id: item.q.id })
+        void vaultOp("/dsh-wangshu/vault/quiz-forget", { rel: item.rel, id: item.q.id })
           .then((outcome) => {
             setChecked((c) => (c !== null ? { ...c, outcome } : c));
             account(item.q.id, outcome);
@@ -11323,7 +11323,7 @@ ellipsis，窄列只截字不破版 */
       const [askDel, setAskDel] = react.useState(null);
       const write = async (drafts, edit) => {
         try {
-          await vaultOp("/dsh-kit/vault/quiz-save", { rel, questions: drafts, edit: edit ?? null });
+          await vaultOp("/dsh-wangshu/vault/quiz-save", { rel, questions: drafts, edit: edit ?? null });
           setEditing(null);
           setAskDel(null);
           reload();
@@ -11389,8 +11389,8 @@ ellipsis，窄列只截字不破版 */
                     jsxRuntime.jsx("button", { type: "button", className: "dshk-quiz-mini", onClick: () => setAskDel(null), children: t("qzCancel") }),
                   ] })
                 : jsxRuntime.jsxs(jsxRuntime.Fragment, { children: [
-                    jsxRuntime.jsx("button", { type: "button", className: "dshk-quiz-mini", title: t("qzMark"), disabled: qzIsMastered(progress, q.id) === true, onClick: () => markOrForget(q.id, "/dsh-kit/vault/quiz-mark"), children: "✓" }),
-                    jsxRuntime.jsx("button", { type: "button", className: "dshk-quiz-mini", title: t("qzForget"), onClick: () => markOrForget(q.id, "/dsh-kit/vault/quiz-forget"), children: "↻" }),
+                    jsxRuntime.jsx("button", { type: "button", className: "dshk-quiz-mini", title: t("qzMark"), disabled: qzIsMastered(progress, q.id) === true, onClick: () => markOrForget(q.id, "/dsh-wangshu/vault/quiz-mark"), children: "✓" }),
+                    jsxRuntime.jsx("button", { type: "button", className: "dshk-quiz-mini", title: t("qzForget"), onClick: () => markOrForget(q.id, "/dsh-wangshu/vault/quiz-forget"), children: "↻" }),
                     jsxRuntime.jsx("button", { type: "button", className: "dshk-quiz-mini", title: t("qzEdit"), onClick: () => setEditing(i), children: "✎" }),
                     jsxRuntime.jsx("button", { type: "button", className: "dshk-quiz-mini is-danger", title: t("qzDeleteGo"), onClick: () => setAskDel(i), children: "✕" }),
                   ] }),
@@ -11668,7 +11668,7 @@ ellipsis，窄列只截字不破版 */
     }
     /** 一页的学习状态（没有记录 = null） */
     async function studyFetchState(rel) {
-      const body = await kitJson("/dsh-kit/vault/study?rel=" + encodeURIComponent(rel), undefined, (b) => !!b);
+      const body = await kitJson("/dsh-wangshu/vault/study?rel=" + encodeURIComponent(rel), undefined, (b) => !!b);
       return body && body.state ? body.state : null;
     }
     /** 学习写动作：宿主回 {state}（移出回 {removed}）；成功后广播日程（复习待办跟着变） */
@@ -11704,7 +11704,7 @@ ellipsis，窄列只截字不破版 */
         try {
           // 单文件 stat 对不存在的路径回 200 {gone:true}（页签「已消失」同一条口径）：
           // 判据要带上 gone，只判 !!b 会把第一候选 .md 当成命中
-          await kitJson("/dsh-kit/vault/stat?path=" + encodeURIComponent(abs), undefined, (b) => !!b && b.gone !== true);
+          await kitJson("/dsh-wangshu/vault/stat?path=" + encodeURIComponent(abs), undefined, (b) => !!b && b.gone !== true);
           return abs;
         } catch {
           /* gone / 404：试下一个扩展名 */
@@ -11813,12 +11813,12 @@ ellipsis，窄列只截字不破版 */
         title = t("studyAdjustTitle");
         body = jsxRuntime.jsx(StudyIntervalPicker, {
           initial: rec.intervalDays,
-          onSave: (d) => run("/dsh-kit/vault/study-adjust", { rel, nextInterval: d }, (next) => say(t("studyAdjustDone").replace("{date}", String(next?.record?.dueAt ?? "")))),
+          onSave: (d) => run("/dsh-wangshu/vault/study-adjust", { rel, nextInterval: d }, (next) => say(t("studyAdjustDone").replace("{date}", String(next?.record?.dueAt ?? "")))),
           onCancel: () => setMode("record"),
         });
       } else if (mode === "restart" && isDone === true) {
         title = t("studyRestartTitle");
-        const restart = (m) => run("/dsh-kit/vault/study-restart", { rel, mode: m }, (next) => say(t("studyRestartDone").replace("{date}", String(next?.record?.dueAt ?? ""))));
+        const restart = (m) => run("/dsh-wangshu/vault/study-restart", { rel, mode: m }, (next) => say(t("studyRestartDone").replace("{date}", String(next?.record?.dueAt ?? ""))));
         body = jsxRuntime.jsxs(jsxRuntime.Fragment, { children: [
           jsxRuntime.jsx("div", { className: "dshk-vault-modalline", children: t("studyRestartAsk") }),
           jsxRuntime.jsx("button", { type: "button", className: "dshk-btn-cancel dshk-study-choice", onClick: () => restart("first"), children: t("studyRestartFirst") }),
@@ -11834,7 +11834,7 @@ ellipsis，窄列只截字不破版 */
               type: "button",
               className: "dshk-study-danger",
               onClick: () => {
-                studyOp("/dsh-kit/vault/study-remove", { rel })
+                studyOp("/dsh-wangshu/vault/study-remove", { rel })
                   .then(() => {
                     apply(null);
                     onClose();
@@ -11884,7 +11884,7 @@ ellipsis，窄列只截字不破版 */
                     type: "button",
                     className: "dshk-btn-cancel",
                     title: t("studyCompleteTip"),
-                    onClick: () => run("/dsh-kit/vault/study-complete", { rel }, (next) => {
+                    onClick: () => run("/dsh-wangshu/vault/study-complete", { rel }, (next) => {
                       say(t("studyCompleteDone").replace("{n}", String(next?.record?.reps ?? 0)).replace("{date}", String(next?.record?.dueAt ?? "")));
                     }),
                     children: t("studyComplete"),
@@ -11893,7 +11893,7 @@ ellipsis，窄列只截字不破版 */
                     type: "button",
                     className: "dshk-btn-save",
                     title: t("studyFinishTip"),
-                    onClick: () => run("/dsh-kit/vault/study-finish", { rel }, () => say(t("studyFinishDone"))),
+                    onClick: () => run("/dsh-wangshu/vault/study-finish", { rel }, () => say(t("studyFinishDone"))),
                     children: t("studyFinish"),
                   }, "finish"),
                 ] }),
@@ -11957,7 +11957,7 @@ ellipsis，窄列只截字不破版 */
                   type: "button",
                   className: "dshk-btn-save",
                   onClick: () => {
-                    studyOp("/dsh-kit/vault/study-first", { rel })
+                    studyOp("/dsh-wangshu/vault/study-first", { rel })
                       .then((body) => {
                         setDialog(null);
                         setState(body && body.state ? body.state : null);
@@ -12003,7 +12003,7 @@ ellipsis，窄列只截字不破版 */
       const [items, setItems] = react.useState(null); // null = 载入中
       react.useEffect(() => {
         let alive = true;
-        kitJson("/dsh-kit/vault/study-scope?dir=" + encodeURIComponent(dir), undefined, (b) => !!b)
+        kitJson("/dsh-wangshu/vault/study-scope?dir=" + encodeURIComponent(dir), undefined, (b) => !!b)
           .then((body) => {
             if (alive) setItems(Array.isArray(body?.items) ? body.items : []);
           })
@@ -12141,16 +12141,16 @@ ellipsis，窄列只截字不破版 */
     exports.VaultStudySetDialog = VaultStudySetDialog;
 
     exports.inject = ["slots"];
-    // 行开关即总开关：宿主半边不物化时 /dsh-kit-vault/config 404，这里整体不注册
+    // 行开关即总开关：宿主半边不物化时 /dsh-wangshu-vault/config 404，这里整体不注册
     //（侧栏索引、右栏知识库/日程签、对话路径改投、快捷键全不出现）。
     exports.apply = async (ctx) => {
       if (!(await loadCfg())) return;
       // 计时悬浮球：全局根，与槽位无关（面板全关时那只表也看得见、停得掉）
       mountSchedBall(require);
       // 本组件的两张 dock 签 kind 补登（openRightbarTab/closeRightbarTab 按 feature 查 kind）
-      dock.tabKinds.vault = { id: "dsh-kit-vault", kind: "dshk-vault" };
-      dock.tabKinds.schedule = { id: "dsh-kit-schedule", kind: "dshk-schedule" };
-      dock.tabKinds.home = { id: "dsh-kit-home", kind: "dshk-home" };
+      dock.tabKinds.vault = { id: "dsh-wangshu-vault", kind: "dshk-vault" };
+      dock.tabKinds.schedule = { id: "dsh-wangshu-schedule", kind: "dshk-schedule" };
+      dock.tabKinds.home = { id: "dsh-wangshu-home", kind: "dshk-home" };
       // 座对象（root 只读，本组件填字段）：侧栏索引视图 + 文件树行点击的 vault 改道
       dock.vaultView.renderer = ({ owner }) => jsxRuntime.jsx(SidebarVaultIndex, { ...(owner ?? {}) });
       dock.vaultRoute.open = (path) => {
@@ -12165,7 +12165,7 @@ ellipsis，窄列只截字不破版 */
       // 别端 / agent 写下来的记录都靠这一拍补齐待办、清掉不在学的残留待办
       if (!studySyncRequested) {
         studySyncRequested = true;
-        void kitPostJson("/dsh-kit/vault/study-sync", {}, (b) => b !== null && typeof b === "object")
+        void kitPostJson("/dsh-wangshu/vault/study-sync", {}, (b) => b !== null && typeof b === "object")
           .then((body) => {
             if (Number(body && body.created) > 0) schedBus.bump();
           })
@@ -12173,10 +12173,10 @@ ellipsis，窄列只截字不破版 */
       }
       // 侧栏底部形态切换条上的知识库·日程那枚（整条由 root 渲染，这里只登记）：
       // 与快捷键同一个动作（整格开合）；格内的 tab 条只有格已经开着才看得见
-      kit.registerSideForm({ id: "dsh-kit-vault", order: 40, Component: VaultFooterEntry });
+      kit.registerSideForm({ id: "dsh-wangshu-vault", order: 40, Component: VaultFooterEntry });
       // 常驻壳（order 910：根壳 900 之后）
       ctx.slots.inject("shell.overlay", () =>
-        ctx.slots.register({ name: "shell.overlay", id: "dsh-kit-vault", order: 910 }, VaultShell));
+        ctx.slots.register({ name: "shell.overlay", id: "dsh-wangshu-vault", order: 910 }, VaultShell));
       // 右栏两张签 + pane 正文
       ctx.inject(["sidebarRightTabs"], registerRightbar);
       // 对话文件点击的知识库路由（vault 内路径改道知识库标签，其余放行官方）
@@ -12185,7 +12185,7 @@ ellipsis，窄列只截字不破版 */
       ctx.inject(["shortcuts"], registerShortcuts);
       // 配置页挂本组件行：槽位 key = <包名>#<行id>（宿主按精确 key 匹配本行）
       ctx.slots.inject("plugins.row.config", () =>
-        ctx.slots.register({ name: "plugins.row.config", key: "dsh-kit#vault" }, VaultConfigPage));
+        ctx.slots.register({ name: "plugins.row.config", key: "dsh-wangshu#vault" }, VaultConfigPage));
     };
 
     // 渲染级检查取用
@@ -12269,12 +12269,12 @@ ellipsis，窄列只截字不破版 */
     return module.exports;
 };
 
-    // ── dsh-kit/phone 组件（手机访问）──
-    // dsh-kit/phone 浏览器半边 —— 手机访问组件的 client 面。
+    // ── dsh-wangshu/phone 组件（手机访问）──
+    // dsh-wangshu/phone 浏览器半边 —— 手机访问组件的 client 面。
     // 收纳：设置页「手机访问」整块（网关启停 / 二维码 / 链接复制与轮换）、组件配置页
     // （端口 / 远程域名 / 网关常驻）与设置导航的手机图标。
-    // 数据走本组件宿主半边 /dsh-kit/phone/*；行开关即总开关：宿主半边不物化时
-    // /dsh-kit-phone/config 404，apply 直接不注册任何槽位（设置页整块与配置页都不出现）。
+    // 数据走本组件宿主半边 /dsh-wangshu/phone/*；行开关即总开关：宿主半边不物化时
+    // /dsh-wangshu-phone/config 404，apply 直接不注册任何槽位（设置页整块与配置页都不出现）。
     const phoneModule = (kit, require) => {
     var module = { exports: {} };
     var exports = module.exports;
@@ -12371,13 +12371,13 @@ ellipsis，窄列只截字不破版 */
       return s;
     };
 
-    // ─────────── 组件配置（/dsh-kit-phone/config）───────────
-    // 网关状态与链接不走这里（走 /dsh-kit/phone/info|link）；本端点只做可达性探针：
+    // ─────────── 组件配置（/dsh-wangshu-phone/config）───────────
+    // 网关状态与链接不走这里（走 /dsh-wangshu/phone/info|link）；本端点只做可达性探针：
     // 200 = 行启用；404（行禁用 → 子模块不物化）= 设置页整块与配置页都不注册。
     let pAvailable = false;
     async function loadCfg() {
       try {
-        const body = await kitJson("/dsh-kit-phone/config");
+        const body = await kitJson("/dsh-wangshu-phone/config");
         pAvailable = !!(body && typeof body === "object");
       } catch {
         pAvailable = false;
@@ -12431,10 +12431,10 @@ ellipsis，窄列只截字不破版 */
     /** 注入本组件样式（幂等；行关闭时不注册槽位也就不会注入） */
     function injectStyles() {
       if (typeof document === "undefined") return;
-      if (document.querySelector('style[data-plugin-css="dsh-kit-phone/ui"]') === null) {
+      if (document.querySelector('style[data-plugin-css="dsh-wangshu-phone/ui"]') === null) {
         const tag = document.createElement("style");
-        tag.dataset.plugin = "dsh-kit-phone";
-        tag.dataset.pluginCss = "dsh-kit-phone/ui";
+        tag.dataset.plugin = "dsh-wangshu-phone";
+        tag.dataset.pluginCss = "dsh-wangshu-phone/ui";
         tag.textContent = PHONE_CSS;
         document.head.appendChild(tag);
       }
@@ -12452,16 +12452,16 @@ ellipsis，窄列只截字不破版 */
     }
 
     // ─────────── 手机访问页（settings.section）───────────
-    // 数据源：本组件宿主半边 /dsh-kit/phone/info|link（网关状态与带令牌链接）。
+    // 数据源：本组件宿主半边 /dsh-wangshu/phone/info|link（网关状态与带令牌链接）。
     // 这些端点挂在主 webserver（只绑回环，LAN 够不到），宿主侧另有同源校验。
-    // 二维码用 vendored qrcode-generator（/dsh-kit/vendor/qrcode.js），首次打开
+    // 二维码用 vendored qrcode-generator（/dsh-wangshu/vendor/qrcode.js），首次打开
     // 面板时按需加载，与终端组件的 xterm 同策略。
     function fetchPhoneInfo(signal) {
       // 字段以宿主回包为准：网关状态看 gatewayOn/running
-      return kitGetJson("/dsh-kit/phone/info", signal, (b) => typeof b.gatewayOn === "boolean");
+      return kitGetJson("/dsh-wangshu/phone/info", signal, (b) => typeof b.gatewayOn === "boolean");
     }
     function fetchPhoneLinks(signal) {
-      return kitGetJson("/dsh-kit/phone/link", signal, (b) => Array.isArray(b.links));
+      return kitGetJson("/dsh-wangshu/phone/link", signal, (b) => Array.isArray(b.links));
     }
     /** 把链接画上 canvas：白色静区 + 码点，按 devicePixelRatio 输出清晰图 */
     function drawPhoneQr(canvas, text) {
@@ -12500,14 +12500,14 @@ ellipsis，窄列只截字不破版 */
       const [copied, setCopied] = react.useState(false);
       const [notice, setNotice] = react.useState("");
       const canvasRef = react.useRef(null);
-      // 网关启停开关（POST /dsh-kit/phone/gateway；状态文件直管，不经 settings）。
+      // 网关启停开关（POST /dsh-wangshu/phone/gateway；状态文件直管，不经 settings）。
       // 远程域名/端口属插件配置，编辑入口在原生设置页（Config schema 自动生成）
       const [gateBusy, setGateBusy] = react.useState(false);
       const toggleGateway = async (next) => {
         if (gateBusy) return;
         setGateBusy(true);
         try {
-          const body = await kitPostJson("/dsh-kit/phone/gateway", { on: next }, (b) => typeof b.gatewayOn === "boolean");
+          const body = await kitPostJson("/dsh-wangshu/phone/gateway", { on: next }, (b) => typeof b.gatewayOn === "boolean");
           // 以端点回包为准更新状态（不依赖 settings 读取器，无滞后）
           setInfo((info) =>
             info === null
@@ -12525,14 +12525,14 @@ ellipsis，窄列只截字不破版 */
         }
         setGateBusy(false);
       };
-      // 远程隧道开关（POST /dsh-kit/phone/remote；进程启停归宿主，见 src/phone/tunnel.ts）。
+      // 远程隧道开关（POST /dsh-wangshu/phone/remote；进程启停归宿主，见 src/phone/tunnel.ts）。
       // 开启远程时宿主会把网关一并拉起，所以这里不额外处理网关。
       const [remoteBusy, setRemoteBusy] = react.useState(false);
       const toggleRemote = async (next) => {
         if (remoteBusy) return;
         setRemoteBusy(true);
         try {
-          const body = await kitPostJson("/dsh-kit/phone/remote", { on: next }, (b) => typeof b.remoteOn === "boolean");
+          const body = await kitPostJson("/dsh-wangshu/phone/remote", { on: next }, (b) => typeof b.remoteOn === "boolean");
           setInfo((info) =>
             info === null
               ? info
@@ -12554,7 +12554,7 @@ ellipsis，窄列只截字不破版 */
         if (gateBusy) return;
         setGateBusy(true);
         try {
-          const body = await kitPostJson("/dsh-kit/phone/rotate", {}, (b) => Array.isArray(b.links));
+          const body = await kitPostJson("/dsh-wangshu/phone/rotate", {}, (b) => Array.isArray(b.links));
           setLinkData(body);
           setNotice(t("phoneRotated"));
           setTimeout(() => setNotice(""), 3000);
@@ -12601,7 +12601,7 @@ ellipsis，窄列只截字不破版 */
           setQrReady(true);
           return undefined;
         }
-        loadScript("/dsh-kit/vendor/qrcode.js")
+        loadScript("/dsh-wangshu/vendor/qrcode.js")
           .then(() => setQrReady(true))
           .catch(() => {});
         return undefined;
@@ -12771,7 +12771,7 @@ ellipsis，窄列只截字不破版 */
     };
 
     exports.inject = ["slots"];
-    // 行开关即总开关：宿主半边不物化时 /dsh-kit-phone/config 404，这里整体不注册
+    // 行开关即总开关：宿主半边不物化时 /dsh-wangshu-phone/config 404，这里整体不注册
     // （设置页「手机访问」整块、组件配置页与导航图标全不出现）。
     exports.apply = async (ctx) => {
       if (!(await loadCfg())) return;
@@ -12781,7 +12781,7 @@ ellipsis，窄列只截字不破版 */
       ));
       // 配置页挂本组件行：槽位 key = <包名>#<行id>（宿主按精确 key 匹配本行）
       ctx.slots.inject("plugins.row.config", () =>
-        ctx.slots.register({ name: "plugins.row.config", key: "dsh-kit#phone" }, PhoneConfigPage));
+        ctx.slots.register({ name: "plugins.row.config", key: "dsh-wangshu#phone" }, PhoneConfigPage));
       registerNavIcon(PHONE_NAV_ICON);
       injectStyles();
     };
@@ -12801,12 +12801,12 @@ ellipsis，窄列只截字不破版 */
     // 每个组件一个隔离壳，同住本 factory：kit 形参即根 exports（同一对象引用，
     // 见文件尾的组件模块执行段），座对象机制不变。
     // 组件模块执行只组装导出（无副作用），apply 由根 apply 尾部的激活循环调用。
-    // ── dsh-kit/files 组件（文件树）──
-// dsh-kit/files 浏览器半边 —— 文件树组件的 client 面。
+    // ── dsh-wangshu/files 组件（文件树）──
+// dsh-wangshu/files 浏览器半边 —— 文件树组件的 client 面。
 // 收纳：侧栏文件树（目录树/新建/改名/删除/@ 到对话），点文件交官方右栏文件签。
-// 数据走本组件宿主半边的端点（路径沿用 /dsh-kit/*）。形态钮经
+// 数据走本组件宿主半边的端点（路径沿用 /dsh-wangshu/*）。形态钮经
 // kitBase.registerSideForm 登记进左栏底部切换条，开关 = 本组件自己的 Config
-// （fileTreeEnabled，经 /dsh-kit-files/config 拉取）；侧栏浏览区的文件树分支经
+// （fileTreeEnabled，经 /dsh-wangshu-files/config 拉取）；侧栏浏览区的文件树分支经
 // kitBase.sidebarView 座交给 root 单槽分发，全局快捷键经宿主 shortcuts 服务注册
 // （键位与冲突归官方快捷键页），组合键读组件自己的配置。
     const filesModule = (kit, require) => {
@@ -12911,7 +12911,7 @@ ellipsis，窄列只截字不破版 */
       return s;
     };
 
-    // ─────────── 组件配置（/dsh-kit-files/config，Config schema 唯一真源）───────
+    // ─────────── 组件配置（/dsh-wangshu-files/config，Config schema 唯一真源）───────
     // 键位不在这里：两条命令注册进官方 shortcuts 服务（见 registerShortcuts），
     // 录制与持久化归官方「快捷键」页。
     const F_CFG_DEFAULTS = {
@@ -12932,7 +12932,7 @@ ellipsis，窄列只截字不破版 */
     async function loadCfg() {
       let value = null;
       try {
-        const v = await kitJson("/dsh-kit-files/config", undefined, (b) => b !== null && typeof b === "object");
+        const v = await kitJson("/dsh-wangshu-files/config", undefined, (b) => b !== null && typeof b === "object");
         value = v;
       } catch {
         value = null; // 端点不可达：null → cfgFromSnapshot 走内置默认
@@ -12983,10 +12983,10 @@ body.dshk-hide-official-files [data-sidebar-right-guide-entry="files"]{display:n
     `;
     function injectStyles() {
       if (typeof document === "undefined") return;
-      if (document.querySelector('style[data-plugin-css="dsh-kit-files/ui"]') === null) {
+      if (document.querySelector('style[data-plugin-css="dsh-wangshu-files/ui"]') === null) {
         const tag = document.createElement("style");
-        tag.dataset.plugin = "dsh-kit-files";
-        tag.dataset.pluginCss = "dsh-kit-files/ui";
+        tag.dataset.plugin = "dsh-wangshu-files";
+        tag.dataset.pluginCss = "dsh-wangshu-files/ui";
         tag.textContent = FILES_CSS;
         document.head.appendChild(tag);
       }
@@ -13004,7 +13004,7 @@ body.dshk-hide-official-files [data-sidebar-right-guide-entry="files"]{display:n
       t,
       onSaved: async () => {
         try {
-          const body = await kitJson("/dsh-kit-files/config");
+          const body = await kitJson("/dsh-wangshu-files/config");
           if (body && typeof body === "object") {
             cfgSnap = { status: "ready", value: body };
             emitCfg();
@@ -13027,9 +13027,9 @@ body.dshk-hide-official-files [data-sidebar-right-guide-entry="files"]{display:n
       attachShortcutCatalog(shortcuts.catalog);
       const commands = [
         {
-          id: "dsh-kit-files.tree.toggle",
+          id: "dsh-wangshu-files.tree.toggle",
           labelKey: "treeLabel",
-          aliases: ["file tree", "workspace files", "dsh-kit"],
+          aliases: ["file tree", "workspace files", "dsh-wangshu"],
           code: "Comma",
           // web 档不能用 Mod+Alt+,：宿主 0.2.0 起「打开设置」在 web 也是 Mod+Alt+,，
           // shortcuts.register 跨全部档位查重，同键位直接抛错（会带走本组件两条命令）
@@ -13064,21 +13064,21 @@ body.dshk-hide-official-files [data-sidebar-right-guide-entry="files"]{display:n
             if (!rightbarSeat.available) return { status: "blocked", reason: t("scNoSeat") };
             return { status: "handled", run: cmd.run };
           },
-        }), `dsh-kit-files: shortcut ${cmd.id}`);
+        }), `dsh-wangshu-files: shortcut ${cmd.id}`);
       }
     }
 
     // ─────────── 文件树 ───────────
-    // 数据走宿主半边只读端点 /dsh-kit/tree（官方 browse RPC 只列目录不列文件）。
+    // 数据走宿主半边只读端点 /dsh-wangshu/tree（官方 browse RPC 只列目录不列文件）。
     // 端点限根（工作区 + 各组件注册的根），cwd 是「工作区那一根」——不带就被拒。
     function fetchTree(path, signal, cwd) {
       const root = typeof cwd === "string" && cwd.trim() !== "" ? `&cwd=${encodeURIComponent(cwd.trim())}` : "";
-      return kitGetJson(`/dsh-kit/tree?path=${encodeURIComponent(path)}${root}`, signal, (b) => Array.isArray(b.entries));
+      return kitGetJson(`/dsh-wangshu/tree?path=${encodeURIComponent(path)}${root}`, signal, (b) => Array.isArray(b.entries));
     }
 
-    /** 文件管理操作（新建/重命名/删除）：POST /dsh-kit/fs/op，宿主做子树与名称校验 */
+    /** 文件管理操作（新建/重命名/删除）：POST /dsh-wangshu/fs/op，宿主做子树与名称校验 */
     function postFsOp(payload) {
-      return kitPostJson("/dsh-kit/fs/op", payload, (b) => b.ok === true);
+      return kitPostJson("/dsh-wangshu/fs/op", payload, (b) => b.ok === true);
     }
 
     function FolderIcon(props) {
@@ -13338,7 +13338,7 @@ body.dshk-hide-official-files [data-sidebar-right-guide-entry="files"]{display:n
         if (!expanded[entry.path]) loadDir(entry.path);
       };
 
-      // ── 文件管理（新建/重命名/删除）：数据走 POST /dsh-kit/fs/op，宿主做子树校验 ──
+      // ── 文件管理（新建/重命名/删除）：数据走 POST /dsh-wangshu/fs/op，宿主做子树校验 ──
       /** 取父目录：无分隔符时回落 cwd */
       const parentOf = (p) => {
         const i = Math.max(p.lastIndexOf("\\"), p.lastIndexOf("/"));
@@ -13621,7 +13621,7 @@ body.dshk-hide-official-files [data-sidebar-right-guide-entry="files"]{display:n
       if (cfg.fileTreeEnabled === false) return null;
       return jsxRuntime.jsx(KitTip, {
         label: t("treeLabel"),
-        command: "dsh-kit-files.tree.toggle",
+        command: "dsh-wangshu-files.tree.toggle",
         side: "top",
         children: jsxRuntime.jsx("button", {
           type: "button",
@@ -13640,12 +13640,12 @@ body.dshk-hide-official-files [data-sidebar-right-guide-entry="files"]{display:n
     function apply(ctx) {
       // 组件配置页：挂本组件行（槽位 key = <包名>#<行id>）
       ctx.slots.inject("plugins.row.config", () =>
-        ctx.slots.register({ name: "plugins.row.config", key: "dsh-kit#files" }, FilesConfigPage),
+        ctx.slots.register({ name: "plugins.row.config", key: "dsh-wangshu#files" }, FilesConfigPage),
       );
       // 侧栏底部形态切换条：文件树那一枚（整条由 root 渲染，这里只登记入口；
       // 行关 = 不登记 = 不出那枚）。开关门控在组件内读本组件配置（关 = 渲染 null，
       // volatile 热提交即时生效）
-      kit.registerSideForm({ id: "dsh-kit-filetree", order: 20, Component: FileTreeEntry });
+      kit.registerSideForm({ id: "dsh-wangshu-filetree", order: 20, Component: FileTreeEntry });
       // 侧栏浏览区文件树渲染器：root 的 sidebar.workspaces 单槽分发到这
       // （owner 携带官方注入的 wide，收起态各占用者自判不渲染）
       dock.sidebarView.renderer = ({ ui, cwd, owner }) => {
@@ -13678,11 +13678,11 @@ body.dshk-hide-official-files [data-sidebar-right-guide-entry="files"]{display:n
     return module.exports;
 };
 
-    // ── dsh-kit/monitor 组件（用量与监视）──
-// dsh-kit/monitor 浏览器半边 —— 用量与监视组件的 client 面。
+    // ── dsh-wangshu/monitor 组件（用量与监视）──
+// dsh-wangshu/monitor 浏览器半边 —— 用量与监视组件的 client 面。
 // 现收纳：余额与用量芯片（UsageLine）+ 会话通知（系统通知）。
 //
-// 数据走宿主 /dsh-kit/usage（key 在宿主侧复用模型配置，浏览器拿不到）。状态带
+// 数据走宿主 /dsh-wangshu/usage（key 在宿主侧复用模型配置，浏览器拿不到）。状态带
 // 右缘只出**一张**芯片：当前会话选中的模型 provider（modelDirectories 服务按
 // sessionId 给的共享目录 store，composer 模型座同源）归类出 deepseek/opencode
 // 卡位，端点没配对应 provider 或识别不出（如 sensenova）= 不出。芯片只放
@@ -13693,7 +13693,7 @@ body.dshk-hide-official-files [data-sidebar-right-guide-entry="files"]{display:n
 // 缺位时芯片退成带 title 的按钮。modelDirectories 是懒就绪服务：就绪时
 // version++ 通知订阅者重跑 effect，否则「服务后到」的挂载永远拿不到数据源。
 //
-// 开关 = 本组件自己的 Config（usageEnabled，默认开），经 /dsh-kit-monitor/config
+// 开关 = 本组件自己的 Config（usageEnabled，默认开），经 /dsh-wangshu-monitor/config
 // 拉取：关 = 端点 403 + 芯片不出，两者由同一份配置驱动。
     const monitorModule = (kit, require) => {
     var module = { exports: {} };
@@ -13811,7 +13811,7 @@ body.dshk-hide-official-files [data-sidebar-right-guide-entry="files"]{display:n
     const lang = () => (resolveZh() ? zh : en);
     const t = (key) => lang()[key] ?? key;
 
-    // 组件配置快照：拉本组件自己的 /dsh-kit-monitor/config（用量开关 + 监视/通知 +
+    // 组件配置快照：拉本组件自己的 /dsh-wangshu-monitor/config（用量开关 + 监视/通知 +
     // 会话头注入，全部字段——组件的 Config schema 是唯一真源）。快照形状统一为
     // { status:'ready', value }；端点不可达按全默认处理（与门控同源语义）。
     const M_CFG_DEFAULTS = {
@@ -13824,7 +13824,7 @@ body.dshk-hide-official-files [data-sidebar-right-guide-entry="files"]{display:n
     async function loadCfg() {
       let value = null;
       try {
-        const v = await kitJson("/dsh-kit-monitor/config", undefined, (b) => b !== null && typeof b === "object");
+        const v = await kitJson("/dsh-wangshu-monitor/config", undefined, (b) => b !== null && typeof b === "object");
         value = v;
       } catch {
         value = null; // 端点不可达：null → cfgFromSnapshot 走内置默认
@@ -14310,7 +14310,7 @@ body.dshk-hide-official-files [data-sidebar-right-guide-entry="files"]{display:n
     }
 
 
-    // 本组件配置页（插件页 dsh-kit/monitor 行「配置」）：骨架在 dock，这里只喂字段表
+    // 本组件配置页（插件页 dsh-wangshu/monitor 行「配置」）：骨架在 dock，这里只喂字段表
     const MONITOR_CFG_FIELDS = [
       { key: "usageEnabled", type: "bool", group: "kcfgGroupUsage", labelKey: "kcfgUsageEnabled", hintKey: "kcfgUsageEnabledHint" },
       { key: "notifyEnabled", type: "bool", group: "kcfgGroupMonitor", labelKey: "kcfgNotifyEnabled", hintKey: "kcfgNotifyEnabledHint" },
@@ -14551,7 +14551,7 @@ body.dshk-hide-official-files [data-sidebar-right-guide-entry="files"]{display:n
       const load = react.useCallback(async (fresh) => {
         // 开关刚关（403）或网络失败：保留旧数据，下一轮轮询再试
         try {
-          const body = await kitJson(`/dsh-kit/usage${fresh ? "?fresh=1" : ""}`, undefined, (b) => b !== null && typeof b.providers === "object");
+          const body = await kitJson(`/dsh-wangshu/usage${fresh ? "?fresh=1" : ""}`, undefined, (b) => b !== null && typeof b.providers === "object");
           usageData.body = body;
           usageData.at = Date.now();
           setData(body);
@@ -14774,10 +14774,10 @@ body.dshk-hide-official-files [data-sidebar-right-guide-entry="files"]{display:n
     exports.inject = ["slots"];
     exports.apply = async (ctx) => {
       slotsCtx = ctx;
-      // 组件配置页：挂在插件页本组件行上的「配置」。行由 dsh-kit bundle 的 patch
+      // 组件配置页：挂在插件页本组件行上的「配置」。行由 dsh-wangshu bundle 的 patch
       // 声明，槽位 key = <包名>#<行id>（宿主按精确 key 匹配本行）
       ctx.slots.inject("plugins.row.config", () =>
-        ctx.slots.register({ name: "plugins.row.config", key: "dsh-kit#monitor" }, MonitorConfigPage),
+        ctx.slots.register({ name: "plugins.row.config", key: "dsh-wangshu#monitor" }, MonitorConfigPage),
       );
       // modelDirectories 懒就绪：就绪时通知订阅者重读（用量芯片据此显隐）
       ctx.inject(["modelDirectories"], (mctx) => {
@@ -14788,7 +14788,7 @@ body.dshk-hide-official-files [data-sidebar-right-guide-entry="files"]{display:n
       // 一律经 slots.inject 等声明落地再注册（直接 register 会炸整树 boot）
       ctx.slots.inject("conversation.composer.dock", () =>
         ctx.slots.register(
-          { name: "conversation.composer.dock", id: "dsh-kit-usage", order: 6 },
+          { name: "conversation.composer.dock", id: "dsh-wangshu-usage", order: 6 },
           UsageLine,
         ),
       );
@@ -14898,19 +14898,19 @@ body.dshk-hide-official-files [data-sidebar-right-guide-entry="files"]{display:n
     return exports;
 };
 
-    // ── dsh-kit/search 组件（网页搜索）──
+    // ── dsh-wangshu/search 组件（网页搜索）──
 // 网页搜索没有浏览器半边：搜索本体全在宿主半边（web seam 接管 + 引擎链，src/search/），
 // 组件行只有开关、没有配置页——返回条数由宿主 web_search 的 searchMaxResults 决定。
 
 
-    // ── dsh-kit/terminal 组件（终端）──
-// dsh-kit/terminal 浏览器半边 —— 终端组件的 client 面。
+    // ── dsh-wangshu/terminal 组件（终端）──
+// dsh-wangshu/terminal 浏览器半边 —— 终端组件的 client 面。
 // 收纳：对话输入行的终端入口（多会话角标）+ 底部停靠多标签终端坞 + xterm 胶水
 // （引擎 = 官方 webTerminals 服务，PTY 归宿主：会话工作区绑定、刷新保活、后台清理）。
 // 入口与坞分属两个槽位（conversation.input.left / shell.overlay），共享 kitBase 的
 // kitUi 跨槽状态（terminals/activeTermId/termDockOpen）；开关读本组件 Config
-// （/dsh-kit-terminal/config），键位注册进官方 shortcuts 服务。xterm 静态资源走主包
-// /dsh-kit/vendor 白名单（静态口套件共用）。
+// （/dsh-wangshu-terminal/config），键位注册进官方 shortcuts 服务。xterm 静态资源走主包
+// /dsh-wangshu/vendor 白名单（静态口套件共用）。
     const terminalModule = (kit, require) => {
     var module = { exports: {} };
     var exports = module.exports;
@@ -14965,7 +14965,7 @@ body.dshk-hide-official-files [data-sidebar-right-guide-entry="files"]{display:n
     const lang = () => (resolveZh() ? zh : en);
     const t = (key) => lang()[key] ?? key;
 
-    // ─────────── 组件配置（/dsh-kit-terminal/config）───────
+    // ─────────── 组件配置（/dsh-wangshu-terminal/config）───────
     // 行开关（插件页组件行 switch）= 唯一开关。拉端点只为可达性——200 = 行启用；
     // 404（行禁用 → 子模块不物化）= 隐藏入口并结束会话。
     let cfgSnap = null;
@@ -14982,7 +14982,7 @@ body.dshk-hide-official-files [data-sidebar-right-guide-entry="files"]{display:n
     async function loadCfg() {
       let value = null;
       try {
-        const v = await kitJson("/dsh-kit-terminal/config", undefined, (b) => b !== null && typeof b === "object");
+        const v = await kitJson("/dsh-wangshu-terminal/config", undefined, (b) => b !== null && typeof b === "object");
         value = v;
       } catch {
         value = null; // 端点不可达（行禁用 404）：探明不可用
@@ -15048,19 +15048,19 @@ body.dshk-open [class*="_centerCol"]{padding-bottom:var(--dshk-dock-h,${DOCK_H})
     /** 注入本组件样式与 xterm.css（link），幂等 */
     function injectStyles() {
       if (typeof document === "undefined") return;
-      if (document.querySelector('style[data-plugin-css="dsh-kit-terminal/ui"]') === null) {
+      if (document.querySelector('style[data-plugin-css="dsh-wangshu-terminal/ui"]') === null) {
         const tag = document.createElement("style");
-        tag.dataset.plugin = "dsh-kit-terminal";
-        tag.dataset.pluginCss = "dsh-kit-terminal/ui";
+        tag.dataset.plugin = "dsh-wangshu-terminal";
+        tag.dataset.pluginCss = "dsh-wangshu-terminal/ui";
         tag.textContent = TERMINAL_CSS;
         document.head.appendChild(tag);
       }
-      if (document.querySelector('link[data-plugin-css="dsh-kit-terminal/xterm"]') === null) {
+      if (document.querySelector('link[data-plugin-css="dsh-wangshu-terminal/xterm"]') === null) {
         const link = document.createElement("link");
         link.rel = "stylesheet";
-        link.dataset.plugin = "dsh-kit-terminal";
-        link.dataset.pluginCss = "dsh-kit-terminal/xterm";
-        link.href = "/dsh-kit/vendor/xterm.css";
+        link.dataset.plugin = "dsh-wangshu-terminal";
+        link.dataset.pluginCss = "dsh-wangshu-terminal/xterm";
+        link.href = "/dsh-wangshu/vendor/xterm.css";
         document.head.appendChild(link);
       }
     }
@@ -15082,7 +15082,7 @@ body.dshk-open [class*="_centerCol"]{padding-bottom:var(--dshk-dock-h,${DOCK_H})
         vendorPromise =
           typeof window.Terminal === "function" && window.FitAddon && typeof window.FitAddon.FitAddon === "function"
             ? Promise.resolve()
-            : loadScript("/dsh-kit/vendor/xterm.js").then(() => loadScript("/dsh-kit/vendor/addon-fit.js"));
+            : loadScript("/dsh-wangshu/vendor/xterm.js").then(() => loadScript("/dsh-wangshu/vendor/addon-fit.js"));
       }
       return vendorPromise;
     }
@@ -15298,8 +15298,8 @@ body.dshk-open [class*="_centerCol"]{padding-bottom:var(--dshk-dock-h,${DOCK_H})
 
             // gen（= restartKey）进 key/contentId：⟳ 换代后旧 view 已 close、
             // 新 contentId 才会分配全新宿主终端（closed 身份不可复用）
-            const viewKey = `dsh-kit-term-${term.id}-g${restartKey}`;
-            const contentId = `dsh-kit-term-${term.id}-g${restartKey}`;
+            const viewKey = `dsh-wangshu-term-${term.id}-g${restartKey}`;
+            const contentId = `dsh-wangshu-term-${term.id}-g${restartKey}`;
             view = svc.view(term.sessionId, viewKey, contentId);
             const detach = view.mount();
             detachRef.current = typeof detach === "function" ? detach : null;
@@ -15610,7 +15610,7 @@ body.dshk-open [class*="_centerCol"]{padding-bottom:var(--dshk-dock-h,${DOCK_H})
       const dockOn = ui.termDockOpen && count > 0;
       return jsxRuntime.jsx(KitTip, {
         label: count > 0 ? `${t("label")} · ${count}` : t("label"),
-        command: "dsh-kit.terminal.toggle",
+        command: "dsh-wangshu.terminal.toggle",
         side: "top",
         children: jsxRuntime.jsxs("button", {
           type: "button",
@@ -15680,9 +15680,9 @@ body.dshk-open [class*="_centerCol"]{padding-bottom:var(--dshk-dock-h,${DOCK_H})
       if (!shortcuts || typeof shortcuts.register !== "function") return;
       attachShortcutCatalog(shortcuts.catalog);
       scCtx.effect(() => shortcuts.register({
-        id: "dsh-kit.terminal.toggle",
+        id: "dsh-wangshu.terminal.toggle",
         label: () => t("scTerminal"),
-        aliases: ["terminal", "terminal dock", "dsh-kit"],
+        aliases: ["terminal", "terminal dock", "dsh-wangshu"],
         defaults: {
           "web:macos": { code: "Backquote", modifiers: ["primary", "alt"] },
           "web:windows": { code: "Backquote", modifiers: ["primary", "alt"] },
@@ -15698,7 +15698,7 @@ body.dshk-open [class*="_centerCol"]{padding-bottom:var(--dshk-dock-h,${DOCK_H})
           // 会话在 run 期读：resolve 与 run 之间隔着宿主调度，按钮可能已重渲染换过会话
           return { status: "handled", run: () => setKitUi(toggleTermDock(getKitUi(), lastSession.id, lastSession.cwd)) };
         },
-      }), "dsh-kit-terminal: shortcut dsh-kit.terminal.toggle");
+      }), "dsh-wangshu-terminal: shortcut dsh-wangshu.terminal.toggle");
     }
 
     // ─────────── 插件体 ───────────
@@ -15707,10 +15707,10 @@ body.dshk-open [class*="_centerCol"]{padding-bottom:var(--dshk-dock-h,${DOCK_H})
       // 输入框入口与坞：官方 conversation / shell 挂载期声明槽位，inject 等声明
       // 落地再注册——直接 register 抛 not declared 且炸掉整个 web boot
       ctx.slots.inject("conversation.input.left", () =>
-        ctx.slots.register({ name: "conversation.input.left", id: "dsh-kit-terminal", order: 14 }, TerminalEntry),
+        ctx.slots.register({ name: "conversation.input.left", id: "dsh-wangshu-terminal", order: 14 }, TerminalEntry),
       );
       ctx.slots.inject("shell.overlay", () =>
-        ctx.slots.register({ name: "shell.overlay", id: "dsh-kit-terminal", order: 910 }, TerminalSurfaces),
+        ctx.slots.register({ name: "shell.overlay", id: "dsh-wangshu-terminal", order: 910 }, TerminalSurfaces),
       );
       // 官方终端模型服务：apply 期 inject 捕获
       ctx.inject(["webTerminals"], (tctx) => { webTerminalsSvc = tctx.webTerminals; });
@@ -15739,11 +15739,11 @@ body.dshk-open [class*="_centerCol"]{padding-bottom:var(--dshk-dock-h,${DOCK_H})
     return module.exports;
 };
 
-    // ── dsh-kit/chat 组件（对话小窗）──
+    // ── dsh-wangshu/chat 组件（对话小窗）──
     // 贴边常驻的把手 + 点开成浮窗。内核是宿主官方 conversation.content 工厂的
     // embedded 变体，本组件只自绘外壳与做会话绑定：
     // 自己 retain 一条会话，与主面选中哪个会话无关（独立小窗）。
-    // 行开关 = 总开关：宿主半边不物化时 /dsh-kit-chat/config 404，apply 整体不注册。
+    // 行开关 = 总开关：宿主半边不物化时 /dsh-wangshu-chat/config 404，apply 整体不注册。
     const chatModule = (kit, require) => {
     var module = { exports: {} };
     var exports = module.exports;
@@ -15802,7 +15802,7 @@ body.dshk-open [class*="_centerCol"]{padding-bottom:var(--dshk-dock-h,${DOCK_H})
     const lang = () => (resolveZh() ? zh : en);
     const t = (key) => lang()[key] ?? key;
 
-    // ─────────── 组件配置页（plugins.row.config，key = dsh-kit#chat）───────────
+    // ─────────── 组件配置页（plugins.row.config，key = dsh-wangshu#chat）───────────
     // 骨架在 dock；字段清单与 src/chat/index.ts 的 Config schema 同源（渲染级检查钉住）。
     const CHAT_CFG_FIELDS = [
       { key: "rememberWindow", type: "bool", group: "kcfgGroupChat", labelKey: "kcfgRememberWindow", hintKey: "kcfgRememberWindowHint" },
@@ -15810,7 +15810,7 @@ body.dshk-open [class*="_centerCol"]{padding-bottom:var(--dshk-dock-h,${DOCK_H})
     ];
     const ChatConfigPage = dock.createConfigPage({ fields: CHAT_CFG_FIELDS, groups: ["kcfgGroupChat"], t });
 
-    // ─────────── 生效配置快照（/dsh-kit-chat/config）───────────
+    // ─────────── 生效配置快照（/dsh-wangshu-chat/config）───────────
     // 真源 = 本组件宿主 Config（src/chat/index.ts）。
     const CHAT_CFG_DEFAULTS = { rememberWindow: true, rememberTarget: true };
     let cSnap = null;
@@ -15841,7 +15841,7 @@ body.dshk-open [class*="_centerCol"]{padding-bottom:var(--dshk-dock-h,${DOCK_H})
     /** 拉生效配置；返回 false = 行关闭（探针 404）= 本组件 client 面整体不注册 */
     async function loadCfg() {
       try {
-        const body = await kitJson("/dsh-kit-chat/config");
+        const body = await kitJson("/dsh-wangshu-chat/config");
         cSnap = body && typeof body === "object" ? { status: "ready", value: body } : null;
       } catch {
         cSnap = null;
@@ -16337,7 +16337,7 @@ body.dshk-open [class*="_centerCol"]{padding-bottom:var(--dshk-dock-h,${DOCK_H})
       const ref = useSessionRef(valid ? wantedId : null);
       const body =
         ref && typeof props.SessionProvider === "function"
-          ? jsxRuntime.jsx(props.SessionProvider, { session: ref, children: props.renderSlot("dsh-kit.chat.session", {}) })
+          ? jsxRuntime.jsx(props.SessionProvider, { session: ref, children: props.renderSlot("dsh-wangshu.chat.session", {}) })
           : jsxRuntime.jsx("div", { className: "dshk-chat-note", children: t("noSession") });
 
       const current = rows.find((r) => r?.id === ui.sessionId) ?? null;
@@ -16458,10 +16458,10 @@ body.dshk-open [class*="_centerCol"]{padding-bottom:var(--dshk-dock-h,${DOCK_H})
     ].join("\n");
     function injectStyles() {
       if (typeof document === "undefined") return;
-      if (document.querySelector('style[data-plugin-css="dsh-kit-chat/ui"]') !== null) return;
+      if (document.querySelector('style[data-plugin-css="dsh-wangshu-chat/ui"]') !== null) return;
       const tag = document.createElement("style");
-      tag.dataset.plugin = "dsh-kit-chat";
-      tag.dataset.pluginCss = "dsh-kit-chat/ui";
+      tag.dataset.plugin = "dsh-wangshu-chat";
+      tag.dataset.pluginCss = "dsh-wangshu-chat/ui";
       tag.textContent = CHAT_CSS;
       document.head.appendChild(tag);
     }
@@ -16476,9 +16476,9 @@ body.dshk-open [class*="_centerCol"]{padding-bottom:var(--dshk-dock-h,${DOCK_H})
       if (!shortcuts || typeof shortcuts.register !== "function") return;
       attachShortcutCatalog(shortcuts.catalog);
       scCtx.effect(() => shortcuts.register({
-        id: "dsh-kit.chat.toggle",
+        id: "dsh-wangshu.chat.toggle",
         label: () => t("scChat"),
-        aliases: ["chat window", "chat pane", "dsh-kit"],
+        aliases: ["chat window", "chat pane", "dsh-wangshu"],
         // 分号：Ctrl+Alt+; —— 字母键 C/V/X/Z/Y/Q/H 与 primary 组合是系统保留
         // （剪贴板 / 退出 / 历史），web 端一律拒收；web:linux 只放行 Slash 与
         // Comma/Period+shift，故不声明那一档
@@ -16496,7 +16496,7 @@ body.dshk-open [class*="_centerCol"]{padding-bottom:var(--dshk-dock-h,${DOCK_H})
           if (getCSnap() === null) return { status: "blocked", reason: t("scChatOff") };
           return { status: "handled", run: toggleChat };
         },
-      }), "dsh-kit-chat: shortcut dsh-kit.chat.toggle");
+      }), "dsh-wangshu-chat: shortcut dsh-wangshu.chat.toggle");
     }
 
     // ─────────── 插件体 ───────────
@@ -16517,18 +16517,18 @@ body.dshk-open [class*="_centerCol"]{padding-bottom:var(--dshk-dock-h,${DOCK_H})
         ctx.slots.register(
           {
             name: "shell.overlay",
-            id: "dsh-kit-chat",
+            id: "dsh-wangshu-chat",
             order: 930,
-            children: { "dsh-kit.chat.session": { kind: "single", scope: "session" } },
+            children: { "dsh-wangshu.chat.session": { kind: "single", scope: "session" } },
           },
           ChatSurface,
         ),
       );
-      ctx.slots.inject("dsh-kit.chat.session", () =>
-        ctx.slots.register({ name: "dsh-kit.chat.session", id: "dsh-kit-chat-body" }, ChatSessionBody),
+      ctx.slots.inject("dsh-wangshu.chat.session", () =>
+        ctx.slots.register({ name: "dsh-wangshu.chat.session", id: "dsh-wangshu-chat-body" }, ChatSessionBody),
       );
       ctx.slots.inject("plugins.row.config", () =>
-        ctx.slots.register({ name: "plugins.row.config", key: "dsh-kit#chat" }, ChatConfigPage),
+        ctx.slots.register({ name: "plugins.row.config", key: "dsh-wangshu#chat" }, ChatConfigPage),
       );
       injectStyles();
     }
@@ -16562,7 +16562,7 @@ body.dshk-open [class*="_centerCol"]{padding-bottom:var(--dshk-dock-h,${DOCK_H})
     // 组件模块执行必须在 kitBase/root 设施组装完成之后（见下方 exports.files 赋值
     // 处）——组件体执行期会读 dock.createConfigPage 等成员
     // slots 是唯一依赖：配置走各组件自己的 Config schema + 原生设置页，client 拉
-    // 自己的 /dsh-kit-<行id>/config 快照做门控
+    // 自己的 /dsh-wangshu-<行id>/config 快照做门控
     // 共享面暴露给组件半边：kit 形参即本对象（apply/inject 是插件形状，不暴露）
     for (const [k, v] of Object.entries(kitBase)) if (k !== "apply" && k !== "inject") exports[k] = v;
     // 组件半边消费的 root 侧设施：闭包引用 root 模块状态（sessionsSvc/rightbarSr/

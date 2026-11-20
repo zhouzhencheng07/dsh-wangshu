@@ -1,10 +1,10 @@
 // vendor 静态资源路由：白名单里的每个文件注册一条 exact 路由，资源归**用它的组件行**伺服。
 //
 // 归属跟着行走：终端行关 = 连 xterm 的 js / css 都没有，知识库行关 = pdf.js / katex /
-// mermaid 都没有。URL 一律 /dsh-kit/vendor/<文件名>（KaTeX 字体走 fonts/ 前缀路由），
+// mermaid 都没有。URL 一律 /dsh-wangshu/vendor/<文件名>（KaTeX 字体走 fonts/ 前缀路由），
 // 浏览器半边只按 URL 取，不因归属变化而改。
 //
-// 不做成一条 /dsh-kit/vendor 前缀路由的原因：前缀路由抢路径，先注册的那条会把不在自己
+// 不做成一条 /dsh-wangshu/vendor 前缀路由的原因：前缀路由抢路径，先注册的那条会把不在自己
 // 白名单里的请求打成 404（同宿主多行注册同一前缀 = 后面的组件拿不到资源）。逐文件 exact
 // 互不覆盖，也就不依赖宿主对重复路径的处理方式。
 import fs from 'node:fs';
@@ -44,7 +44,7 @@ function serveFile(req, res, file) {
 }
 /**
  * 逐文件 exact 路由。files = URL 路径 → client/vendor/ 下的文件名（如
- * '/dsh-kit/vendor/xterm.js' → 'xterm.js'）；URL 不在表里就 404，天然挡路径穿越。
+ * '/dsh-wangshu/vendor/xterm.js' → 'xterm.js'）；URL 不在表里就 404，天然挡路径穿越。
  */
 export function registerVendorFiles(webServer, files) {
     const disposers = [];
@@ -72,7 +72,7 @@ export function registerVendorSubdir(webServer, urlPrefix, diskDir) {
         kind: 'prefix',
         path: urlPrefix,
         handler: (req, res) => {
-            const pathname = new URL(req.url ?? '/', 'http://dsh-kit.local').pathname;
+            const pathname = new URL(req.url ?? '/', 'http://dsh-wangshu.local').pathname;
             const rest = pathname.slice(urlPrefix.length + 1);
             if (!one.test(rest)) {
                 notFound(res);

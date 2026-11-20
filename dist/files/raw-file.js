@@ -1,4 +1,4 @@
-// 原始字节端点（/dsh-kit/raw）的 content-type 白名单。
+// 原始字节端点（/dsh-wangshu/raw）的 content-type 白名单。
 // 白名单按扩展名收口——只放行明确支持的 inline 渲染类型（现仅 vault 图片），
 // 避免把任意二进制按 octet-stream 喂给浏览器（触发下载）；新增 inline 渲染
 // 格式时在此扩表。
@@ -7,7 +7,7 @@
 /** 可 inline 渲染的类型：扩展名 → content-type（pdf/office 不在表内，
  *  下载模式不受此表限制） */
 const RAW_TYPES = new Map([
-    // 图片（vault 笔记粘贴截图/插图走 /dsh-kit/raw 渲染）
+    // 图片（vault 笔记粘贴截图/插图走 /dsh-wangshu/raw 渲染）
     ['png', 'image/png'],
     ['jpg', 'image/jpeg'],
     ['jpeg', 'image/jpeg'],

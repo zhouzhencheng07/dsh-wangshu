@@ -1,4 +1,4 @@
-// 渲染级验证：桩掉 react hooks，直接函数调用 dsh-kit 的组件
+// 渲染级验证：桩掉 react hooks，直接函数调用 dsh-wangshu 的组件
 // （KitSurfaces/TreeRowMenu 等根侧渲染体），跑完整渲染体。
 // 组件各自的分册在 tests\render-check-<组件>.cjs（comps = dockExports.<组件>）。
 // 知识库/日程的行为级检查留在本文件：harness 末尾把 exports.vault 并进 comps，
@@ -7,7 +7,7 @@
 // ⚠️ 盲区：桩不会重渲染（effect 不执行、state 不更新），依赖 effect 产出后才走到的
 // 渲染分支（如 FileTreePanel 的 entries.map 行）覆盖不到——残留变量藏在那种行里会
 // 逃过本检查。可疑残留请配合全文扫描排查。
-// 用法：从 dsh-kit 根运行：node tests\render-check.cjs client\bundle.js
+// 用法：从 dsh-wangshu 根运行：node tests\render-check.cjs client\bundle.js
 const fs = require("node:fs");
 // 归一化行尾：git autocrlf 检出后文件可能是 CRLF，切片标记按 LF 匹配才稳定
 const src = fs.readFileSync(process.argv[2], "utf8").replace(/\r\n/g, "\n");
@@ -224,8 +224,8 @@ let copiedRel = null;
   // 接线哨兵：整条挂 sidebar.footer.action，根形态那枚在 apply 期登记
   check(
     "root apply 把整条挂上 sidebar.footer.action、并登记「会话列表」那枚",
-    src.includes('ctx.slots.register({ name: "sidebar.footer.action", id: "dsh-kit-sideforms", order: 10 }, SideFormBar)') &&
-      src.includes('dock.registerSideForm({ id: "dsh-kit-sessions", order: 10, Component: SideFormSessions })'),
+    src.includes('ctx.slots.register({ name: "sidebar.footer.action", id: "dsh-wangshu-sideforms", order: 10 }, SideFormBar)') &&
+      src.includes('dock.registerSideForm({ id: "dsh-wangshu-sessions", order: 10, Component: SideFormSessions })'),
   );
 }
 
@@ -250,9 +250,9 @@ check(
   "对话区不再挂知识库 · 日程入口钮（唯一入口是快捷键）",
   !src.includes("function VaultEntry") &&
     !src.includes("exports.VaultEntry") &&
-    !src.includes('id: "dsh-kit-vault", order: 12') &&
+    !src.includes('id: "dsh-wangshu-vault", order: 12') &&
     !src.includes("ScheduleEntry") &&
-    !src.includes('dsh-kit-schedule", order: 13'),
+    !src.includes('dsh-wangshu-schedule", order: 13'),
 );
 check("知识库 · 日程的快捷键说明用组件行名", /scVault: "知识库 · 日程"/.test(src) && /scVault: "Vault · Schedule"/.test(src));
 // 7.0) 侧栏那格单槽互斥（sidebarViewPatch 纯补丁语义；入口按钮交互在 files 组件直测）
@@ -860,8 +860,8 @@ let vaultFetchPrev = null;
   );
   check(
     "知识集动作走 refs 端点：set 全量回写清单 / unmark 删标记（源码哨兵）",
-    src.includes('vaultOp("/dsh-kit/vault/refs", { op: "set", dir: dirPath, refs })') &&
-      src.includes('vaultOp("/dsh-kit/vault/refs", { op: "unmark", dir: entry.path })') &&
+    src.includes('vaultOp("/dsh-wangshu/vault/refs", { op: "set", dir: dirPath, refs })') &&
+      src.includes('vaultOp("/dsh-wangshu/vault/refs", { op: "unmark", dir: entry.path })') &&
       src.includes("const addRef = (dirPath, rel) => {") &&
       src.includes("const removeRef = (dirPath, rel) => {") &&
       src.includes("const markFolderKs = (dirPath) => {") &&
@@ -1005,7 +1005,7 @@ let vaultFetchPrev = null;
     );
     check(
       "新建走宿主端点（源码哨兵：create + kind 由 \\ 前缀决定，资料库那一支只建目录）",
-      src.includes('vaultOp("/dsh-kit/vault/create", { dir, name, kind: wantDir ? "dir" : "page" })') &&
+      src.includes('vaultOp("/dsh-wangshu/vault/create", { dir, name, kind: wantDir ? "dir" : "page" })') &&
         src.includes("const wantDir = raw.startsWith(\"\\\\\") || isLibPath(createAt);"),
     );
     const createPlus = callLog.find((c) => c[2] && c[2].className === "dshk-vault-treerow" && c[2].title === "D:/v/wiki");
@@ -1030,7 +1030,7 @@ let vaultFetchPrev = null;
     );
     check(
       "改名走宿主端点（源码哨兵：rename 提交后搬树键 + 把开着的那张页签换到新地址）",
-      src.includes('vaultOp("/dsh-kit/vault/rename", { path: entry.path, name })') &&
+      src.includes('vaultOp("/dsh-wangshu/vault/rename", { path: entry.path, name })') &&
         src.includes("vaultTabsRetarget(entry.path, res.path, entry.dir === true);") &&
         src.includes("retargetTree(entry.path, res.path, entry.dir === true);"),
     );
@@ -1054,8 +1054,8 @@ let vaultFetchPrev = null;
     );
     check(
       "移动与删除走宿主端点（源码哨兵）",
-      src.includes('vaultOp("/dsh-kit/vault/move", { path: d.entry.path, dest: d.dest, conflict: d.conflict })') &&
-        src.includes('vaultOp("/dsh-kit/vault/delete", { paths: [d.entry.path] })'),
+      src.includes('vaultOp("/dsh-wangshu/vault/move", { path: d.entry.path, dest: d.dest, conflict: d.conflict })') &&
+        src.includes('vaultOp("/dsh-wangshu/vault/delete", { paths: [d.entry.path] })'),
     );
     // 导入：资料库那一支给「导入文件…」（多选、不限格式），笔记侧给「导入 md 文件…」
     const importErr = renderVault({
@@ -1095,7 +1095,7 @@ let vaultFetchPrev = null;
     );
     check(
       "导入走宿主端点（源码哨兵：两条来源同一端点，上传带 dataBase64）",
-      src.includes('vaultOp("/dsh-kit/vault/import", payload)') &&
+      src.includes('vaultOp("/dsh-wangshu/vault/import", payload)') &&
         src.includes("dataBase64: await fileToBase64(job.file)") &&
         src.includes('accept: dialog.lib ? undefined : ".md,.markdown"'),
     );
@@ -1153,7 +1153,7 @@ let vaultFetchPrev = null;
   if (refreshBtn) refreshBtn.props.onClick();
   // fetch 桩同步记账：loadIndex 的请求在 onClick 返回前就已发出；目录树重拉排在
   // 微任务里，桩要留到收尾结算后（提前还原会让它打真网络，落进 fetchDir 的静默失败）
-  check("↻ 点击立即重拉索引（/dsh-kit/vault/index）", fetched.some((u) => u.includes("/dsh-kit/vault/index")));
+  check("↻ 点击立即重拉索引（/dsh-wangshu/vault/index）", fetched.some((u) => u.includes("/dsh-wangshu/vault/index")));
   comps.vaultSideSlot.set(null);
   comps.setKitUi({ vaultSideOpen: false, vaultSideTab: "vault", vaultOpen: false, activeFeature: null });
   stateSeq = 0;
@@ -1164,14 +1164,14 @@ let vaultFetchPrev = null;
 // Project / R / 本机（DESKTOP-…）这类带大写的目录永远对不上——行上没箭头，
 // 点了也不展开，整棵子树都看不见
 {
-  const V = "D:\\agent\\.dsh\\dsh-kit\\vault";
+  const V = "D:\\agent\\.dsh\\wangshu\\vault";
   check(
     "relUnder：Windows 折叠大小写只用于比较，返回段保留原样",
-    comps.relUnder(V, "D:/AGENT/.dsh/DSH-KIT/VAULT/Project") === "Project" &&
+    comps.relUnder(V, "D:/AGENT/.dsh/WANGSHU/VAULT/Project") === "Project" &&
       comps.relUnder(V, V + "\\本机（DESKTOP-6EMI7H3）") === "本机（DESKTOP-6EMI7H3）" &&
-      comps.relUnder(V, V + "\\Project\\dsh-kit") === "Project/dsh-kit" &&
+      comps.relUnder(V, V + "\\Project\\dsh-wangshu") === "Project/dsh-wangshu" &&
       comps.relUnder(V, V) === "" &&
-      comps.relUnder(V, "D:\\agent\\.dsh\\dsh-kit\\other") === null,
+      comps.relUnder(V, "D:\\agent\\.dsh\\dsh-wangshu\\other") === null,
   );
   check(
     "relUnder：POSIX 根仍大小写敏感（Linux 上同名不同大小写是两个目录）",
@@ -1507,9 +1507,9 @@ let vaultFetchPrev = null;
 // 切走即存；冲突条只在出冲突后出现，两钮给「覆盖盘上 / 读盘上的」
 {
   check("RTE 恒为可编辑态（editable:true，无只读二分）", /editable: true/.test(src) && !/editable: false/.test(src));
-  check("保存走 POST /dsh-kit/vault/write 且带 baseMtime CAS", src.includes('kitJson("/dsh-kit/vault/write"') && src.includes("baseMtime: base"));
+  check("保存走 POST /dsh-wangshu/vault/write 且带 baseMtime CAS", src.includes('kitJson("/dsh-wangshu/vault/write"') && src.includes("baseMtime: base"));
   check("CAS 三态都接住了：ok 清脏 / conflict 出条 / missing 丢弃（不写活旧页）", src.includes('body.missing === true') && src.includes('body.modified === true') && src.includes('setConflict({ diskMtime:'));
-  check("粘贴图片走 /dsh-kit/vault/attach（内容寻址入库后插图片节点）", src.includes('"/dsh-kit/vault/attach"') && src.includes("rteRef.current?.insertImage(body.rel"));
+  check("粘贴图片走 /dsh-wangshu/vault/attach（内容寻址入库后插图片节点）", src.includes('"/dsh-wangshu/vault/attach"') && src.includes("rteRef.current?.insertImage(body.rel"));
   check("自动保存 2s 防抖 + Ctrl+S 立即存 + 卸载/切走保底", /saveTimer = setTimeout\(flushSave, 2000\)/.test(src) && /e\.key === "s" \|\| e\.key === "S"/.test(src) && /卸载前尽力落盘/.test(src) && /rteCtlRef\.current\.flush\(\)/.test(src));
   check("冲突条两钮：覆盖盘上 / 读盘上的", src.includes('saveEditRef.current.overwrite()') && src.includes('saveEditRef.current.reload()'));
   check("编辑面不静默覆盖也不碰 git（写端点只回 modified，由人裁决）", !/stash|commitVault/.test(src));
@@ -1520,7 +1520,7 @@ let vaultFetchPrev = null;
   check("斜杠菜单分组：图表（表格/流程图）+ 附件（图片），特殊块末尾双链", src.includes('labelKey: "vmenuGChart"') && src.includes('labelKey: "vmenuGAttach"') && src.includes('key: "wiki"') && src.includes('key: "mermaid"') && src.includes('key: "image"'));
   check("表格不再列 1×2~5×5 固定档（点开自己填行列，默认 3×3 带表头）", !src.includes("vmenuTable1") && !src.includes("vmenuTable5") && src.includes("setTDlg({ rows: 3, cols: 3 })") && src.includes("insertTable(rows, cols)"));
   check("H5/H6 不进菜单（正文里已有的照常渲染）", !src.includes('key: "h5"') && !src.includes('key: "h6"') && src.includes("/^h[1-6]$/.test(key)"));
-  check("流程图真出图：编辑器懒加载钩子 + 知识库行的白名单放行 mermaid", src.includes("/dsh-kit/vendor/mermaid.min.js") && src.includes("window.__dshkMermaidLoad") && src.includes("window.DshRTE.mermaidReady()") && fs.readFileSync(__dirname + "/../src/vault/index.ts", "utf8").includes("['/dsh-kit/vendor/mermaid.min.js', 'mermaid.min.js']") && fs.existsSync(__dirname + "/../client/vendor/mermaid.min.js"));
+  check("流程图真出图：编辑器懒加载钩子 + 知识库行的白名单放行 mermaid", src.includes("/dsh-wangshu/vendor/mermaid.min.js") && src.includes("window.__dshkMermaidLoad") && src.includes("window.DshRTE.mermaidReady()") && fs.readFileSync(__dirname + "/../src/vault/index.ts", "utf8").includes("['/dsh-wangshu/vendor/mermaid.min.js', 'mermaid.min.js']") && fs.existsSync(__dirname + "/../client/vendor/mermaid.min.js"));
   check("双链选择框：一次搜出本集资料 + 页面与标题、资料先问页码、重名时插 rel", src.includes("const pickSplit") && src.includes("const pickRowsOf") && src.includes("pickInsert") && src.includes("pickConfirmMaterial") && src.includes('pickSplit(pick?.query).alias') && src.includes('p.kind === "material" ?') && src.includes("const dup = (pagesRef.current ?? []).some") && src.includes("const pickConfirmMaterial = () => {"));
   check("双链不监听 [[ 输入（字面文本要打得出来），建链只走菜单", !/__dshkWikiTrigger|wiki-link-trigger/.test(src));
   check("图片入口走系统文件选择器，与粘贴同一条入库管线", src.includes("input.accept = \"image/*\"") && src.includes("void attachAndInsert(files)") && src.includes("void attachAndInsert(files);"));
@@ -1679,7 +1679,7 @@ let vaultFetchPrev = null;
       src.includes('className: "dshk-sched-alldaycheck"') &&
       src.includes('className: "dshk-sched-alldaytitle"') &&
       src.includes("const completeTodo = (o) =>") &&
-      src.includes('"/dsh-kit/vault/study-complete"') &&
+      src.includes('"/dsh-wangshu/vault/study-complete"') &&
       src.includes('className: "dshk-sched-alldayadd"') &&
       src.includes("initialDue: newTodoDate") &&
       src.includes('className: "dshk-sched-allday is-more"') &&
@@ -1757,7 +1757,7 @@ check("KitSurfaces 带cwd渲染无异常（根壳不渲染面板本体）", out 
 
 
 // 10c-10f）429 续跑器（G）/ 会话通知（N）/ 收尾判定 / 压缩完成（C）判定核心
-//       在 dsh-kit/monitor 组件——检查在 tests/render-check-monitor.cjs
+//       在 dsh-wangshu/monitor 组件——检查在 tests/render-check-monitor.cjs
 
 
 
@@ -1779,7 +1779,7 @@ check("KitSurfaces 带cwd渲染无异常（根壳不渲染面板本体）", out 
 
 // 9) 插件配置（声明式模型）：载体行（name 等于包名，浏览器半边的挂载点）不导出 Config、
 //    也不物化任何端点——vendor 静态资源分给用它的组件行；每个组件
-//    行自己管自己的字段（手机访问在 dsh-kit/phone，字段与探针都在 src/phone/index.ts）。
+//    行自己管自己的字段（手机访问在 dsh-wangshu/phone，字段与探针都在 src/phone/index.ts）。
 //    这里钉住「载体行没有能力、没有配置」与「root client 不持有配置表」。
 {
   const hostSrc = fs.readFileSync(__dirname + "/../src/index.ts", "utf8");
@@ -1788,7 +1788,7 @@ check("KitSurfaces 带cwd渲染无异常（根壳不渲染面板本体）", out 
     "载体行不物化任何端点 / 无 Config（vendor 不挂它）",
     !/export const Config/.test(hostCode) && !hostCode.includes("volatile") &&
       !hostCode.includes("webServer") && !hostCode.includes("register") &&
-      !hostCode.includes("/dsh-kit/"),
+      !hostCode.includes("/dsh-wangshu/"),
   );
   check(
     "root client 不再持有配置默认表 / 字段表 / 配置页（随各组件迁走）",
@@ -1821,11 +1821,11 @@ check("KitSurfaces 带cwd渲染无异常（根壳不渲染面板本体）", out 
   const expected = ["files", "chat", "vault", "terminal", "phone", "monitor", "search"];
   check(
     "patch 形状：一行载体行（name = 包名、id 写数字字面量 → 不当作可管理组件：不进组件列表、没有行开关；浏览器半边挂在它上面，放行序末尾不跟功能行混在一起）+ 七个组件行 id/name 齐备且顺序 = 描述顺序（组件行 id 必须显式且稳定：匿名行的随机 id 每次 profile 写入都会换 → 该行重挂、整包客户端重载）",
-    carrier.length === 1 && carrier[0].name === "dsh-kit" && /^-?\d+$/.test(carrier[0].id) &&
+    carrier.length === 1 && carrier[0].name === "dsh-wangshu" && /^-?\d+$/.test(carrier[0].id) &&
       rows[rows.length - 1] === carrier[0] &&
       rows.length === expected.length + 1 &&
       JSON.stringify(comps.map((row) => row.id)) === JSON.stringify(expected) &&
-      comps.every((row) => row.name === "dsh-kit/" + row.id),
+      comps.every((row) => row.name === "dsh-wangshu/" + row.id),
   );
   check(
     "包根可解析（载体行要 import 得到：main / 根 exports 指向 dist/index.js）",
@@ -1850,14 +1850,14 @@ check(
   "过时文案已更新（无侧栏底部钮现行说法/默认 5/schedIdxTitle）",
   !src.includes("侧栏底部「") && !src.includes("默认 5") && !src.includes("schedIdxTitle"),
 );
-// OpenCode Go 会话头归 dsh-kit/monitor 组件：开关 sessionHeaderEnabled 进本行配置页
+// OpenCode Go 会话头归 dsh-wangshu/monitor 组件：开关 sessionHeaderEnabled 进本行配置页
 // （默认开）；旧的静态头写入端点与旧设置卡提示行都不得复现——机制由
 // test-opencode-session.mjs 覆盖
 {
   const monSrc = fs.readFileSync(__dirname + "/../src/monitor/index.ts", "utf8");
   check(
     "OpenCode Go 会话头归 monitor 组件且可开关（旧写入端点与旧设置卡键不复现）",
-    !src.includes("cfgOpenCodeSession") && !src.includes('"/dsh-kit/opencode-session"') &&
+    !src.includes("cfgOpenCodeSession") && !src.includes('"/dsh-wangshu/opencode-session"') &&
       /sessionHeaderEnabled: z\.boolean\(\)\.default\(true\)\.volatile\(\),/.test(monSrc) &&
       src.includes('{ key: "sessionHeaderEnabled", type: "bool", group: "kcfgGroupRequest"') &&
       src.includes("kcfgSessionHeaderHint"),
@@ -1869,7 +1869,7 @@ check(
 check(
   "工作区文件编辑预览面已退役（CM/编辑区/write 端点/沙箱库全链移除）",
   !src.includes("dshk-cm-host") && !src.includes("dshk-editarea") && !src.includes("setCmHost") &&
-    !src.includes("window.CM6") && !src.includes('"/dsh-kit/write"') && !src.includes("/dsh-kit/vendor/pdf.min.js") &&
+    !src.includes("window.CM6") && !src.includes('"/dsh-wangshu/write"') && !src.includes("/dsh-wangshu/vendor/pdf.min.js") &&
     !src.includes("mountPdfViewer") && !src.includes("dshk-sheetwrap") && !src.includes("dshk-docwrap"),
 );
 
@@ -1893,7 +1893,7 @@ check(
     !src.includes("dshk-cfgp-kbd") && !src.includes("function toggleSidebar"),
 );
 // 文件树没有「上传文件到当前目录」：按钮/隐藏 input/上传逻辑/i18n 键都不得存在；
-// vault 附件上传仍走 /dsh-kit/upload（端点保留）
+// vault 附件上传仍走 /dsh-wangshu/upload（端点保留）
 check(
   "文件树上没有上传按钮与逻辑（vault 附件上传不受影响）",
   !src.includes("UploadIcon") && !src.includes("treeUpload") && !src.includes("uploadDone") && !src.includes("uploadFail"),
@@ -1911,12 +1911,12 @@ check("渲染体实际产出元素", callLog.length > 0);
 // 收尾结算放进 setTimeout：6.9c 里 ↻ 刷新的目录树重拉排在 await loadIndex()
 // 之后的微任务里，同步段看不到；微任务先于定时器清空，此刻断言才成立
 setTimeout(async () => {
-  const treeHits = vaultRefreshFetched.filter((u) => u.includes("/dsh-kit/tree"));
+  const treeHits = vaultRefreshFetched.filter((u) => u.includes("/dsh-wangshu/tree"));
   check("↻ 刷新连带重拉每个已展开目录（6.9c 预置了 3 个）", treeHits.length === 3);
   // kit 端点包装（kitGetJson/kitPostJson/kitJson）：回包约定收在一处后的行为契约。
   // 2xx 且形状断言通过才算成功，失败带宿主 error 原文与 status——写文件的 409
   // 冲突分流就靠 status/body，这里把契约钉死
-  // kit 端点包装契约直调（业务函数在 dsh-kit/files 组件，契约本身收在 kitBase
+  // kit 端点包装契约直调（业务函数在 dsh-wangshu/files 组件，契约本身收在 kitBase
   // 的三件套里，直调覆盖同一行为）
   {
     const calls = [];
@@ -1930,26 +1930,26 @@ setTimeout(async () => {
     };
     const shape = (b) => Array.isArray(b.entries);
     scripted = { status: 200, body: { entries: [{ name: "a" }] } };
-    const okBody = await comps.kitGetJson("/dsh-kit/tree?path=%2Fw", undefined, shape);
-    check("kitGetJson：2xx + 形状通过 → 回包直通", okBody.entries.length === 1 && calls[0].url === "/dsh-kit/tree?path=%2Fw");
+    const okBody = await comps.kitGetJson("/dsh-wangshu/tree?path=%2Fw", undefined, shape);
+    check("kitGetJson：2xx + 形状通过 → 回包直通", okBody.entries.length === 1 && calls[0].url === "/dsh-wangshu/tree?path=%2Fw");
     scripted = { status: 200, body: { nope: 1 } };
-    const shapeErr = await rejection(comps.kitGetJson("/dsh-kit/tree?path=%2Fw", undefined, shape));
+    const shapeErr = await rejection(comps.kitGetJson("/dsh-wangshu/tree?path=%2Fw", undefined, shape));
     check("kitGetJson：形状不符 → 抛错（半个回包不当成功）", !!shapeErr && shapeErr.message === "HTTP 200");
     scripted = { status: 500, body: { error: "boom" } };
-    const netErr = await rejection(comps.kitGetJson("/dsh-kit/any", undefined, shape));
+    const netErr = await rejection(comps.kitGetJson("/dsh-wangshu/any", undefined, shape));
     check("kitGetJson：非 2xx → 抛错带宿主 error 与 status", !!netErr && netErr.message === "boom" && netErr.status === 500);
     scripted = { status: 200, body: { ok: false, error: "nope" } };
-    const okErr = await rejection(comps.kitPostJson("/dsh-kit/any", { cwd: "C:/w" }, (b) => b.ok === true));
+    const okErr = await rejection(comps.kitPostJson("/dsh-wangshu/any", { cwd: "C:/w" }, (b) => b.ok === true));
     check("kitPostJson：回包显式 ok:false → 也算失败", !!okErr && okErr.message === "nope");
     scripted = { status: 200, body: { ok: true, created: true } };
-    const init = await comps.kitPostJson("/dsh-kit/any", { cwd: "C:/w" }, (b) => b.created === true);
+    const init = await comps.kitPostJson("/dsh-wangshu/any", { cwd: "C:/w" }, (b) => b.created === true);
     const last = calls[calls.length - 1];
     check(
       "kitPostJson：POST + JSON 头 + body 原样发出",
       init.created === true && last.opts.method === "POST" && last.opts.headers["content-type"] === "application/json" && JSON.parse(last.opts.body).cwd === "C:/w",
     );
     scripted = { status: 409, body: { error: "conflict", mtimeMs: 7 } };
-    const conflict = await rejection(comps.kitPostJson("/dsh-kit/write", {}));
+    const conflict = await rejection(comps.kitPostJson("/dsh-wangshu/write", {}));
     check("kitPostJson：失败带 status/body（写文件按 409 进冲突条）", !!conflict && conflict.status === 409 && conflict.body.mtimeMs === 7);
   }
   // 日程写路径（面板浮层 + 悬浮球）：渲染体出表单，写请求的 op 载荷逐个钉住。
@@ -1990,7 +1990,7 @@ setTimeout(async () => {
     const created = await pressPrimary();
     check(
       "待办保存：op=create，落 title/due，start/end/recurrence 清成 null（成对由宿主校验）",
-      created.url === "/dsh-kit/schedule/op" && created.body.op === "create" && created.body.input.title === "写周报" &&
+      created.url === "/dsh-wangshu/schedule/op" && created.body.op === "create" && created.body.input.title === "写周报" &&
         created.body.input.due === "2026-10-05" && created.body.input.start === null &&
         created.body.input.end === null && created.body.input.recurrence === null,
     );
@@ -2063,7 +2063,7 @@ setTimeout(async () => {
       const revDone = calls[calls.length - 1];
       check(
         "清单行勾选（复习待办）= POST study-complete（推进学习记录，不发 op=done）",
-        !!revCheck && !!revDone && revDone.url === "/dsh-kit/vault/study-complete" && revDone.body.rel === "数学/函数",
+        !!revCheck && !!revDone && revDone.url === "/dsh-wangshu/vault/study-complete" && revDone.body.rel === "数学/函数",
       );
       // 完成后出「第 N 次复习 · 下次 …」提示（带调整下次 / 结束学习两个快动作）
       stateSeq = 0;
@@ -2126,7 +2126,7 @@ setTimeout(async () => {
       const revAdvance = calls[calls.length - 1];
       check(
         "「完成本次复习」走 study-complete（不写 completedAt）",
-        !!revAdvance && revAdvance.url === "/dsh-kit/vault/study-complete" && revAdvance.body.rel === "数学/函数",
+        !!revAdvance && revAdvance.url === "/dsh-wangshu/vault/study-complete" && revAdvance.body.rel === "数学/函数",
       );
       // 已完成的那条只给 关闭 / 打开页面
       stateSeq = 0;

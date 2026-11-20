@@ -1,4 +1,4 @@
-export declare const name = "dsh-kit/phone";
+export declare const name = "dsh-wangshu/phone";
 interface KitCtx {
     inject(deps: string[], cb: (svc: any) => void): void;
     effect?(fn: () => void | (() => void), label?: string): void;

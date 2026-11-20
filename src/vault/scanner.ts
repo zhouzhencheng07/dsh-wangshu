@@ -1,4 +1,4 @@
-// dsh-kit/vault 组件的知识库半边 —— 扫描索引 / wikilink 解析 / 标题提取 / 内容搜索。**只读**：
+// dsh-wangshu/vault 组件的知识库半边 —— 扫描索引 / wikilink 解析 / 标题提取 / 内容搜索。**只读**：
 // 页面由 agent 的文件工具或外部编辑器写——「文件即接口」，插件只管把这棵目录读出来。
 // 数据契约：vault 是配置页配置的一个绝对目录（vaultRoot，留空用默认根
 // defaultVaultRoot()），其内 md 文件是页面（attachments/ 与点前缀目录除外），

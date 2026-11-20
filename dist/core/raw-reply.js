@@ -1,4 +1,4 @@
-// 原始字节响应（/dsh-kit/raw 与 /dsh-kit/vault/file 共用）：响应头策略 + Range +
+// 原始字节响应（/dsh-wangshu/raw 与 /dsh-wangshu/vault/file 共用）：响应头策略 + Range +
 // 流式发送。路径准入由各自的调用方做（可读根集合 / 库内判定），本文件只管
 // 「怎么把字节发出去」——安全响应头是一份契约，两处各写一遍必然漂。
 //

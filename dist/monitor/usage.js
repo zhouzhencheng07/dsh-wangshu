@@ -1,14 +1,14 @@
-// dsh-kit 用量与余额宿主半边
+// dsh-wangshu 用量与余额宿主半边
 //
 // 从模型配置发现 provider（llm-pi-ai entry 配置经宿主 configEditor 读，providers.<id>.apiKeyEnv
 // 是凭证引用名），经 credentials 服务按引用解析 key（每请求现读，改配置即生效、
 // key 不出宿主进程），聚合两家上游给浏览器芯片：
 //   deepseek  GET {base|api.deepseek.com}/user/balance    Bearer        余额（币种/总额/赠送/充值）
 //   opencode  GET {provider.baseURL}/usage                Bearer        rolling(5h)/weekly/monthly 百分比+重置
-// opencode 的配额上游是非官方承诺的契约（失效只挂对应卡，见知识库「dsh-kit 用量」页）。
+// opencode 的配额上游是非官方承诺的契约（失效只挂对应卡，见知识库「dsh-wangshu 用量」页）。
 //
 // 端点（同源校验同 index.ts；webserver 默认只绑 loopback）：
-//   GET /dsh-kit/usage[?fresh=1] → { providers:{deepseek?|opencode?}, at }
+//   GET /dsh-wangshu/usage[?fresh=1] → { providers:{deepseek?|opencode?}, at }
 //   卡按配置出现：模型配置里没配对应 provider（且无 DEEPSEEK_API_KEY 引用）就不出卡。
 //   usageEnabled 总开关关闭时 403 usage-disabled（前端入口同步隐藏）。
 //
@@ -103,7 +103,7 @@ async function fetchUpstream(d, key) {
 function pathOf(d) {
     return d.kind === 'deepseek' ? '/user/balance' : '/usage';
 }
-/** 注册 /dsh-kit/usage；返回注销函数（插件卸载时撤路由） */
+/** 注册 /dsh-wangshu/usage；返回注销函数（插件卸载时撤路由） */
 export function registerUsageRoutes(deps) {
     const cache = new Map();
     /** 单飞按「家 + 配置 tag」分键：tag 不同的并发请求不能互相顶包（配置热改期间） */
@@ -139,7 +139,7 @@ export function registerUsageRoutes(deps) {
     };
     return deps.webServer.register({
         kind: 'exact',
-        path: '/dsh-kit/usage',
+        path: '/dsh-wangshu/usage',
         handler: (req, res) => {
             const json = (code, obj) => {
                 res.writeHead(code, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
@@ -157,7 +157,7 @@ export function registerUsageRoutes(deps) {
                 json(403, { error: 'usage-disabled' });
                 return;
             }
-            const fresh = new URL(req.url ?? '/', 'http://dsh-kit.local').searchParams.has('fresh');
+            const fresh = new URL(req.url ?? '/', 'http://dsh-wangshu.local').searchParams.has('fresh');
             void (async () => {
                 const discovered = await discoverProviders(deps);
                 const providers = {};

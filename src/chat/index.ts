@@ -1,8 +1,8 @@
-// dsh-kit/chat 组件（宿主半边入口）——对话小窗
+// dsh-wangshu/chat 组件（宿主半边入口）——对话小窗
 //
 // 能力本体在 client/bundle.js 的 chatModule（贴边常驻把手 + 浮窗外壳 + 会话绑定）；
 // 本模块只做两件事：暴露行可达性探针，以及本组件的细粒度设置。
-//   GET /dsh-kit-chat/config —— 生效配置快照（client 门控与可达性探针：404 = 行关闭）
+//   GET /dsh-wangshu-chat/config —— 生效配置快照（client 门控与可达性探针：404 = 行关闭）
 // 行开关（插件页组件行 switch）= 总开关：行禁用 → 本模块不物化 → 端点 404 → client
 // 半边整体不注册（把手与浮窗都不出现）。
 //
@@ -29,7 +29,7 @@ interface KitWebCtx {
   effect(fn: () => void | (() => void), label?: string): void
 }
 
-export const name = 'dsh-kit/chat'
+export const name = 'dsh-wangshu/chat'
 
 // ── 组件设置 schema（声明式模型）──
 // **字段必须 .volatile()**（SettingsForms 只投影 volatile 字段进表单）；volatile 写入
@@ -66,7 +66,7 @@ export async function apply(ctx: KitCtx, config: KitSettings = {}): Promise<void
     // 因残留路由重复注册失败，行关闭期间探针也仍 200、client 门控失效
     webCtx.effect(() => webCtx.webServer.register({
       kind: 'exact',
-      path: '/dsh-kit-chat/config',
+      path: '/dsh-wangshu-chat/config',
       handler: (req, res) => {
         const json = (code: number, obj: unknown) => {
           res.writeHead(code, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' })
@@ -82,6 +82,6 @@ export async function apply(ctx: KitCtx, config: KitSettings = {}): Promise<void
         }
         json(200, readSettings())
       },
-    }), 'dsh-kit/chat: config endpoint')
+    }), 'dsh-wangshu/chat: config endpoint')
   })
 }

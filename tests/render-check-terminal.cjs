@@ -1,7 +1,7 @@
-// dsh-kit-terminal 浏览器半边渲染级检查：加载真实 dock bundle（root client）+ terminal
+// dsh-wangshu-terminal 浏览器半边渲染级检查：加载真实 dock bundle（root client）+ terminal
 // bundle，直测输入行入口（角标/按压态/官方气泡）、底部坞（标签条/头部动作/pane 状态
 // 文案）、图标描边风格、配置门控与官方「快捷键」服务注册。
-// 用法（dsh-kit 根）：node tests\render-check-terminal.cjs
+// 用法（dsh-wangshu 根）：node tests\render-check-terminal.cjs
 const fs = require("node:fs");
 
 let failed = 0;
@@ -116,7 +116,7 @@ check(
 {
   dockExports.setKitUi({ terminals: [], activeTermId: null, termDockOpen: false });
   let out = comps.TerminalEntry({});
-  check("TerminalEntry 渲染无异常且悬停走官方气泡（命令 id 对上快捷键注册）", !!out && out.type === dockExports.KitTip && out.props.command === "dsh-kit.terminal.toggle" && out.props.side === "top" && typeof out.props.label === "string");
+  check("TerminalEntry 渲染无异常且悬停走官方气泡（命令 id 对上快捷键注册）", !!out && out.type === dockExports.KitTip && out.props.command === "dsh-wangshu.terminal.toggle" && out.props.side === "top" && typeof out.props.label === "string");
   const btn = out.props.children;
   check("无会话：无数量角标、未按压", btn.props.className === "dshk-btn dshk-enbtn" && btn.props["aria-pressed"] === false && btn.props.children[1] === null);
   dockExports.setKitUi({ terminals: [comps.makeTerm("s1", "C:/x"), comps.makeTerm("s1", "C:/x")], activeTermId: null, termDockOpen: true });
@@ -178,17 +178,17 @@ check(
 {
   const termSrc = fs.readFileSync(__dirname + "/../client/bundle.js", "utf8");
   const termHost = fs.readFileSync(__dirname + "/../src/terminal/index.ts", "utf8");
-  check("xterm 三个 URL 都在本包加载（xterm.js/addon-fit.js/xterm.css）", termSrc.includes("/dsh-kit/vendor/xterm.js") && termSrc.includes("/dsh-kit/vendor/addon-fit.js") && termSrc.includes("/dsh-kit/vendor/xterm.css"));
+  check("xterm 三个 URL 都在本包加载（xterm.js/addon-fit.js/xterm.css）", termSrc.includes("/dsh-wangshu/vendor/xterm.js") && termSrc.includes("/dsh-wangshu/vendor/addon-fit.js") && termSrc.includes("/dsh-wangshu/vendor/xterm.css"));
   check(
     "xterm 的静态路由归终端行注册（registerVendorFiles + 三个文件，且不夹带别家的资源）",
     termHost.includes("registerVendorFiles") &&
-      ["/dsh-kit/vendor/xterm.js", "/dsh-kit/vendor/addon-fit.js", "/dsh-kit/vendor/xterm.css"].every((u) => termHost.includes(`['${u}',`)) &&
+      ["/dsh-wangshu/vendor/xterm.js", "/dsh-wangshu/vendor/addon-fit.js", "/dsh-wangshu/vendor/xterm.css"].every((u) => termHost.includes(`['${u}',`)) &&
       !/qrcode|richeditor|mermaid|katex|pdf\./.test(termHost),
   );
   check("坞样式随组件自带（.dshk-dock 与让位规则在本包 CSS，不在根包）", termSrc.includes(".dshk-dock{position:fixed") && termSrc.includes("body.dshk-open [class*=\"_centerCol\"]"));
   check("入口钮的悬停不再自带原生 title（全走官方气泡）", !/dshk-enbtn"[\s\S]{0,120}?\n\s*title:/.test(termSrc));
   const hostSrc = fs.readFileSync(__dirname + "/../src/terminal/index.ts", "utf8");
-  check("终端无独立配置字段（行开关 = 唯一开关，宿主只剩可达性探针）", !hostSrc.includes("terminalEnabled") && hostSrc.includes("/dsh-kit-terminal/config") && !hostSrc.includes("fileTreeEnabled"));
+  check("终端无独立配置字段（行开关 = 唯一开关，宿主只剩可达性探针）", !hostSrc.includes("terminalEnabled") && hostSrc.includes("/dsh-wangshu-terminal/config") && !hostSrc.includes("fileTreeEnabled"));
 }
 
 // —— 配置门控 + 官方快捷键注册 + apply 激活契约（配置端点走 fetch 桩）——
@@ -197,7 +197,7 @@ async function checkApply() {
   const seatInjects = [];
   const shortcutCmds = [];
   const injected = [];
-  const scRows = [{ id: "dsh-kit.terminal.toggle", keys: ["Ctrl", "+", "Alt", "+", "`"], aria: "Control+Alt+`" }];
+  const scRows = [{ id: "dsh-wangshu.terminal.toggle", keys: ["Ctrl", "+", "Alt", "+", "`"], aria: "Control+Alt+`" }];
   const ctxStub = {
     inject: (deps, cb) => {
       injected.push(...deps);
@@ -227,13 +227,13 @@ async function checkApply() {
   let applyErr = null;
   try { await comps.apply(ctxStub); await tick(); } catch (e) { applyErr = e; }
   check("terminal apply 激活不抛错", applyErr === null);
-  check("apply 拉自家配置端点喂门控", calls.some((c) => c.url === "/dsh-kit-terminal/config"));
+  check("apply 拉自家配置端点喂门控", calls.some((c) => c.url === "/dsh-wangshu-terminal/config"));
   check("apply 捕获官方终端模型服务与快捷键服务（运行期 inject）", injected.includes("webTerminals") && injected.includes("shortcuts"));
   check(
     "apply 座席：入口 order 14、坞挂 shell.overlay（order 910），无配置页（行开关 = 唯一开关）",
     (() => {
-      const entry = seats.find((s) => s.name === "conversation.input.left" && s.id === "dsh-kit-terminal");
-      const overlay = seats.find((s) => s.name === "shell.overlay" && s.id === "dsh-kit-terminal");
+      const entry = seats.find((s) => s.name === "conversation.input.left" && s.id === "dsh-wangshu-terminal");
+      const overlay = seats.find((s) => s.name === "shell.overlay" && s.id === "dsh-wangshu-terminal");
       return !!entry && entry.order === 14 && !!overlay && overlay.order === 910 && seats.every((s) => s.name !== "plugins.row.config");
     })(),
   );
@@ -244,7 +244,7 @@ async function checkApply() {
   check("行启用：TerminalEntry 正常渲染、浮层宿主空列表返回 null", !!comps.TerminalEntry({}) && comps.TerminalSurfaces({}) === null);
 
   // 快捷键：命令进官方「快捷键」页 + 键帽从宿主目录活读
-  const cmd = shortcutCmds.find((c) => c.id === "dsh-kit.terminal.toggle");
+  const cmd = shortcutCmds.find((c) => c.id === "dsh-wangshu.terminal.toggle");
   check("注册进官方 shortcuts（id/label/别名/page·editable·terminal 三区）", !!cmd && typeof cmd.label === "function" && typeof cmd.label() === "string" && cmd.aliases.includes("terminal") && ["page", "editable", "terminal"].every((r) => cmd.regions.includes(r)) && cmd.modals.length === 0);
   check("默认键 Ctrl+Alt+`（primary+alt 口径，web 与 desktop 各档都在）", cmd.defaults["web:windows"].code === "Backquote" && String(cmd.defaults["web:windows"].modifiers) === "primary,alt" && !!cmd.defaults["web:macos"] && !!cmd.defaults["desktop:linux"]);
   const resolved = cmd.resolve({ region: "page", modal: null });
@@ -252,7 +252,7 @@ async function checkApply() {
   comps.TerminalEntry({ useSessions: () => ({ id: "s1", cwd: "C:/x" }) });
   check("行启用：resolve handled，run 开坞并绑当前会话（按钮渲染期回填）", resolved.status === "handled" && (resolved.run(), dockExports.getKitUi().termDockOpen === true && dockExports.getKitUi().terminals.length === 1 && dockExports.getKitUi().terminals[0].sessionId === "s1"));
   dockExports.setKitUi({ terminals: [], activeTermId: null, termDockOpen: false });
-  const tipEl = dockExports.KitTip({ label: "终端", command: "dsh-kit.terminal.toggle", side: "top", children: jsxRuntimeStub.jsx("button", { type: "button" }) });
+  const tipEl = dockExports.KitTip({ label: "终端", command: "dsh-wangshu.terminal.toggle", side: "top", children: jsxRuntimeStub.jsx("button", { type: "button" }) });
   check("键帽座跨包共享：root 的 KitTip 读得到本组件命令的键位", tipEl.type === primStub.Tooltip && tipEl.props.shortcutKeys.join("") === "Ctrl+Alt+`" && tipEl.props.children.props["aria-keyshortcuts"] === "Control+Alt+`");
 
   // 行禁用（端点 404）：入口与坞都不渲染，命令 blocked 带说明，已有会话被清场

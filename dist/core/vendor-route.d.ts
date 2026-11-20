@@ -8,7 +8,7 @@ export interface KitVendorWebServer {
 }
 /**
  * 逐文件 exact 路由。files = URL 路径 → client/vendor/ 下的文件名（如
- * '/dsh-kit/vendor/xterm.js' → 'xterm.js'）；URL 不在表里就 404，天然挡路径穿越。
+ * '/dsh-wangshu/vendor/xterm.js' → 'xterm.js'）；URL 不在表里就 404，天然挡路径穿越。
  */
 export declare function registerVendorFiles(webServer: KitVendorWebServer, files: ReadonlyMap<string, string>): () => void;
 /**

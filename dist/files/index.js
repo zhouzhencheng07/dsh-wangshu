@@ -1,11 +1,11 @@
-// dsh-kit 文件树组件（宿主半边入口）
+// dsh-wangshu 文件树组件（宿主半边入口）
 //
-// 端点家族（本组件自持，路径沿用 /dsh-kit/*——client 半边与官方右栏文件预览
-// 已按此路径接线，搬迁不改路径）：GET /dsh-kit/tree 目录树、GET /dsh-kit/read
-// 单文件文本（限长 + 二进制探测）、GET /dsh-kit/raw 原始字节（下载/附件预览）、
-// POST /dsh-kit/fs/op 文件管理（create/rename/delete，子树校验见
+// 端点家族（本组件自持，路径沿用 /dsh-wangshu/*——client 半边与官方右栏文件预览
+// 已按此路径接线，搬迁不改路径）：GET /dsh-wangshu/tree 目录树、GET /dsh-wangshu/read
+// 单文件文本（限长 + 二进制探测）、GET /dsh-wangshu/raw 原始字节（下载/附件预览）、
+// POST /dsh-wangshu/fs/op 文件管理（create/rename/delete，子树校验见
 // validate.ts）。
-// 另有 GET /dsh-kit-files/config 只读配置快照（client 半边的入口门控与快捷键
+// 另有 GET /dsh-wangshu-files/config 只读配置快照（client 半边的入口门控与快捷键
 // 真源），字段 = 本组件 Config schema。
 //
 // **读端点限根**（tree/read/raw）：同源调用方不得读根集合之外的文件。根 = 请求
@@ -36,7 +36,7 @@ export const Config = z && typeof z.object === 'function'
         // （官方「快捷键」页录制与持久化）
     })
     : undefined;
-export const name = 'dsh-kit-files';
+export const name = 'dsh-wangshu-files';
 export function apply(ctx, config = {}) {
     // volatile 字段在 fiber config 里是稳定 ref（{get}），统一解引用
     const defaults = Config
@@ -53,11 +53,11 @@ export function apply(ctx, config = {}) {
     };
     const disposers = [];
     ctx.inject(['webServer'], (webCtx) => {
-        // ── 组件配置快照端点：GET /dsh-kit-files/config ──
+        // ── 组件配置快照端点：GET /dsh-wangshu-files/config ──
         // client 半边拉它做入口门控与快捷键（各组件行同一口径：200 = 行启用、404 = 行关闭）
         disposers.push(webCtx.webServer.register({
             kind: 'exact',
-            path: '/dsh-kit-files/config',
+            path: '/dsh-wangshu-files/config',
             handler: (req, res) => {
                 const json = (code, obj) => {
                     res.writeHead(code, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
@@ -82,13 +82,13 @@ export function apply(ctx, config = {}) {
                 const roots = readableRoots(url.searchParams.get('cwd') ?? '');
                 return withinReadable(target, roots, allowRoot) ? null : `不在可读根内：${path.basename(target)}`;
             };
-            // ── 文件树端点：GET /dsh-kit/tree?path=<绝对目录> ──
+            // ── 文件树端点：GET /dsh-wangshu/tree?path=<绝对目录> ──
             // 只读单层列表（目录+文件，目录在前）。官方 browse RPC（ctx.workspaces
             // .listDirectory）只返回子目录不返回文件，文件树走这里。
             const TREE_LIMIT = 2000;
             const disposeTree = webCtx.webServer.register({
                 kind: 'exact',
-                path: '/dsh-kit/tree',
+                path: '/dsh-wangshu/tree',
                 handler: (req, res) => {
                     const json = (code, obj) => {
                         res.writeHead(code, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-cache' });
@@ -105,7 +105,7 @@ export function apply(ctx, config = {}) {
                         json(403, { error: 'cross-origin denied' });
                         return;
                     }
-                    const url = new URL(req.url ?? '/', 'http://dsh-kit.local');
+                    const url = new URL(req.url ?? '/', 'http://dsh-wangshu.local');
                     const dir = validateCwd(url.searchParams.get('path') ?? '');
                     if (!dir.ok) {
                         json(400, { error: dir.message });
@@ -164,7 +164,7 @@ export function apply(ctx, config = {}) {
                     });
                 },
             });
-            // ── 文件内容端点：GET /dsh-kit/read?path=<绝对文件>[&maxBytes=<字节>] ──
+            // ── 文件内容端点：GET /dsh-wangshu/read?path=<绝对文件>[&maxBytes=<字节>] ──
             // 只读单文件文本内容（限长 + 二进制探测）。点击文件树中的文件后，
             // 浏览器端把内容展示进右侧 details 列（对话左移让位）。默认只回开头
             // 512KB 供预览；maxBytes 可要到上限——知识库单页编辑器要整篇正文，
@@ -173,7 +173,7 @@ export function apply(ctx, config = {}) {
             const READ_LIMIT_MAX = 1024 * 1024;
             const disposeRead = webCtx.webServer.register({
                 kind: 'exact',
-                path: '/dsh-kit/read',
+                path: '/dsh-wangshu/read',
                 handler: (req, res) => {
                     const json = (code, obj) => {
                         res.writeHead(code, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-cache' });
@@ -187,7 +187,7 @@ export function apply(ctx, config = {}) {
                         json(403, { error: 'cross-origin denied' });
                         return;
                     }
-                    const url = new URL(req.url ?? '/', 'http://dsh-kit.local');
+                    const url = new URL(req.url ?? '/', 'http://dsh-wangshu.local');
                     const asked = Number(url.searchParams.get('maxBytes'));
                     const limit = Number.isInteger(asked) && asked > 0 ? Math.min(asked, READ_LIMIT_MAX) : READ_LIMIT;
                     const file = validateFile(url.searchParams.get('path') ?? '');
@@ -241,14 +241,14 @@ export function apply(ctx, config = {}) {
                     });
                 },
             });
-            // ── 原始字节端点：GET /dsh-kit/raw?path=<绝对文件>[&dl=1] ──
+            // ── 原始字节端点：GET /dsh-wangshu/raw?path=<绝对文件>[&dl=1] ──
             // 原始字节透传（官方文件预览头部的「下载到本机」按钮、vault 图片/附件）：
             // 扩展名白名单给 content-type，完整流式返回不截断，支持 Range/206。安全链
             // 与 /read 相同；手机网关是全路径反代，新路径无需单独登记。
             // &dl=1 = 下载模式：任意类型 + attachment，见下。
             const disposeRaw = webCtx.webServer.register({
                 kind: 'exact',
-                path: '/dsh-kit/raw',
+                path: '/dsh-wangshu/raw',
                 handler: (req, res) => {
                     const fail = (code, msg) => {
                         res.writeHead(code, { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-cache' });
@@ -262,7 +262,7 @@ export function apply(ctx, config = {}) {
                         fail(403, 'cross-origin denied');
                         return;
                     }
-                    const url = new URL(req.url ?? '/', 'http://dsh-kit.local');
+                    const url = new URL(req.url ?? '/', 'http://dsh-wangshu.local');
                     const file = validateFile(url.searchParams.get('path') ?? '');
                     if (!file.ok) {
                         fail(400, file.message);
@@ -285,7 +285,7 @@ export function apply(ctx, config = {}) {
                     sendRawFile(req, res, { path: file.path, size: file.size, type, download, fileName: path.basename(file.path) }, fail);
                 },
             });
-            // ── 文件管理端点：POST /dsh-kit/fs/op ──
+            // ── 文件管理端点：POST /dsh-wangshu/fs/op ──
             // body {cwd, op, ...}，供文件树的新建/重命名/删除：
             //   create {dir, name, kind?:'dir'}  在 dir 下新建空文件/文件夹（已存在报错）
             //   rename {path, name}              同目录内重命名（目标已存在报错）
@@ -295,7 +295,7 @@ export function apply(ctx, config = {}) {
             // （工作区根本身不可改删）→ 名称过 invalidFsName 校验。
             const disposeFsOp = webCtx.webServer.register({
                 kind: 'exact',
-                path: '/dsh-kit/fs/op',
+                path: '/dsh-wangshu/fs/op',
                 handler: (req, res) => {
                     const json = (code, obj) => {
                         res.writeHead(code, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-cache' });

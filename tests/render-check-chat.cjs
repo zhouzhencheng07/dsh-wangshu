@@ -1,7 +1,7 @@
-// dsh-kit/chat 浏览器半边渲染级检查：加载真实 root client bundle（kitBase 随 factory
+// dsh-wangshu/chat 浏览器半边渲染级检查：加载真实 root client bundle（kitBase 随 factory
 // 执行）后直测组件导出面、配置页渲染、apply 装配、浮层各分支渲染与目标解析纯函数。
 // 组件 = 单包内模块（root client 的 exports.chat），无独立 bundle。
-// 用法（dsh-kit 根）：node tests\render-check-chat.cjs
+// 用法（dsh-wangshu 根）：node tests\render-check-chat.cjs
 const fs = require("node:fs");
 
 let failed = 0;
@@ -129,16 +129,16 @@ async function checkApply() {
     return { registered, seatInjects, injected };
   };
   const off = await run(false);
-  check("行关闭（/dsh-kit-chat/config 404）：一个槽、一个服务注入都不发生", off.registered.length === 0 && off.seatInjects.length === 0 && off.injected.length === 0);
+  check("行关闭（/dsh-wangshu-chat/config 404）：一个槽、一个服务注入都不发生", off.registered.length === 0 && off.seatInjects.length === 0 && off.injected.length === 0);
   const { registered, seatInjects, injected } = await run(true);
-  check("apply 挂三个槽位等待（shell.overlay / 子槽 / 配置页）", seatInjects.join(",") === "shell.overlay,dsh-kit.chat.session,plugins.row.config");
-  const overlay = registered.find((r) => r.name === "shell.overlay" && r.id === "dsh-kit-chat");
+  check("apply 挂三个槽位等待（shell.overlay / 子槽 / 配置页）", seatInjects.join(",") === "shell.overlay,dsh-wangshu.chat.session,plugins.row.config");
+  const overlay = registered.find((r) => r.name === "shell.overlay" && r.id === "dsh-wangshu-chat");
   check(
     "贴边面注册进 shell.overlay 且带 session 子槽声明（换 SessionProvider 与 renderFactorySlot）",
-    !!overlay && overlay.children?.["dsh-kit.chat.session"]?.scope === "session",
+    !!overlay && overlay.children?.["dsh-wangshu.chat.session"]?.scope === "session",
   );
-  check("小窗正文注册进自声明的子槽", registered.some((r) => r.name === "dsh-kit.chat.session"));
-  check("配置页挂本组件行（key = dsh-kit#chat）", registered.some((r) => r.name === "plugins.row.config" && r.key === "dsh-kit#chat"));
+  check("小窗正文注册进自声明的子槽", registered.some((r) => r.name === "dsh-wangshu.chat.session"));
+  check("配置页挂本组件行（key = dsh-wangshu#chat）", registered.some((r) => r.name === "plugins.row.config" && r.key === "dsh-wangshu#chat"));
   check("apply 期 inject 官方 sessions 服务", injected.some((d) => Array.isArray(d) && d.includes("sessions")));
   check("apply 期 inject 官方 uiWorkspace（⇄ 互换要它把主面换到小窗这条）", injected.some((d) => Array.isArray(d) && d.includes("uiWorkspace")));
 
@@ -150,7 +150,7 @@ async function checkApply() {
     effect: (fn) => { effects.push(fn); return () => {}; },
   });
   effects.forEach((fn) => fn());
-  const cmd = shortcutCmds.find((c) => c.id === "dsh-kit.chat.toggle");
+  const cmd = shortcutCmds.find((c) => c.id === "dsh-wangshu.chat.toggle");
   const keys = cmd ? Object.values(cmd.defaults).map((d) => d.code + "+" + d.modifiers.join("+")).join(" ") : "";
   check(
     "快捷键注册进官方服务：开合小窗一条（默认键 primary+alt+分号，避开系统保留的字母键）",
@@ -341,7 +341,7 @@ async function checkApply() {
   const compSrc = read("src/chat/index.ts");
   const patchSrc = read("cordis.patch.yml");
   const pkg = JSON.parse(read("package.json"));
-  check("组件行声明 + exports 子路径 + locale 齐备", patchSrc.includes("name: dsh-kit/chat") && !!pkg.exports["./chat"] && !!pkg.exports["./chat/locale/*.json"]);
+  check("组件行声明 + exports 子路径 + locale 齐备", patchSrc.includes("name: dsh-wangshu/chat") && !!pkg.exports["./chat"] && !!pkg.exports["./chat/locale/*.json"]);
   check("组件行中文名与描述在 locale/chat", read("locale/chat/zh.json").includes("对话小窗") && read("locale/chat/en.json").includes("Chat window"));
   check("chatModule 装进 bundle 且进组件激活循环", bundleSrc.includes("const chatModule = (kit, require) => {") && bundleSrc.includes("exports.chat = chatModule(exports, require);") && bundleSrc.includes("exports.files, exports.chat,"));
   const schemaKeys = [...compSrc.matchAll(/^ {8}(\w+): z\.boolean\(\)/gm)].map((m) => m[1]);
@@ -350,7 +350,7 @@ async function checkApply() {
     schemaKeys.join(",") === comps.CHAT_CFG_FIELDS.map((f) => f.key).join(",") &&
       schemaKeys.join(",") === Object.keys(comps.CHAT_CFG_DEFAULTS).join(","),
   );
-  check("宿主半边只有配置快照端点（会话与工作区全走官方服务）", compSrc.includes("/dsh-kit-chat/config") && !compSrc.includes("ctx.inject(['tools']"));
+  check("宿主半边只有配置快照端点（会话与工作区全走官方服务）", compSrc.includes("/dsh-wangshu-chat/config") && !compSrc.includes("ctx.inject(['tools']"));
   check(
     "引用按目标 id 把门：effect 释放旧引用与 state 落地之间，旧引用不交给 SessionProvider",
     bundleSrc.includes("return held !== null && held.id === sessionId ? held.ref : null;"),

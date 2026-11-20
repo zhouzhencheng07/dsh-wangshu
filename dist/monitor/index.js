@@ -1,8 +1,8 @@
-// dsh-kit 用量与监视组件（宿主半边入口）
+// dsh-wangshu 用量与监视组件（宿主半边入口）
 //
-// 组件化切片：/dsh-kit/usage 聚合端点 + 用量芯片（client/bundle.js）+ 会话通知
+// 组件化切片：/dsh-wangshu/usage 聚合端点 + 用量芯片（client/bundle.js）+ 会话通知
 // + OpenCode Go 会话头
-// 按会话注入（opencode-session.ts），从 dsh-kit 主包迁出，独立成 entry（bundle
+// 按会话注入（opencode-session.ts），从 dsh-wangshu 主包迁出，独立成 entry（bundle
 // patch 插单，profile 里行 id: monitor）。provider 配置读取不依赖主包：经宿主
 // configEditor 服务现读 llm-pi-ai entry 的合成配置
 // （inherited+override 两层 providers 浅合并），凭证经宿主 credentials 按引用
@@ -19,7 +19,7 @@ const z = (schemastery?.default ?? schemastery ?? null);
 export const Config = z && typeof z.object === 'function'
     ? z.object({
         // 用量与余额芯片开关。默认开——key 不在本组件配置里（复用模型配置
-        // llm-pi-ai.providers 的凭证引用），开 = /dsh-kit/usage 端点放行 +
+        // llm-pi-ai.providers 的凭证引用），开 = /dsh-wangshu/usage 端点放行 +
         // client 半边出余额/配额芯片，关 = 端点 403 + 芯片不出。
         usageEnabled: z.boolean().default(true).volatile(),
         // 会话通知（纯浏览器端消费，宿主不读）：回合收尾、上下文压缩完成或 agent 提问时，
@@ -59,7 +59,7 @@ export async function apply(ctx, config = {}) {
         // 组件自己的只读配置快照：client 半边拉它做芯片门控（各组件行同一口径：200 = 行启用、404 = 行关闭）
         disposers.push(webCtx.webServer.register({
             kind: 'exact',
-            path: '/dsh-kit-monitor/config',
+            path: '/dsh-wangshu-monitor/config',
             handler: (req, res) => {
                 const json = (code, obj) => {
                     res.writeHead(code, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });

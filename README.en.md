@@ -1,6 +1,6 @@
 English | [中文](README.md)
 
-# dsh-kit
+# dsh-wangshu
 
 A page-capability kit plugin for DeepSeek Harness (dsh): optional add-ons for the dsh browser UI, each independent; with none used, dsh stays stock. The workbench lives in the official right sidebar (one dock tab per piece of content).
 
@@ -19,7 +19,7 @@ A page-capability kit plugin for DeepSeek Harness (dsh): optional add-ons for th
 - Each component row has its own switch (Plugins page): turning a row off removes that capability entirely (host endpoints 404, UI entry gone).
 - Rows that take settings carry their own config page; saving writes to the profile and takes effect immediately.
 - Shortcuts for the file tree, knowledge base · schedule, terminal and floating chat are registered on the host's Shortcuts page (Ctrl+/).
-- Runtime data lives in `<DSH_HOME>/dsh-kit/` (default vault root, schedule, …); the vault root can be changed on its config page.
+- Runtime data lives in `<DSH_HOME>/dsh-wangshu/` (default vault root, schedule, …); the vault root can be changed on its config page.
 
 ## Requirements
 
@@ -29,7 +29,7 @@ A page-capability kit plugin for DeepSeek Harness (dsh): optional add-ons for th
 ## How it works
 
 - One package plus component rows in `cordis.patch.yml` (row names are exports subpaths); the host loads row by row — a disabled row materializes no host endpoints, and its client half does not register.
-- The host half is `src/*.ts` (tsc emits `dist/`); the browser half is a hand-written `client/bundle.js` (no build). xterm / TipTap / pdf.js / KaTeX / mermaid / QR code are loaded from `/dsh-kit/vendor/*` on demand.
+- The host half is `src/*.ts` (tsc emits `dist/`); the browser half is a hand-written `client/bundle.js` (no build). xterm / TipTap / pdf.js / KaTeX / mermaid / QR code are loaded from `/dsh-wangshu/vendor/*` on demand.
 
 ## License
 
