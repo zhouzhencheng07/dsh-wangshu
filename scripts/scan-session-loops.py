@@ -1,7 +1,6 @@
 """扫全部 dsh 会话日志，找「工具调用循环」的真实证据（只读）。
 
-判据与官方 repeat-tool-reminder 同口径：
-  连续 (name, canonicalize(arguments)) 相同的链 ≥3 次。
+判据：连续 (name, canonicalize(arguments)) 相同的链 ≥3 次。
 额外统计：单回合工具调用总数、单 step 输出字符数（找输出侧复读）。
 用法：uv run --no-project --with zstandard python scripts/scan-session-loops.py <sessionsRoot>
 """
@@ -17,7 +16,7 @@ if hasattr(sys.stdout, "reconfigure"):
 
 
 def canonical(value):
-    """官方 canonicalize 的同款：深键排序后 JSON.stringify（Python 侧等价实现）。"""
+    """深键排序后 JSON 序列化，用于比较两次调用的参数是否相同。"""
     def sort_keys(v):
         if isinstance(v, dict):
             return {k: sort_keys(v[k]) for k in sorted(v)}
@@ -34,7 +33,7 @@ def decompress(path: Path) -> str:
 
 
 def main() -> None:
-    root = Path(sys.argv[1] if len(sys.argv) > 1 else r"D:\agent\.dsh\sessions")
+    root = Path(sys.argv[1]) if len(sys.argv) > 1 else Path.home() / ".dsh" / "sessions"
     files = sorted(root.rglob("*.jsonl.zstd"))
     print(f"发现 {len(files)} 个会话日志文件")
 

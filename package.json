@@ -1,6 +1,6 @@
 {
   "name": "dsh-wangshu",
-  "version": "0.1.7-rc.2",
+  "version": "0.1.7",
   "description": "Wangshu's plugin for DeepSeek Harness (dsh): knowledge base & schedule inside dsh sessions, plus file tree, floating chat window, phone access, usage monitor and free multi-source web search",
   "license": "MIT",
   "type": "module",

@@ -1,6 +1,6 @@
 # frpc —— Windows PC 客户端配置模板（frp ≥ 0.52，TOML 格式）
 # 放到 PC：C:\tools\frp\frpc.toml（路径自定，与任务计划一致即可）。
-# 作用：把 PC 上 dsh-kit 手机网关(127.0.0.1:3090) 挂到 VPS 的 127.0.0.1:8443，
+# 作用：把 PC 上插件的手机网关(127.0.0.1:3090) 挂到 VPS 的 127.0.0.1:8443，
 # 再由 VPS 的 caddy 终结 TLS 对外。8443 不对公网开放（安全组不放行）。
 
 serverAddr = "CHANGE_ME_VPS_IP"
@@ -10,7 +10,7 @@ serverPort = 7000
 auth.token = "CHANGE_ME_LONG_RANDOM_TOKEN"
 
 [[proxies]]
-name = "dsh-kit-phone"
+name = "dsh-wangshu-phone"
 type = "tcp"
 localIP = "127.0.0.1"
 localPort = 3090
