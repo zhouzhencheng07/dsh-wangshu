@@ -98,7 +98,7 @@ await test('nextLadder：默认表 [1,2,4,7,15,30,60,120]，自定义间隔按�
   assert.equal(nextLadder(7), 15)
   assert.equal(nextLadder(10), 15) // 自定义 10 天：不按下标、按数值
   assert.equal(nextLadder(120), 120) // 到顶不再涨
-  assert.equal(nextLadder(3650), 120) // 超过最后一档也停在最后一档（与参照实现同口径）
+  assert.equal(nextLadder(3650), 120) // 超过最后一档也停在最后一档
   assert.equal(nextLadder(0), 1)
 })
 
@@ -312,7 +312,7 @@ await test('坏记录：整份挪 .json.bak 后当没记录，不拖垮整库', 
   )
 })
 
-await test('记录解析与另一端 serde 同口径：缺省补默认、越界整份算坏、可选字段没值不落键', () => {
+await test('记录解析：缺省补默认、越界整份算坏、可选字段没值不落键', () => {
   // 可选字段没值就不带键（与 serde skip_serializing_if 同形：两端写出来的形状一致）
   mkpage('解析/一')
   first(root, '解析/一')
@@ -411,7 +411,7 @@ await test('覆盖撞名：被覆盖页的学习记录一并清掉，不冒充�
   assert.equal(get(root, '覆盖/子/甲'), null)
 })
 
-// ── rel 守卫（与 quiz.ts safeRel 同口径）────────────────────────────────────
+// ── rel 守卫────────────────────────────────────
 
 await test('rel 守卫：盘符 / .. / 空段挡下，写路径抛错、范围查询当空', () => {
   mkpage('守卫/正常')

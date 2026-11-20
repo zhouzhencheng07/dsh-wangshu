@@ -658,7 +658,7 @@ export async function apply(ctx: KitCtx, config: KitSettings = {}): Promise<void
       )
       /** 写请求体上限：一次学习动作只有 rel / nextInterval / mode 几个短字段 */
       const STUDY_BODY_LIMIT = 256 * 1024
-      /** nextInterval：缺省 = 按默认表；给了必须是 u32 整数（与桌面端入参同口径） */
+      /** nextInterval：缺省 = 按默认表；给了必须是 u32 整数 */
       const nextIntervalOf = (v: unknown): number | undefined => {
         if (v === undefined || v === null) return undefined
         if (typeof v !== 'number' || !Number.isInteger(v) || v < 0 || v > 0xffffffff) {

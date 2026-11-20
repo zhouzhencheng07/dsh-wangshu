@@ -422,7 +422,7 @@ window.__ModuleLoader__.load({
               setDraft(null);
               if (onSaved) await onSaved();
             } else {
-              setFailed(true); // 草稿保留供更正（官方同语义）
+              setFailed(true); // 草稿保留供更正
             }
           } catch {
             setFailed(true);
@@ -2003,7 +2003,7 @@ ellipsis，窄列只截字不破版 */
       );
     }
     /** 知识集图标（摊开的书）：官方图标集没有书类成员——自绘一本，与树目录文件夹
-     *  同一描边语言（16 视窗、1.2 描边、随 currentColor）；树行/资料段/树头/首页同款 */
+     *  同一描边语言（16 视窗、1.2 描边、随 currentColor）；树行/资料段/树头/首页一致 */
     function KsIcon({ className }) {
       return jsxRuntime.jsxs("svg", {
         className,
@@ -2159,7 +2159,7 @@ ellipsis，窄列只截字不破版 */
     // 输入行只剩终端一枚（dsh-wangshu/terminal 组件自注册）；文件树与知识库·日程
     // 都已改挂左栏底部的形态切换条（见上面的 SideFormBar）。
     // 选中态标记：aria-pressed 属性选择器命中 .dshk-enbtn[aria-pressed="true"]
-    // 规则（底色 + 品牌色图标）；形态条那几枚是同款观感的 .dshk-sfbtn 规则。
+    // 规则（底色 + 品牌色图标）；形态条那几枚是同一观感的 .dshk-sfbtn 规则。
     // 选中态底色必须用真实存在的 tool-bar-fill 令牌——不存在的变量（如
     // --dsw-alias-fill-l2）会解析成透明，选中态等于没有。
 
@@ -3421,8 +3421,7 @@ ellipsis，窄列只截字不破版 */
       );
     }
 
-    /** 对话文件路径解析：绝对直接用；相对按 cwd 拼接（与官方 resolveWorkspacePath
-     *  同语义）；反斜杠归一避免混用分隔符触发宿主校验问题。 */
+    /** 对话文件路径解析：绝对直接用；相对按 cwd 拼接；反斜杠归一避免混用分隔符触发宿主校验问题。 */
     function resolveChatOpenPath(cwd, title) {
       // POSIX 写法的盘符绝对路径（/D:/… 或 \D:\…）先归一为盘符开头：这类路径
       // 官方 resolveWorkspacePath 同样按绝对处理，直接拼 cwd 会产出 D:\D:\…
@@ -6022,7 +6021,7 @@ ellipsis，窄列只截字不破版 */
         const mn = mnArg ?? menuRef.current ?? { query: "", sub: null };
         const q = (mn.query ?? "").toLowerCase();
         // 格内只收行内项且平铺成一层：块级结构进格子存不住（序列化按 <br> 摊平），
-        // 菜单就不给入口——行内公式 / 图片 / 双链三项，直接一层列出（桌面端同口径）
+        // 菜单就不给入口——行内公式 / 图片 / 双链三项，直接一层列出
         if (rteRef.current?.inTable() === true) {
           const inlineKeys = new Set(["mathinline", "image", "wiki"]);
           const flat = [];
@@ -6947,7 +6946,7 @@ ellipsis，窄列只截字不破版 */
                       jsxRuntime.jsx("button", { type: "button", className: "dshk-vault-bbtn", title: t("vtblAlignR"), onClick: () => rteCmd((h) => h.editor.chain().setCellAttribute("align", "right").run()), children: "右" }),
                       jsxRuntime.jsx("span", { className: "dshk-vault-bsep" }),
                       // 「切换表头列」不进条：md 表格只认首行表头，列级表头存不下
-                      // （存一次读回来就丢，按钮是个假承诺）——与桌面端同口径删掉
+                      // （存一次读回来就丢，按钮是个假承诺）——删掉
                       jsxRuntime.jsx("button", { type: "button", className: "dshk-vault-bbtn", title: t("vtblDelTable"), onClick: () => rteCmd((h) => h.tableDelete()), children: "✕表" }),
                     ] })
                     : null,
@@ -7633,7 +7632,7 @@ ellipsis，窄列只截字不破版 */
         }
       };
       /** 行内新建提交：`\` 前缀 = 建目录（资料库那一支一律目录），可含 `/` 多级；
-       *  新页建好直接打开（与单击同语义），失败保留草稿 */
+       *  新页建好直接打开，失败保留草稿 */
       const submitCreate = async () => {
         if (createAt === null) return;
         const raw = createName.trim();
@@ -9922,7 +9921,7 @@ ellipsis，窄列只截字不破版 */
             : t("homeStudyTipActive").replace("{a}", String(s.study.active)),
         };
       };
-      // 测验钮文案：已掌握/能答（0 题只写「测验」——进去就是出题），与页条入口同口径
+      // 测验钮文案：已掌握/能答（0 题只写「测验」——进去就是出题），
       const quizText = (dir) => {
         const s = setStatOf(dir);
         return s === null || s.quiz.total === 0 ? t("qzEntry") : t("qzEntry") + " " + s.quiz.mastered + "/" + s.quiz.total;
@@ -10164,7 +10163,7 @@ ellipsis，窄列只截字不破版 */
     }
 
     // ─────────── 侧栏形态切换条上的那一枚 ───────────
-    /** 知识库 · 日程的常驻入口：开 = 左栏那一格占住并落在知识库 tab（与快捷键同语义
+    /** 知识库 · 日程的常驻入口：开 = 左栏那一格占住并落在知识库 tab（
      *  的 toggleVaultEntry），再点 = 回官方会话列表。手机上没键盘，这一枚才是可达的
      *  入口——那一格里的「知识库/日程」两枚 tab 只有那格已经开着才看得见。
      *  名叫「知识库·日程」而不是「知识库」：它开的是整格，格名与两枚 tab 一致。
@@ -13036,7 +13035,7 @@ body.dshk-hide-official-files [data-sidebar-right-guide-entry="files"]{display:n
           webModifiers: ["primary", "shift"],
           enabled: (cfg) => cfg.fileTreeEnabled,
           offKey: "scTreeOff",
-          // 与入口按钮同语义：单槽互斥，收起态先展开侧栏
+          // ：单槽互斥，收起态先展开侧栏
           run: () => {
             if (!getKitUi().treeOpen) expandSidebarNow();
             setKitUi(sidebarViewPatch(getKitUi().treeOpen ? null : "tree"));

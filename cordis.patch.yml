@@ -8,7 +8,7 @@
 # ——静态把 web 行的 searchProvider 钉成 free-search 会让「关掉该组件行」变成搜索直接抛
 # WEB_PROVIDER_CONFIGURED_MISSING（详见 src/search/web-search.ts 头注释）。
 - insert:
-    # 组件行 id 用短语义名（官方同款，如 agent-team）：插件页组件行显示「显示名 +
+    # 组件行 id 用短语义名（官方也用短名，如 agent-team）：插件页组件行显示「显示名 +
     # 行id + 模块名」，id 与包名同文会两行重复
     - id: files
       name: dsh-wangshu/files

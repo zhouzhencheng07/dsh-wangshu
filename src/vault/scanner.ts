@@ -67,7 +67,7 @@ const MD_EXTS = new Set(['.md', '.markdown'])
 /** 不进索引与树的目录名（attachments 约定放二进制，由外部工具维护；点前缀一律隐藏） */
 export const SKIP_DIRS = new Set(['attachments', '.git', '.trash', 'node_modules'])
 const SCAN_FILE_LIMIT = 5000
-/** 目录递归深度上限：人为的超深目录树不打爆栈，到限的子树当截断（与文件数到限同语义） */
+/** 目录递归深度上限：人为的超深目录树不打爆栈，到限的子树当截断 */
 const SCAN_MAX_DEPTH = 32
 /** 资料库目录名（根下这一层是约定：library/ 即资料库）；清单上限独立于页数上限 */
 const LIBRARY_DIR = 'library'
@@ -124,7 +124,7 @@ export function extractWikiLinks(content: string): string[] {
 
 /** 正文标题提取（ATX，1~6 个 #，缩进 ≤3 空格）：跳过 frontmatter 与围栏代码块
  *  （``` 或 ~~~，闭合要求同字符且连数不短于开栏）；`#` 后必须跟空白（#标签 不是
- *  标题），闭合的 # 序列按 CommonMark 剥掉——编辑器解析标题同口径，`[[页#标题]]`
+ *  标题），闭合的 # 序列按 CommonMark 剥掉——编辑器解析标题也要这么剥，`[[页#标题]]`
  *  的锚点靠标题文本比对，两处必须一致。去重（不分大小写）保序。 */
 export function extractHeadings(content: string): string[] {
   const out: string[] = []
@@ -256,7 +256,7 @@ export class VaultScanner {
           await walkLibrary(full, rel)
           continue
         }
-        // 写盘中间文件不进清单（与桌面端同口径）；目录名以 .tmp 结尾照收
+        // 写盘中间文件不进清单；目录名以 .tmp 结尾照收
         if (dirent.isFile() && !dirent.name.toLowerCase().endsWith('.tmp')) lib.items.push({ path: full, rel, dir: false })
       }
     }

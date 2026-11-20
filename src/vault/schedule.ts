@@ -789,8 +789,8 @@ export class ScheduleStore {
     // 落盘统一截到分钟（网格按分钟画，秒级差异没有显示意义）
     entry.start = start.slice(0, 16)
     entry.end = end.slice(0, 16)
-    // 备注上限跟归属走：独立段的 note 就是它在网格上的标题（与日程标题同口径），
-    // 挂在条目下的段只是备注位（与 description 同口径）
+    // 备注上限跟归属走：独立段的 note 就是它在网格上的标题，
+    // 挂在条目下的段只是备注位
     if (patch.note !== undefined && patch.note !== null) {
       const cap = owner ? 200 : SCHED_TITLE_MAX
       const note = String(patch.note).trim().slice(0, cap)

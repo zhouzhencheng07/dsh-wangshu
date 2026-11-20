@@ -223,7 +223,7 @@ export function parseRecord(text) {
         }
     }
     const rec = {
-        // 与另一端 read_record_file 同口径：version 归 1、间隔 0 归 1、非 done 归 active
+        // ：version 归 1、间隔 0 归 1、非 done 归 active
         version: 1,
         firstLearnedAt: obj.firstLearnedAt,
         intervalDays: typeof obj.intervalDays === 'number' && obj.intervalDays > 0 ? obj.intervalDays : 1,
@@ -333,8 +333,7 @@ function stateFor(root, rel, rec) {
 function isRecordFile(name) {
     return name.endsWith(RECORD_SUFFIX) && !name.includes(CONFLICT_MARK) && !name.endsWith('.json.bak') && !name.endsWith('.json.tmp');
 }
-/** 范围走查要跳过的目录：约定目录（scanner 同款）+ 任意深度的 library（资料库子树里的
- *  md 是文献不是页面；与 quiz 的范围汇总同口径） */
+/** 范围走查要跳过的目录：约定目录+ 任意深度的 library */
 function skipDir(name) {
     return name.startsWith('.') || SKIP_DIRS.has(name) || name === 'library';
 }

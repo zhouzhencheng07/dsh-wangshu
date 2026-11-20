@@ -180,7 +180,7 @@ export function isLibraryRoot(root, target) {
 // 跟着目录生死，改名 / 移动 / 删除都不用单独维护；扫描只收 .md，点前缀文件不进索引。
 // 清单里存的是库内 rel（相对 library/、正斜杠）；资料实物在 library/ 里只存一份，
 // 多个知识集挂同一本书就是多条 ref 指向同一个 rel。允许嵌套（每一层各挂各的清单，
-// 呈现按「最近的一层」走），与桌面端同口径。
+// 呈现按「最近的一层」走），。
 /** 知识集标记文件名 */
 export const REFS_FILE = '.refs.json';
 /** 知识集遍历要跳过的目录：scanner 的 SKIP_DIRS 再加 `library`（scanner 里根层 library 归
@@ -239,7 +239,7 @@ function dirHasContent(dirAbs) {
     return false;
 }
 /** 写一个知识集的挂载清单（**全量写回**——挂载 / 移除都由调用方拼好整张清单）。
- *  **允许嵌套**（与桌面端同口径）：目录树本来就能把集套进集里，每一层各挂各的清单；
+ *  **允许嵌套**：目录树本来就能把集套进集里，每一层各挂各的清单；
  *  refs 为空也照写（「标记了但还没挂资料」是合法状态），取消标记走 unmarkFolder。
  *  **标记**动作要求目录非空（已标记的只更新清单，内容删光也还是知识集）。tmp + rename
  *  原子落盘。 */
@@ -300,7 +300,7 @@ export function listKnowledgeSets(root) {
     return out;
 }
 /** 库里按内容（sha256 前 16 位）找同哈希文献：命中回绝对路径，没有回 null。
- *  资料导入按内容去重——同一本书被多个知识集挂载时物理文件只存一份（与桌面端同口径）。
+ *  资料导入按内容去重——同一本书被多个知识集挂载时物理文件只存一份。
  *  先按大小筛再逐份读；导入是低频动作，这趟读盘可以接受。
  *  `*.tmp` 是写盘中间件（清单那边同样跳过）：拿它当命中的话，挂上去的条目等写入方
  *  rename 收尾就成了永久悬挂。 */
@@ -1065,7 +1065,7 @@ export async function importEntry(root, opts) {
         throw new Error('缺少导入内容');
     if (bytes.length === 0)
         throw new Error('文件是空的');
-    // 资料按内容去重（与桌面端同口径）：库里已有同哈希就复用那一份，不落第二份——
+    // 资料按内容去重：库里已有同哈希就复用那一份，不落第二份——
     // 同一本书被多个知识集挂载时物理文件只存一份
     if (library) {
         const existing = findLibraryByHash(root, bytes);

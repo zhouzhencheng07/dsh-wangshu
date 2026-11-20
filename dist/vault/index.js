@@ -560,7 +560,7 @@ export async function apply(ctx, config = {}) {
             vaultRoute('/dsh-wangshu/vault/study-scope', quizRead((url, root) => ({ items: studyScope(root, url.searchParams.get('dir') ?? '') })));
             /** 写请求体上限：一次学习动作只有 rel / nextInterval / mode 几个短字段 */
             const STUDY_BODY_LIMIT = 256 * 1024;
-            /** nextInterval：缺省 = 按默认表；给了必须是 u32 整数（与桌面端入参同口径） */
+            /** nextInterval：缺省 = 按默认表；给了必须是 u32 整数 */
             const nextIntervalOf = (v) => {
                 if (v === undefined || v === null)
                     return undefined;

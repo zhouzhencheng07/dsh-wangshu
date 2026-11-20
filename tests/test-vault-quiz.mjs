@@ -105,7 +105,7 @@ await test('questionId：桌面端定值向量（含非 ASCII 大小写只降 AS
   assert.equal(questionId({ ...SINGLE, answer: 'ß' }), questionId({ ...SINGLE, answer: '' }))
 })
 
-await test('parseMd/toMd：FEFF 不是空白、CRLF 行尾归一（与桌面端 str::trim / lines 同口径）', () => {
+await test('parseMd/toMd：FEFF 不是空白、CRLF 行尾归一', () => {
   // U+FEFF 不是 White_Space：不能像 JS trim/\\s 那样被裁掉或当空行
   const [feff] = parseMd('<!--q type=judge-->\n题\n\n<!--answer-->\n\uFEFFtrue\n')
   assert.equal(feff[0].answer, null)
@@ -197,7 +197,7 @@ await test('record/markMastered/forget：连对达阈值即掌握，同一天答
   assert.equal(DEFAULT_THRESHOLD, 3)
   let out = record(root, '数学/4.1', id, true, '2026-01-01')
   assert.deepEqual(out, { streak: 1, mastered: false, newlyMastered: false })
-  // 同一天再答对：照样涨（题照刷、掌握跟手，与另一端同口径）
+  // 同一天再答对：照样涨
   assert.deepEqual(record(root, '数学/4.1', id, true, '2026-01-01'), { streak: 2, mastered: false, newlyMastered: false })
   out = record(root, '数学/4.1', id, true, '2026-01-02')
   assert.deepEqual(out, { streak: 3, mastered: true, newlyMastered: true })
@@ -263,7 +263,7 @@ await test('readScope：递归收题，跳过点前缀 / 约定目录 / 资料�
   fs.writeFileSync(path.join(root, 'library', '.quiz'), '', 'utf8')
   fs.rmSync(path.join(root, 'library', '.quiz'), { force: true })
   fs.writeFileSync(page('别的/9.9.conflict-手机-2026') , '', 'utf8')
-  // 嵌套的 library/ 不算页面来源（任意深度都跳，与桌面端 SKIP_DIRS 同口径）
+  // 嵌套的 library/ 不算页面来源
   mkpage('别的/library/藏')
   savePage(root, '别的/library/藏', [JUDGE], null)
   const scope = readScope(root, '数学')
@@ -360,7 +360,7 @@ await test('坏掌握度文件：整份挪 .bak 留证再当空表（半份好�
   const file = progressPath(root, '数学/10.1')
   const warns = []
   setQuizWarn((m) => warns.push(m))
-  // 半好半坏：好记录也不能救回来（与桌面端 serde 同口径）
+  // 半好半坏：好记录也不能救回来
   fs.writeFileSync(file, JSON.stringify({ version: 1, progress: { ok: { streak: 1, mastered: false, updatedMs: 1 }, bad: { streak: 'x' } } }), 'utf8')
   assert.deepEqual(readProgress(root, '数学/10.1', null).progress, {})
   assert.ok(!fs.existsSync(file))

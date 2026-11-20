@@ -79,7 +79,7 @@ export declare function siblingOf(pageFile: string): string | null;
 export declare function followPage(oldPage: string, newPage: string): void;
 /** 页面被删除时，它的题目与掌握度文件也要一起进回收站（存在几个回几个） */
 export declare function siblingsForDelete(pageFile: string): string[];
-/** 题目 id：内容哈希，前 16 位小写十六进制（与附件命名同口径） */
+/** 题目 id：内容哈希，前 16 位小写十六进制 */
 export declare function questionId(q: QuizQuestion): string;
 /** 非法回错误串（指出第几题由调用方拼）——作者写的东西不能被静默丢掉 */
 export declare function validate(q: QuizQuestion): string | null;

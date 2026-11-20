@@ -223,7 +223,7 @@ await test('importEntry：上传字节落资料库原样保留扩展名；同内
   })
   assert.equal(up.name, '统计.pdf')
   assert.equal(read('library/统计.pdf'), '%PDF-1.4 up')
-  // 同一份字节再导：按内容复用第一份（与桌面端同口径），不再落 统计 (2).pdf
+  // 同一份字节再导：按内容复用第一份，不再落 统计 (2).pdf
   const up2 = await importEntry(root, {
     destAbs: path.join(root, 'library'),
     name: '统计.pdf',
@@ -362,7 +362,7 @@ await test('storeAttachment：内容寻址落 attachments/，同内容复用不�
   assert.throws(() => storeAttachment(root, Buffer.alloc(0), 'x.png'), /空的/)
 })
 
-await test('知识集：cleanRefs 与桌面端同口径 + 标记写 .refs.json + 索引上报', async () => {
+await test('知识集：cleanRefs  + 标记写 .refs.json + 索引上报', async () => {
   // 与桌面端 clean_refs 一字不差：只裁空白 + 反斜杠归一 + 去空去重；不解 .. / 不折内部空段
   assert.deepEqual(cleanRefs([' 书.pdf ', '书.pdf', '../外.pdf', 'a\\b.pdf', '', 3]), ['书.pdf', '../外.pdf', 'a/b.pdf'])
   write('课/笔记.md', '# 课')

@@ -57,7 +57,7 @@ export declare function isMaterialLink(target: string, anchor: string): boolean;
 export declare function extractWikiLinks(content: string): string[];
 /** 正文标题提取（ATX，1~6 个 #，缩进 ≤3 空格）：跳过 frontmatter 与围栏代码块
  *  （``` 或 ~~~，闭合要求同字符且连数不短于开栏）；`#` 后必须跟空白（#标签 不是
- *  标题），闭合的 # 序列按 CommonMark 剥掉——编辑器解析标题同口径，`[[页#标题]]`
+ *  标题），闭合的 # 序列按 CommonMark 剥掉——编辑器解析标题也要这么剥，`[[页#标题]]`
  *  的锚点靠标题文本比对，两处必须一致。去重（不分大小写）保序。 */
 export declare function extractHeadings(content: string): string[];
 export declare class VaultScanner {

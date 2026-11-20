@@ -7,7 +7,7 @@ const fs = require("node:fs");
 let failed = 0;
 const check = (label, ok) => { console.log((ok ? "PASS  " : "FAIL  ") + label); if (!ok) failed++; };
 
-// 浏览器全局最小桩（与根 render-check 同口径）
+// 浏览器全局最小桩
 if (!global.localStorage) {
   const store = new Map();
   global.localStorage = { getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(String(k), String(v)), removeItem: (k) => store.delete(k) };
@@ -187,7 +187,7 @@ check(
       bundleSrc.includes('document.body.classList.toggle("dshk-hide-official-files"'),
   );
   // 组件内置默认与宿主 schema（src/files/index.ts）逐项同值：改必须两处同改，
-  // 漂移即红（root 侧同款比对在 render-check.cjs）
+  // 漂移即红（root 侧的比对在 render-check.cjs）
   const drift = [];
   let compared = 0;
   for (const m of hostSrc.matchAll(/^ {8}(\w+): z\.(?:boolean|number|string)\(\)[^,\n]*\.default\(([^)]*)\)\.volatile\(\),?$/gm)) {

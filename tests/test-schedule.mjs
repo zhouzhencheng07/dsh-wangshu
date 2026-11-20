@@ -523,7 +523,7 @@ test('计时：独立段落 entries/<id>.json（带标题），且必须有名�
   const running = store.startTimer(null, '  读论文  ')
   assert.equal(running.id, '')
   assert.equal(running.title, '读论文')
-  // 标题上限与日程标题同口径（网格上它就是这段的标题）
+  // 标题上限（网格上它就是这段的标题）
   assert.equal(store.startTimer(null, 'x'.repeat(50)).title.length, 16)
   assert.equal(store.stopTimer(), true)
   const entries = store.listOrphans()

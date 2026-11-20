@@ -1,8 +1,7 @@
 // dsh-wangshu/vault 组件的测验半边——题目文件的解析/序列化、内容哈希 id、掌握度与阈值。
 // 数据与桌面端应用共用同一份：题目在页面所在目录的 .quiz/<页名>.md（一页一文件），
 // 掌握度在 .quiz/<页名>.progress.json（按**题目内容哈希**记，页面改名/移动不丢进度），
-// 阈值在库根 .quiz-state/settings.json。.quiz 是点前缀目录，不进索引与树（scanner 同款
-// 排除）；页面改名/移动/删除由 fs.ts 把两份伴生文件一起带走。
+// 阈值在库根 .quiz-state/settings.json。.quiz 是点前缀目录，不进索引与树；页面改名/移动/删除由 fs.ts 把两份伴生文件一起带走。
 // md 形状、id 归一化是跨端契约（两端同一套），单端不得改动语义；云同步的按记录
 // 合并不在这里——插件不做云同步。
 import crypto from 'node:crypto';
@@ -157,15 +156,14 @@ function isQuestionFile(name) {
 function isProgressFile(name) {
     return name.endsWith(PROGRESS_SUFFIX) && !name.includes(CONFLICT_MARK);
 }
-/** 范围走查要跳过的目录：约定目录（scanner 同款）+ 任意深度的 `library`（资料库子树里
- *  的 md 是文献不是页面；与桌面端 SKIP_DIRS 同口径） */
+/** 范围走查要跳过的目录：约定目录+ 任意深度的 `library` */
 function skipDir(name) {
     return name.startsWith('.') || SKIP_DIRS.has(name) || name === 'library';
 }
 // ── id（跨端契约）───────────────────────────────────────────────────────────
-/** 归一化：去掉全部 Unicode 空白 + **只降 ASCII A-Z**（与桌面端 `to_ascii_lowercase`
- *  同口径——`Ä`、`K`(U+212A) 这类非 ASCII 大写必须原样留着，JS 的 `toLowerCase()` 会降它们，
- *  同一道题就算出两个 id）。不上 Unicode NFKC；全角/半角差异在 id 上算两道题，判题另有口径。 */
+/** 归一化：去掉全部 Unicode 空白 + **只降 ASCII A-Z**：`Ä`、`K`(U+212A) 这类非 ASCII
+ *  大写必须原样留着，JS 的 `toLowerCase()` 会降它们，同一道题就算出两个 id。
+ *  不上 Unicode NFKC；全角/半角差异在 id 上算两道题，判题另有口径。 */
 function norm(s) {
     return s.replace(WS_RE, '').replace(/[A-Z]/g, (c) => c.toLowerCase());
 }
@@ -201,7 +199,7 @@ function answerCanonical(q) {
     }
     return '';
 }
-/** 题目 id：内容哈希，前 16 位小写十六进制（与附件命名同口径） */
+/** 题目 id：内容哈希，前 16 位小写十六进制 */
 export function questionId(q) {
     const raw = [q.type, norm(q.stem), norm(q.options.join('\u0001')), norm(answerCanonical(q))].join('\u0001');
     return crypto.createHash('sha256').update(raw, 'utf8').digest('hex').slice(0, 16);
@@ -452,7 +450,7 @@ function parseAnswer(kind, lines) {
     }
     if (kind === 'judge') {
         for (const line of lines) {
-            // 只降 ASCII 大写（与桌面端同口径：全角字母不参与判定）
+            // 只降 ASCII 大写（：全角字母不参与判定）
             const t = wsTrim(line).replace(/[A-Z]/g, (c) => c.toLowerCase());
             if (t === '')
                 continue;
@@ -833,7 +831,7 @@ function readProgressFile(root, rel) {
     }
     return parsed;
 }
-/** 严格解析：缺字段给默认，类型不对整份算坏（与桌面端 serde 同口径，半份好记录不留） */
+/** 严格解析：缺字段给默认，类型不对整份算坏 */
 function parseProgress(text) {
     let raw;
     try {

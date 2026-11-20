@@ -7,7 +7,7 @@ const fs = require("node:fs");
 let failed = 0;
 const check = (label, ok) => { console.log((ok ? "PASS  " : "FAIL  ") + label); if (!ok) failed++; };
 
-// 浏览器全局最小桩（与根 render-check 同口径）
+// 浏览器全局最小桩
 if (!global.localStorage) {
   const store = new Map();
   global.localStorage = { getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(String(k), String(v)), removeItem: (k) => store.delete(k) };

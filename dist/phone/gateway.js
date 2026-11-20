@@ -13,7 +13,7 @@
 //
 // 转发策略（全功能模式）：Host 重写为 127.0.0.1:<upstream>、剥离 Origin 与本网关
 // Cookie。这会让 dsh 的 browser-trust fence 把请求当回环同源放行（含特权 RPC——
-// 上游把它们钉死 loopback）；kit 自有端点同语义（web-guard.ts sameOrigin 对缺
+// 上游把它们钉死 loopback）；kit 自有端点同理（web-guard.ts sameOrigin 对缺
 // Origin 放行 + Host 回环闸），kit 的 POST/WS 经网关同样可达。安全上自洽：令牌即
 // 认证层，持有链接者本就能借 agent 对话执行任意命令，特权钉死对该威胁模型无增量；
 // 而直连回环的本机访问不受影响，dsh 本体零改动。

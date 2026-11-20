@@ -50,7 +50,7 @@ import { common, createLowlight } from "lowlight";
 import powershell from "highlight.js/lib/languages/powershell";
 
 const lowlight = createLowlight(common);
-// common 不含 powershell：补注册（语言条里能选、围栏能高亮），与桌面端同口径
+// common 不含 powershell：补注册（语言条里能选、围栏能高亮），
 lowlight.register("powershell", powershell);
 
 // ─── vault md 约定的共享小工具 ─────────────────────────────────────────────

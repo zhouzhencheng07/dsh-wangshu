@@ -10,7 +10,7 @@ const fs = require("node:fs");
 let failed = 0;
 const check = (label, ok) => { console.log((ok ? "PASS  " : "FAIL  ") + label); if (!ok) failed++; };
 
-// 浏览器全局最小桩（与根 render-check 同口径）
+// 浏览器全局最小桩
 if (!global.localStorage) {
   const store = new Map();
   global.localStorage = { getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(String(k), String(v)), removeItem: (k) => store.delete(k) };
@@ -669,7 +669,7 @@ async function checkApply() {
 }
 
 // 3.5) 形态切换条上的那一枚（VaultFooterEntry）：seat 在场才画；点了 = 那一格占住并
-//      落在知识库 tab（与快捷键同语义），再点回官方会话列表；名字/键帽走悬停气泡
+//      落在知识库 tab，再点回官方会话列表；名字/键帽走悬停气泡
 {
   const walk = (node, pred, out = []) => {
     if (!node || typeof node !== "object") return out;
@@ -817,7 +817,7 @@ async function checkApply() {
   );
   // 双链选择框一次搜出页面与标题：标题随索引走（宿主提取 ATX，frontmatter/围栏/
   // #标签 都不算），客户端页行/标题行并成一列混排；| 后写别名不进搜索，
-  // 标题行插 [[页#标题|别名]]（锚点 = 标题原文，与编辑器解析同口径才能滚到位）
+  // 标题行插 [[页#标题|别名]]
   const scannerSrc = read("src/vault/scanner.ts");
   const pickBody = sliceBetween("const pickRowsOf = (query) => {", "const openPick = () => {");
   check(
@@ -965,7 +965,7 @@ async function checkApply() {
       !bundleSrc.includes("qzStudyAsk") && !bundleSrc.includes('auto: "unmastered"'),
   );
   check(
-    "答题不打乱选项、正确答案只给字母（与桌面端同口径）",
+    "答题不打乱选项、正确答案只给字母",
     bundleSrc.includes("shuffleOptions === true && order.length >= 2") &&
       bundleSrc.includes('if (q.type === "single" || q.type === "multi") return item.displayAnswer;'),
   );
@@ -1008,7 +1008,7 @@ async function checkApply() {
       homePaneSrc.includes("if (req === null) setNonce"),
   );
   check(
-    "首页行联动左栏：知识集行 enterDir（reader 通道）+ 页行 openPath；条数常量与桌面同款",
+    "首页行联动左栏：知识集行 enterDir（reader 通道）+ 页行 openPath；条数常量",
     bundleSrc.includes("enterDir: openHere") &&
       homePaneSrc.includes("reader.enterDir") && homePaneSrc.includes("reader.openPath") &&
       bundleSrc.includes("HOME_SETS_LIMIT = 8") && bundleSrc.includes("HOME_RECENT_LIMIT = 8"),
@@ -1114,7 +1114,7 @@ async function checkApply() {
       studyEventsSrc.includes("store.setDone("),
   );
   check(
-    "学习记录告警接 kitLogger；写端点体上限 256KB（与桌面同口径）",
+    "学习记录告警接 kitLogger；写端点体上限 256KB",
     compSrc.includes("setStudyWarn(kitLogger('vault').warn)") && compSrc.includes("STUDY_BODY_LIMIT = 256 * 1024"),
   );
   // ── 学习/复习：client 半边的写路径与排期投影（行为级断言在根 render-check）──

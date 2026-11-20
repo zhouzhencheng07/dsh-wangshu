@@ -27,7 +27,7 @@ let stateSeq = 0;
 const reactStub = {
   useState: (init) => {
     const id = stateSeq++;
-    // 惰性初始化器与 React 同语义（函数参 = 惰性求值；存函数状态需包一层）
+    // 惰性初始化器（函数参 = 惰性求值；存函数状态需包一层）
     if (!stateStore.has(id)) stateStore.set(id, typeof init === "function" ? init() : init);
     const set = (v) => stateStore.set(id, typeof v === "function" ? v(stateStore.get(id)) : v);
     return [stateStore.get(id), set];
@@ -263,7 +263,7 @@ check("日程与知识库同占侧栏那一格（vaultSideOpen 亮、槽内切 t
 // 「哪张签激活」归官方签表，kitUi 不再存激活位。后台任务无插件分支：官方会话
 // 头部自带任务清单 + 实时输出 + 停止
 check("kitUi 不再存激活位（官方签表才是唯一事实）", comps.getKitUi().activeFeature === undefined);
-// 7.1b) 入口钮（输入行钮 + 快捷键同语义）：开 = 侧栏占住那一格并落在知识库 tab；
+// 7.1b) 入口钮：开 = 侧栏占住那一格并落在知识库 tab；
 // 再点 = 收回会话列表（不论当前在哪个 tab——整格只有这一个开关）。补丁只含侧栏
 // 四键，功能签与页签状态一律不动（setKitUi 合并语义）
 const tvOpen = comps.toggleVaultEntry({ treeOpen: true, vaultSideOpen: false, vaultSideTab: "vault", vaultOpen: false, vaultPages: [], activeFeature: null });
