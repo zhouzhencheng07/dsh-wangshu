@@ -2,7 +2,7 @@ English | [中文](README.md)
 
 # dsh-wangshu
 
-A page-capability kit plugin for DeepSeek Harness (dsh): optional add-ons for the dsh browser UI, each independent; with none used, dsh stays stock. The workbench lives in the official right sidebar (one dock tab per piece of content).
+**Wangshu's plugin for DeepSeek Harness (dsh)**: brings the knowledge base and schedule into dsh sessions, plus a few page add-ons — file tree, floating chat, phone access, usage monitor and web search. Each component row has its own switch; with none enabled dsh stays stock. The workbench lives in the official right sidebar (one dock tab per piece of content).
 
 ## Features
 

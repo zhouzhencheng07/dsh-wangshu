@@ -1,6 +1,6 @@
 // dsh-wangshu — 包根入口（没有 patch 行挂它）。
 //
-// 套件的宿主能力全部在组件行（cordis.patch.yml 的组件行，各自独立开关），本文件不物化任何
+// 宿主能力全部在组件行（cordis.patch.yml 的组件行，各自独立开关），本文件不物化任何
 // 端点：vendor 静态资源分给用它的组件行（见 src/core/vendor-route.ts）。
 //
 // 它存在的原因只有一个：包根要有可解析的入口（package.json 的 main / exports["."]），

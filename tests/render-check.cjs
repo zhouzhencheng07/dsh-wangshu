@@ -1840,7 +1840,7 @@ check("KitSurfaces 带cwd渲染无异常（根壳不渲染面板本体）", out 
   check(
     "卡片描述按同一顺序枚举六个组件（zh/en 同序）",
     inOrder(zhDesc, ["文件树", "对话小窗", "知识库·日程", "手机访问", "用量与监视", "网页搜索"]) &&
-      inOrder(enDesc, ["File tree", "chat window", "vault & schedule", "phone access", "usage & monitor", "web search"]),
+      inOrder(enDesc, ["file tree", "chat window", "vault & schedule", "phone access", "usage & monitor", "web search"]),
   );
 }
 
