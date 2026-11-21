@@ -88,6 +88,7 @@ import {
   safeStudyRel,
   scope as studyScope,
   setStudyWarn,
+  undo as studyUndo,
 } from './study.ts'
 import {
   completeReviewEvent,
@@ -96,6 +97,7 @@ import {
   moveReviewLinks,
   removeReviewEvents,
   syncReviewEvents,
+  undoReviewEvent,
 } from './study-events.ts'
 
 /** 插件设置的运行时形状（loader 按 Config schema 解析后传入 apply 第二参） */
@@ -350,7 +352,10 @@ export async function apply(ctx: KitCtx, config: KitSettings = {}): Promise<void
                     ? json(res, 200, { deleted: true })
                     : json(res, 404, { error: '条目不存在' })
                 case 'done': {
-                  const event = scheduleStore.setDone(str(body.id), body.done !== false)
+                  // at：补勾记在指定的那一天（逾期勾「原定日」），缺省 = 今天此刻
+                  const at = str(body.at)
+                  if (at !== '' && !isRealDateStr(at)) return json(res, 400, { error: 'at 不合法' })
+                  const event = scheduleStore.setDone(str(body.id), body.done !== false, at)
                   return event ? json(res, 200, { event }) : json(res, 404, { error: '条目不存在' })
                 }
                 case 'timer-start':
@@ -668,6 +673,12 @@ export async function apply(ctx: KitCtx, config: KitSettings = {}): Promise<void
       }
       /** 写动作的 rel 统一先过守卫（与记录里的规范形一致；复习待办的 studyRel 也用它） */
       const studyRelOf = (body: Record<string, unknown>): string => safeStudyRel(String(body.rel ?? ''))
+      /** doneDate：逾期补勾按原定日算（缺省 = 今天）；与记录里的日期同一口径 */
+      const doneDateOf = (v: unknown): string | undefined => {
+        if (v === undefined || v === null) return undefined
+        if (typeof v !== 'string' || !isRealDateStr(v)) throw new Error('doneDate 不合法')
+        return v
+      }
       vaultPost(
         '/dsh-wangshu/vault/study-first',
         (body, root) => {
@@ -690,9 +701,24 @@ export async function apply(ctx: KitCtx, config: KitSettings = {}): Promise<void
         '/dsh-wangshu/vault/study-complete',
         (body, root) => {
           const rel = studyRelOf(body)
-          const state = studyComplete(root, rel, nextIntervalOf(body.nextInterval))
+          const doneDate = doneDateOf(body.doneDate)
+          const state = studyComplete(root, rel, nextIntervalOf(body.nextInterval), doneDate)
           const due = state.record.dueAt
-          if (due !== undefined) completeReviewEvent(scheduleStore, rel, due)
+          if (due !== undefined) {
+            // 归档条按这次复习的那一天记完成（补勾 = 原定日）
+            completeReviewEvent(scheduleStore, rel, due, doneDate ?? state.record.lastReviewedAt)
+          }
+          return { state }
+        },
+        STUDY_BODY_LIMIT,
+      )
+      vaultPost(
+        '/dsh-wangshu/vault/study-undo',
+        (body, root) => {
+          const rel = studyRelOf(body)
+          const state = studyUndo(root, rel)
+          // 待办侧与记录一起回滚：删掉这次完成排的下一条、恢复被归档的那条
+          undoReviewEvent(scheduleStore, rel, state.record.dueAt ?? '')
           return { state }
         },
         STUDY_BODY_LIMIT,

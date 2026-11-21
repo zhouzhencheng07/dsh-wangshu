@@ -1670,6 +1670,10 @@ ellipsis，窄列只截字不破版 */
 .dshk-sched-taskmain{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
 .dshk-sched-taskmain .dshk-sched-tasktitle{flex:none;width:100%}
 .dshk-sched-taskparent{font-size:10px;line-height:1.2;color:var(--dsw-alias-label-tertiary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* 清单里的折叠段（已完成 / 逾期）：计数常驻，点标题开合 */
+.dshk-sched-fold{appearance:none;border:0;background:none;font:inherit;display:flex;align-items:center;gap:4px;width:100%;padding:8px 4px 2px;font-size:10px;line-height:1.4;color:var(--dsw-alias-label-tertiary);cursor:pointer;text-align:left}
+.dshk-sched-fold:hover{color:var(--dsw-alias-label-secondary)}
+.dshk-sched-foldarrow{flex:none;width:8px}
 /* 复习完成提示（带「调整 / 完成」两个快捷动作）：portal 到 body，别压在侧栏里 */
 .dshk-sched-rtoast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);z-index:1250;display:flex;align-items:center;gap:10px;max-width:min(92vw,560px);padding:8px 12px;border-radius:10px;background:var(--dsw-alias-bg-layer-3);border:1px solid var(--dsw-alias-border-l2);box-shadow:0 4px 16px rgba(0,0,0,.18);color:var(--dsw-alias-label-primary);font-size:12px;line-height:1.5}
 .dshk-sched-rtoasttext{min-width:0;overflow-wrap:anywhere}
@@ -2455,6 +2459,20 @@ ellipsis，窄列只截字不破版 */
       schedType: "类型",
       schedEndAfterStart: "日程要有起止时刻，且结束必须晚于开始",
       schedDone: "已完成",
+      schedDoneFold: "已完成",
+      schedOverdueFold: "逾期",
+      schedDoneToday: "今天",
+      schedDonePlanDay: "原定日",
+      schedDoneAsk: "完成「{name}」？",
+      schedOverdueAsk: "已逾期，原定 {due}。完成在？",
+      schedUndoDone: "取消完成",
+      schedUndoDoneAsk: "把「{name}」恢复成未完成？",
+      schedUndoReviewAsk: "撤回「{name}」这次复习？记录与它排的下一条待办会一起回滚。",
+      schedUndone: "已恢复未完成",
+      schedUndoReviewDone: "已撤回这次复习",
+      schedDoneOn: "完成 {date}",
+      schedTaskPlanClock: "原定 {time}",
+      schedDoneAt: "已完成 · 记在 {date}",
       schedEntryTitle: "计时段",
       schedEntryNote: "这段在做什么",
       schedTimerStart: "开始计时",
@@ -2885,6 +2903,20 @@ ellipsis，窄列只截字不破版 */
       schedType: "Type",
       schedEndAfterStart: "An event needs a start and an end, and the end must be after the start",
       schedDone: "Done",
+      schedDoneFold: "Done",
+      schedOverdueFold: "Overdue",
+      schedDoneToday: "Today",
+      schedDonePlanDay: "Planned day",
+      schedDoneAsk: "Mark \"{name}\" done?",
+      schedOverdueAsk: "Overdue, planned {due}. Done on which day?",
+      schedUndoDone: "Undo completion",
+      schedUndoDoneAsk: "Restore \"{name}\" as unfinished?",
+      schedUndoReviewAsk: "Undo this review of \"{name}\"? The record and the next to-do it scheduled roll back together.",
+      schedUndone: "Restored as unfinished",
+      schedUndoReviewDone: "Review undone",
+      schedDoneOn: "done {date}",
+      schedTaskPlanClock: "planned {time}",
+      schedDoneAt: "Done · recorded on {date}",
       schedEntryTitle: "Time entry",
       schedEntryNote: "What this segment is for",
       schedTimerStart: "Start timer",
@@ -4300,7 +4332,7 @@ ellipsis，窄列只截字不破版 */
      * 校验与字段白名单在宿主做，这里只挡"当场就能看出来的错"（空标题、结束早于开始），
      * 其余错误原样显示宿主给的原因——面板不复制一份规则。
      */
-    function SchedEventDialog({ ev, initialDue, onClose }) {
+    function SchedEventDialog({ ev, initialDue, onClose, onToggleDone }) {
       const [f, setF] = react.useState(() => {
         const base = schedFormFrom(ev);
         // 从全天带「+ 待办」进来的新建：那一天预填成截止日（时刻留空 = 只到日）
@@ -4317,6 +4349,12 @@ ellipsis，窄列只截字不破版 */
       // 这里只给看、完成、跳转——在这页改日期或类型会让两边各存一套真源
       if (ev !== null && typeof ev.studyRel === "string" && ev.studyRel !== "") {
         const rel = ev.studyRel;
+        const undoReview = () => {
+          studyOp("/dsh-wangshu/vault/study-undo", { rel })
+            .then(() => flashToast(t("schedUndoReviewDone")))
+            .catch((e) => flashToast(t("studyOpFail").replace("{error}", e && e.message ? e.message : "?")));
+          onClose();
+        };
         const completeReview = () => {
           studyOp("/dsh-wangshu/vault/study-complete", { rel })
             .then((body) => {
@@ -4338,7 +4376,10 @@ ellipsis，窄列只截字不破版 */
             jsxRuntime.jsx("div", { className: "dshk-vault-modalline", children: t("studyEventHint") }),
             jsxRuntime.jsxs("div", { className: "dshk-vault-modalfoot", children: [
               jsxRuntime.jsx("button", { type: "button", className: "dshk-btn-cancel", onClick: onClose, children: t("studyClose") }),
-              ev.completedAt ? null : jsxRuntime.jsx("button", { type: "button", className: "dshk-btn-cancel", onClick: completeReview, children: t("studyCompleteThis") }),
+              // 完成过的这条给「撤回」：记录与它排的下一条待办一起回滚
+              ev.completedAt
+                ? jsxRuntime.jsx("button", { type: "button", className: "dshk-btn-cancel", onClick: undoReview, children: t("schedUndoDone") })
+                : jsxRuntime.jsx("button", { type: "button", className: "dshk-btn-cancel", onClick: completeReview, children: t("studyCompleteThis") }),
               jsxRuntime.jsx("button", { type: "button", className: "dshk-btn-save", onClick: () => { openStudyPage(rel); onClose(); }, children: t("studyOpenPage") }),
             ] }),
           ] }),
@@ -4362,7 +4403,6 @@ ellipsis，窄列只截字不破版 */
           payload.end = null;
           payload.recurrence = null;
         }
-        if (!isNew) payload.completedAt = f.done ? schedNowDT() : null;
         setBusy(true);
         setErr("");
         try {
@@ -4407,10 +4447,11 @@ ellipsis，窄列只截字不破版 */
               maxLength: 16, placeholder: t("schedTitleHint"),
             })),
             schedField(t("schedType"), schedSeg(f.kind, [["todo", t("schedKindTodo")], ["event", t("schedKindEvent")]], (v) => set({ kind: v })), true),
-            !isNew
+            // 完成不算表单字段：勾它 = 关掉浮层走完成 / 撤回那套问法（完成日要人来定）
+            !isNew && typeof onToggleDone === "function"
               ? jsxRuntime.jsxs("label", { className: "dshk-sched-checkline", children: [
-                  jsxRuntime.jsx("input", { type: "checkbox", checked: f.done, onChange: (e) => set({ done: e.target.checked }) }),
-                  jsxRuntime.jsx("span", { children: t("schedDone") }),
+                  jsxRuntime.jsx("input", { type: "checkbox", checked: !!ev.completedAt, onChange: () => onToggleDone() }),
+                  jsxRuntime.jsx("span", { children: ev.completedAt ? t("schedUndoDone") : t("schedDone") }),
                 ] })
               : null,
             f.kind === "todo"
@@ -4641,15 +4682,25 @@ ellipsis，窄列只截字不破版 */
     }
     /** 清单行派生（纯函数，render-check 直测）：把 events+occurrences 折成
      *  逾期待办 / 带截止待办 / 无期限待办 / 事件实例四组 */
-    function schedBuildTodoRows(data) {
+    function schedBuildTodoRows(data, scope) {
       const todos = (Array.isArray(data.events) ? data.events : []).filter((e) => e.start === undefined && !e.completedAt);
       const events = (Array.isArray(data.occurrences) ? data.occurrences : [])
         .filter((o) => o.state !== "past")
         .sort((a, b) => (a.date === b.date ? a.startMins - b.startMins : a.date < b.date ? -1 : 1));
+      // 已完成按**完成日**回看，窗口跟范围档走（全部 = 不限；完成日只会在过去，
+      // 所以这半往回看：今日 = 今天、近三日 = 今天 -2 天）。due 在完成之后就不该
+      // 再当口径，计划日留在条目上只表示"原定哪天"
+      const today = schedToday();
+      const since = scope === "all" ? null : schedAddDays(today, scope === "today" ? 0 : -2);
+      const doneTodos = (Array.isArray(data.events) ? data.events : [])
+        .filter((e) => e.start === undefined && typeof e.completedAt === "string" &&
+          (since === null || e.completedAt.slice(0, 10) >= since) && e.completedAt.slice(0, 10) <= today)
+        .sort((a, b) => (a.completedAt < b.completedAt ? 1 : a.completedAt > b.completedAt ? -1 : 0));
       return {
         overdueTodos: todos.filter(schedIsOverdue),
         datedTodos: todos.filter((e) => !schedIsOverdue(e) && schedDueDay(e) !== ""),
         openTodos: todos.filter((e) => schedDueDay(e) === ""),
+        doneTodos,
         events,
       };
     }
@@ -4688,6 +4739,50 @@ ellipsis，窄列只截字不破版 */
       });
     }
 
+    /** 复习待办指回的页面 rel（非空 = 复习待办，完成 / 撤回都走学习端点） */
+    const schedStudyRel = (ev) => (typeof ev.studyRel === "string" ? ev.studyRel : "");
+    /** 折叠段的开合记在本地（已完成默认收起、逾期默认展开） */
+    function schedFoldSaved(key, fallback) {
+      try {
+        const v = localStorage.getItem("dshk:sched:" + key);
+        if (v === "1") return true;
+        if (v === "0") return false;
+      } catch {
+        /* 隐私模式等拿不到 localStorage 就用默认 */
+      }
+      return fallback;
+    }
+    function schedSaveFold(key, open) {
+      try {
+        localStorage.setItem("dshk:sched:" + key, open ? "1" : "0");
+      } catch {
+        /* 忽略 */
+      }
+    }
+
+    /** 一次确认（完成 / 取消完成）：问一句再动，文案与动作由调用方给 */
+    function SchedConfirm({ ask, onClose }) {
+      return jsxRuntime.jsxs(VaultDialog, { title: ask.title, onClose, children: [
+        jsxRuntime.jsx("div", { className: "dshk-vault-modalline", children: ask.msg }),
+        jsxRuntime.jsxs("div", { className: "dshk-vault-modalfoot", children: [
+          jsxRuntime.jsx("button", { type: "button", className: "dshk-btn-cancel", onClick: onClose, children: rootT("cancel") }),
+          jsxRuntime.jsx("button", { type: "button", className: "dshk-btn-primary", onClick: () => { onClose(); ask.run(); }, children: ask.ok }),
+        ] }),
+      ] });
+    }
+
+    /** 逾期待办勾完成的三选：今天 / 原定日 / 取消——补勾记在哪一天由人说了算 */
+    function SchedOverdueAsk({ asked, today, onClose, onPick }) {
+      return jsxRuntime.jsxs(VaultDialog, { title: asked.title, onClose, children: [
+        jsxRuntime.jsx("div", { className: "dshk-vault-modalline", children: t("schedOverdueAsk").replace("{due}", asked.due.slice(5)) }),
+        jsxRuntime.jsxs("div", { className: "dshk-vault-modalfoot", children: [
+          jsxRuntime.jsx("button", { type: "button", className: "dshk-btn-cancel", onClick: onClose, children: rootT("cancel") }),
+          jsxRuntime.jsx("button", { type: "button", className: "dshk-btn-cancel", onClick: () => { onClose(); onPick(asked.due); }, children: t("schedDonePlanDay") }),
+          jsxRuntime.jsx("button", { type: "button", className: "dshk-btn-primary", onClick: () => { onClose(); onPick(today); }, children: t("schedDoneToday") }),
+        ] }),
+      ] });
+    }
+
     function ScheduleTasksPanel() {
       const { data, loadFail } = useScheduleData(false);
       const [scope, setScope] = react.useState(schedTodoScopeSaved);
@@ -4699,6 +4794,16 @@ ellipsis，窄列只截字不破版 */
       // 学习侧：复习待办勾完的提示（带「调整 / 完成」）与它开出来的间隔浮层
       const [reviewToast, setReviewToast] = react.useState(null); // { rel, reps, dueAt, intervalDays } | null
       const [adjustInfo, setAdjustInfo] = react.useState(null); // { rel, initial } | null
+      // 完成 / 逾届三选 / 取消完成：三件事互斥，共用一个浮层槽
+      const [doneAsk, setDoneAsk] = react.useState(null); // { title, msg, ok, run } | null
+      const [overdueAsk, setOverdueAsk] = react.useState(null); // { ev, due } | null
+      const [undoAsk, setUndoAsk] = react.useState(null); // { title, msg, ok, run } | null
+      // 取消时递增它：勾选框按数据重建（否则会停在勾上的样子）
+      const [tick, setTick] = react.useState(0);
+      // 已完成 / 逾期两段折叠（记住上次的开合）
+      const [doneOpen, setDoneOpen] = react.useState(() => schedFoldSaved("doneFold", false));
+      const [overdueOpen, setOverdueOpen] = react.useState(() => schedFoldSaved("overdueFold", true));
+      const today = schedToday();
       react.useEffect(() => {
         if (reviewToast === null) return undefined;
         const timer = setTimeout(() => setReviewToast(null), 8000);
@@ -4719,9 +4824,10 @@ ellipsis，窄列只截字不破版 */
         }
       };
       /** 复习待办勾完成 = 推进学习记录（study-complete 归档旧待办并建下一条），
-       *  不是普通待办的 completedAt——走学习端点，面板靠 schedBus 跟新 */
-      const completeReview = (rel) => {
-        studyOp("/dsh-wangshu/vault/study-complete", { rel })
+       *  不是普通待办的 completedAt——走学习端点，面板靠 schedBus 跟新。
+       *  at 给了（逾期补勾）这次复习就记在那一天 */
+      const completeReview = (rel, at) => {
+        studyOp("/dsh-wangshu/vault/study-complete", at ? { rel, doneDate: at } : { rel })
           .then((body) => {
             const rec = body && body.state && body.state.record ? body.state.record : null;
             if (rec === null) return;
@@ -4739,8 +4845,63 @@ ellipsis，窄列只截字不破版 */
           .then(() => flashToast(t("studyFinishDone")))
           .catch((e) => flashToast(t("studyOpFail").replace("{error}", e && e.message ? e.message : "?")));
       };
-      const groups = react.useMemo(() => schedBuildTodoRows(data), [data]);
-      const today = schedToday();
+      /** 撤回这次复习：记录回到这次之前，待办侧删掉它排的下一条、恢复被归档的那条 */
+      const undoReview = (rel) => {
+        studyOp("/dsh-wangshu/vault/study-undo", { rel })
+          .then(() => flashToast(t("schedUndoReviewDone")))
+          .catch((e) => flashToast(t("studyOpFail").replace("{error}", e && e.message ? e.message : "?")));
+      };
+      /** 落完成：复习待办走记录；普通待办按 at（缺省今天）记完成时刻 */
+      const finishComplete = (ev, at) => {
+        const rel = schedStudyRel(ev);
+        if (rel !== "") {
+          completeReview(rel, at);
+          return;
+        }
+        void runOp(at ? { op: "done", id: ev.id, done: true, at } : { op: "done", id: ev.id, done: true });
+        if (at && at !== today) flashToast(t("schedDoneAt").replace("{date}", at.slice(5)));
+      };
+      /** 勾完成：逾期先问「今天 / 原定日」，其余问一句就落 */
+      const askComplete = (ev) => {
+        const rel = schedStudyRel(ev);
+        const due = schedDueDay(ev);
+        if (due !== "" && schedIsOverdue(ev)) {
+          setOverdueAsk({ ev, due });
+          return;
+        }
+        setDoneAsk({
+          title: ev.title,
+          msg: t("schedDoneAsk").replace("{name}", ev.title),
+          ok: rel !== "" ? t("studyCompleteThis") : t("schedDone"),
+          run: () => finishComplete(ev),
+        });
+      };
+      /** 已完成的再点一次 = 取消完成；复习连记录与它排的下一条一起回滚 */
+      const askUndo = (ev) => {
+        const rel = schedStudyRel(ev);
+        setUndoAsk({
+          title: t("schedUndoDone"),
+          msg: rel !== ""
+            ? t("schedUndoReviewAsk").replace("{name}", ev.title)
+            : t("schedUndoDoneAsk").replace("{name}", ev.title),
+          ok: t("schedUndoDone"),
+          run: () => {
+            if (rel !== "") {
+              undoReview(rel);
+              return;
+            }
+            void runOp({ op: "done", id: ev.id, done: false });
+            flashToast(t("schedUndone"));
+          },
+        });
+      };
+      /** 条目浮层里的完成勾选：先关浮层，再走与清单同一个问法 */
+      const onToggleDoneOf = (ev) => {
+        setEditEv(null);
+        if (ev.completedAt) askUndo(ev);
+        else askComplete(ev);
+      };
+      const groups = react.useMemo(() => schedBuildTodoRows(data, scope), [data, scope]);
       // 前两档 = 滑动窗口（今天 / 今天 +2 天，严格层层包含）；「全部」不设窗
       const windowEnd = scope === "today" ? today : scope === "3d" ? schedAddDays(today, 2) : null;
       const rows = react.useMemo(() => {
@@ -4768,6 +4929,127 @@ ellipsis，窄列只截字不破版 */
           /* 忽略 */
         }
       };
+      // 逾期单独成段（可折叠）：一条条排在最前面，今天的会被挤到下面去看不见
+      const overdueRows = rows.filter((r) => r.overdue);
+      const openRows = rows.filter((r) => !r.overdue);
+      const doneRows = groups.doneTodos;
+
+      /** 未完成的一行：勾选、标题（含复习的父目录）、截止、计时 / 编辑 / 删除 */
+      const rowOf = (row) => {
+        if (row.occ) {
+          // 定时事件实例：行右给时刻（与待办行的截止同位对齐）。改的是整条
+          // 系列（重复系列不合并成一行，编辑落在 base 上）
+          const o = row.occ;
+          const base = eventById(o.baseId);
+          return jsxRuntime.jsxs("div", { className: "dshk-sched-task", children: [
+            jsxRuntime.jsx("span", { className: "dshk-sched-tasktitle is-link", title: t("schedEdit"), onClick: () => base && setEditEv(base), children: o.title }),
+            jsxRuntime.jsx("span", { className: "dshk-sched-taskduebadge", children: schedOccRowLabel(o, today) }),
+          ] }, row.key);
+        }
+        const ev = row.ev;
+        // 复习待办（studyRel 指回页面）：第二行给父目录；勾完成走学习端点而不是 completedAt
+        const rel = schedStudyRel(ev);
+        const parent = rel.includes("/") ? rel.slice(0, rel.lastIndexOf("/")) : "";
+        const dueTxt = typeof ev.due === "string" ? ev.due.slice(5).replace("T", " ") : "";
+        const isRunning = running !== null && running.id === ev.id;
+        return jsxRuntime.jsxs("div", { className: `dshk-sched-task${isRunning ? " is-timing" : ""}`, children: [
+          jsxRuntime.jsx("input", {
+            type: "checkbox",
+            className: "dshk-sched-taskcheck",
+            checked: false,
+            // 复习待办这一勾 = 完成本次复习（推进记录），不是普通待办的"已完成"
+            "aria-label": rel === "" ? t("schedDone") : t("studyCompleteThis"),
+            title: rel === "" ? undefined : t("studyCompleteThis"),
+            onChange: () => {
+              setTick((n) => n + 1);
+              askComplete(ev);
+            },
+          }),
+          jsxRuntime.jsxs("div", { className: "dshk-sched-taskmain", children: [
+            jsxRuntime.jsx("span", { className: "dshk-sched-tasktitle is-link", title: t("schedEdit"), onClick: () => setEditEv(ev), children: ev.title }),
+            parent === "" ? null : jsxRuntime.jsx("span", { className: "dshk-sched-taskparent", title: rel, children: parent }),
+          ] }),
+          dueTxt
+            ? jsxRuntime.jsx("span", { className: `dshk-sched-taskduebadge${row.overdue ? " is-overdue" : ""}`, children: row.overdue ? `${t("schedOverdue")} ${dueTxt}` : dueTxt })
+            : jsxRuntime.jsx("span", { className: "dshk-sched-taskduebadge", children: t("schedNoDue") }),
+          // 行尾动作：悬停才显（窄侧栏常驻三枚钮太挤）
+          jsxRuntime.jsxs("span", { className: "dshk-sched-taskacts", children: [
+            rel === "" ? null : jsxRuntime.jsx(KitTip, { label: t("studyOpenPage"), children:
+              jsxRuntime.jsx("button", {
+                type: "button",
+                className: "dshk-sched-taskact",
+                "aria-label": t("studyOpenPage"),
+                onClick: () => openStudyPage(rel),
+                children: "↗",
+              }) }),
+            jsxRuntime.jsx(KitTip, { label: isRunning ? t("schedTimerStop") : t("schedTimerStart"), children:
+              jsxRuntime.jsx("button", {
+                type: "button",
+                className: `dshk-sched-tasktimer${isRunning ? " is-on" : ""}`,
+                "aria-label": isRunning ? t("schedTimerStop") : t("schedTimerStart"),
+                onClick: () => void runOp(isRunning ? { op: "timer-stop" } : { op: "timer-start", id: ev.id }),
+                children: isRunning ? "■" : "▶",
+              }) }),
+            jsxRuntime.jsx(KitTip, { label: t("schedEdit"), children:
+              jsxRuntime.jsx("button", { type: "button", className: "dshk-sched-taskact", "aria-label": t("schedEdit"), onClick: () => setEditEv(ev), children: "✎" }) }),
+            jsxRuntime.jsx(KitTip, { label: delArmId === ev.id ? t("schedConfirmDelete").replace("{name}", ev.title) : t("schedDelete"), children:
+              jsxRuntime.jsx("button", {
+                type: "button",
+                className: `dshk-sched-taskact${delArmId === ev.id ? " is-arm" : ""}`,
+                "aria-label": t("schedDelete"),
+                // 两步删除：侧栏这么窄，塞不下一个确认浮层；第一步只亮起
+                // 这一枚钮，误点再点一次别的行就散了
+                onClick: () => {
+                  if (delArmId === ev.id) {
+                    setDelArmId(null);
+                    void runOp({ op: "delete", id: ev.id });
+                  } else setDelArmId(ev.id);
+                },
+                children: delArmId === ev.id ? t("schedConfirm") : "✕",
+              }) }),
+          ] }),
+        ] }, `${row.key}#${tick}`);
+      };
+
+      /** 已完成的一行：勾选框打勾 = 取消完成（复习待办连记录与它排的下一条一起回滚） */
+      const doneRowOf = (ev) => {
+        const rel = schedStudyRel(ev);
+        const parent = rel.includes("/") ? rel.slice(0, rel.lastIndexOf("/")) : "";
+        const day = typeof ev.completedAt === "string" ? ev.completedAt.slice(5, 10).replace("-", "/") : "";
+        return jsxRuntime.jsxs("div", { className: "dshk-sched-task", children: [
+          jsxRuntime.jsx("input", {
+            type: "checkbox",
+            className: "dshk-sched-taskcheck",
+            checked: true,
+            title: t("schedUndoDone"),
+            "aria-label": t("schedUndoDone"),
+            onChange: () => {
+              setTick((n) => n + 1);
+              askUndo(ev);
+            },
+          }),
+          jsxRuntime.jsxs("div", { className: "dshk-sched-taskmain", children: [
+            jsxRuntime.jsx("span", { className: "dshk-sched-tasktitle is-link", title: t("schedEdit"), onClick: () => setEditEv(ev), children: ev.title }),
+            parent === "" ? null : jsxRuntime.jsx("span", { className: "dshk-sched-taskparent", title: rel, children: parent }),
+          ] }),
+          jsxRuntime.jsx("span", { className: "dshk-sched-taskduebadge", children: t("schedDoneOn").replace("{date}", day) }),
+        ] }, `done-${ev.id}#${tick}`);
+      };
+
+      /** 折叠段标题（已完成 / 逾期）：计数常驻，开合记在本地 */
+      const foldHeader = (key, label, count, open, toggle) => jsxRuntime.jsxs("button", {
+        type: "button",
+        className: "dshk-sched-fold",
+        onClick: () => {
+          toggle(!open);
+          schedSaveFold(key, !open);
+        },
+        children: [
+          jsxRuntime.jsx("span", { className: "dshk-sched-foldarrow", children: open ? "▾" : "▸" }),
+          jsxRuntime.jsx("span", { children: `${label} ${count}` }),
+        ],
+      }, `fold-${key}`);
+
       return jsxRuntime.jsxs("div", { className: "dshk-sched-todo", children: [
         jsxRuntime.jsxs("div", { className: "dshk-sched-todohead", children: [
           jsxRuntime.jsx("div", { className: "dshk-sched-todotitle", children: `${t("schedTasks")} · ${rows.length}` }),
@@ -4792,80 +5074,19 @@ ellipsis，窄列只截字不破版 */
           loadFail ? jsxRuntime.jsx("div", { className: "dshk-sched-taskfail", children: t("schedLoadFail") }) : null,
           rows.length === 0
             ? jsxRuntime.jsx("div", { className: "dshk-sched-emptytasks", children: t("schedTasksEmpty") })
-            : rows.map((row) => {
-                if (row.occ) {
-                  // 定时事件实例：行右给时刻（与待办行的截止同位对齐）。改的是整条
-                  // 系列（重复系列不合并成一行，编辑落在 base 上）
-                  const o = row.occ;
-                  const base = eventById(o.baseId);
-                  return jsxRuntime.jsxs("div", { className: "dshk-sched-task", children: [
-                    jsxRuntime.jsx("span", { className: "dshk-sched-tasktitle is-link", title: t("schedEdit"), onClick: () => base && setEditEv(base), children: o.title }),
-                    jsxRuntime.jsx("span", { className: "dshk-sched-taskduebadge", children: schedOccRowLabel(o, today) }),
-                  ] }, row.key);
-                }
-                const ev = row.ev;
-                // 复习待办（studyRel 指回页面）：第二行给父目录；勾完成走学习端点而不是 completedAt
-                const rel = typeof ev.studyRel === "string" ? ev.studyRel : "";
-                const parent = rel.includes("/") ? rel.slice(0, rel.lastIndexOf("/")) : "";
-                const dueTxt = typeof ev.due === "string" ? ev.due.slice(5).replace("T", " ") : "";
-                const isRunning = running !== null && running.id === ev.id;
-                return jsxRuntime.jsxs("div", { className: `dshk-sched-task${isRunning ? " is-timing" : ""}`, children: [
-                  jsxRuntime.jsx("input", {
-                    type: "checkbox",
-                    className: "dshk-sched-taskcheck",
-                    checked: false,
-                    // 复习待办这一勾 = 完成本次复习（推进记录），不是普通待办的"已完成"
-                    "aria-label": rel === "" ? t("schedDone") : t("studyCompleteThis"),
-                    title: rel === "" ? undefined : t("studyCompleteThis"),
-                    onChange: () => (rel === "" ? void runOp({ op: "done", id: ev.id, done: true }) : completeReview(rel)),
-                  }),
-                  jsxRuntime.jsxs("div", { className: "dshk-sched-taskmain", children: [
-                    jsxRuntime.jsx("span", { className: "dshk-sched-tasktitle is-link", title: t("schedEdit"), onClick: () => setEditEv(ev), children: ev.title }),
-                    parent === "" ? null : jsxRuntime.jsx("span", { className: "dshk-sched-taskparent", title: rel, children: parent }),
-                  ] }),
-                  dueTxt
-                    ? jsxRuntime.jsx("span", { className: `dshk-sched-taskduebadge${row.overdue ? " is-overdue" : ""}`, children: row.overdue ? `${t("schedOverdue")} ${dueTxt}` : dueTxt })
-                    : jsxRuntime.jsx("span", { className: "dshk-sched-taskduebadge", children: t("schedNoDue") }),
-                  // 行尾动作：悬停才显（窄侧栏常驻三枚钮太挤）
-                  jsxRuntime.jsxs("span", { className: "dshk-sched-taskacts", children: [
-                    rel === "" ? null : jsxRuntime.jsx(KitTip, { label: t("studyOpenPage"), children:
-                      jsxRuntime.jsx("button", {
-                        type: "button",
-                        className: "dshk-sched-taskact",
-                        "aria-label": t("studyOpenPage"),
-                        onClick: () => openStudyPage(rel),
-                        children: "↗",
-                      }) }),
-                    jsxRuntime.jsx(KitTip, { label: isRunning ? t("schedTimerStop") : t("schedTimerStart"), children:
-                      jsxRuntime.jsx("button", {
-                        type: "button",
-                        className: `dshk-sched-tasktimer${isRunning ? " is-on" : ""}`,
-                        "aria-label": isRunning ? t("schedTimerStop") : t("schedTimerStart"),
-                        onClick: () => void runOp(isRunning ? { op: "timer-stop" } : { op: "timer-start", id: ev.id }),
-                        children: isRunning ? "■" : "▶",
-                      }) }),
-                    jsxRuntime.jsx(KitTip, { label: t("schedEdit"), children:
-                      jsxRuntime.jsx("button", { type: "button", className: "dshk-sched-taskact", "aria-label": t("schedEdit"), onClick: () => setEditEv(ev), children: "✎" }) }),
-                    jsxRuntime.jsx(KitTip, { label: delArmId === ev.id ? t("schedConfirmDelete").replace("{name}", ev.title) : t("schedDelete"), children:
-                      jsxRuntime.jsx("button", {
-                        type: "button",
-                        className: `dshk-sched-taskact${delArmId === ev.id ? " is-arm" : ""}`,
-                        "aria-label": t("schedDelete"),
-                        // 两步删除：侧栏这么窄，塞不下一个确认浮层；第一步只亮起
-                        // 这一枚钮，误点再点一次别的行就散了
-                        onClick: () => {
-                          if (delArmId === ev.id) {
-                            setDelArmId(null);
-                            void runOp({ op: "delete", id: ev.id });
-                          } else setDelArmId(ev.id);
-                        },
-                        children: delArmId === ev.id ? t("schedConfirm") : "✕",
-                      }) }),
-                  ] }),
-                ] }, row.key);
-              }),
+            : null,
+          // 顺序：今天要做的 → 已完成（可回看、可撤回，默认收起）→ 逾期（欠的账收在底部）
+          ...openRows.map(rowOf),
+          doneRows.length === 0
+            ? null
+            : foldHeader("doneFold", t("schedDoneFold"), doneRows.length, doneOpen, (v) => setDoneOpen(v)),
+          doneOpen ? doneRows.map(doneRowOf) : null,
+          overdueRows.length === 0
+            ? null
+            : foldHeader("overdueFold", t("schedOverdueFold"), overdueRows.length, overdueOpen, (v) => setOverdueOpen(v)),
+          overdueOpen ? overdueRows.map(rowOf) : null,
         ] }),
-        editEv ? jsxRuntime.jsx(SchedEventDialog, { ev: editEv, onClose: () => setEditEv(null) }) : null,
+        editEv ? jsxRuntime.jsx(SchedEventDialog, { ev: editEv, onClose: () => setEditEv(null), onToggleDone: () => onToggleDoneOf(editEv) }) : null,
         newOpen ? jsxRuntime.jsx(SchedEventDialog, { ev: null, onClose: () => setNewOpen(false) }) : null,
         timerOpen ? jsxRuntime.jsx(SchedTimerStartDialog, { events: data.events, onClose: () => setTimerOpen(false) }) : null,
         // 复习完成提示：portal 到 body（侧栏这一格有自己的层叠上下文，就地 fixed 会被裁）
@@ -4883,30 +5104,37 @@ ellipsis，窄列只截字不破版 */
               },
             }), document.body, "dshk-sched-review"),
         adjustInfo === null ? null : jsxRuntime.jsx(SchedStudyAdjustDialog, { rel: adjustInfo.rel, initial: adjustInfo.initial, onClose: () => setAdjustInfo(null) }),
+        // 完成 / 撤回 / 逾期三选：三件事互斥，一次只开一个浮层
+        doneAsk === null ? null : jsxRuntime.jsx(SchedConfirm, { ask: doneAsk, onClose: () => setDoneAsk(null) }),
+        undoAsk === null ? null : jsxRuntime.jsx(SchedConfirm, { ask: undoAsk, onClose: () => setUndoAsk(null) }),
+        overdueAsk === null ? null : jsxRuntime.jsx(SchedOverdueAsk, {
+          asked: { title: overdueAsk.ev.title, due: overdueAsk.due },
+          today,
+          onClose: () => setOverdueAsk(null),
+          onPick: (date) => finishComplete(overdueAsk.ev, date),
+        }),
       ] });
     }
 
     /** 全天带溢出的那一天：点「+N」弹出这一列的全部待办，条目点了开条目浮层
      *  （与网格块同一个编辑面）。定位由调用方按 +N 钮实测写死（fixed，贴钮下方）。 */
-    function SchedDayMore({ date, items, top, left, maxH, onPick, onComplete }) {
+    function SchedDayMore({ date, items, top, left, maxH, onPick, onToggle }) {
       const zh = resolveZh();
       return jsxRuntime.jsxs("div", { className: "dshk-sched-daymore", style: { top, left, maxHeight: maxH }, children: [
         jsxRuntime.jsx("div", { className: "dshk-sched-daymorehead", children: t("schedDayMoreTitle").replace("{date}", date.slice(5).replace("-", "/")).replace("{n}", String(items.length)) }),
         items.map((o) => jsxRuntime.jsxs("div", {
           className: `dshk-sched-daymoreitem${o.done ? " is-done" : ""}`,
-          title: `${o.title} · ${t("schedTaskDue")} ${o.date}`,
+          title: o.done ? `${o.title} · ${t("schedDoneOn").replace("{date}", o.at)}` : `${o.title} · ${t("schedTaskDue")} ${o.date}`,
           onClick: () => onPick(o),
           children: [
             jsxRuntime.jsx("input", {
               type: "checkbox",
               className: "dshk-sched-alldaycheck",
               checked: o.done,
-              disabled: o.done,
-              "aria-label": o.done ? t("schedDone") : o.rel !== "" ? t("studyCompleteThis") : t("schedDone"),
+              title: o.done ? t("schedUndoDone") : undefined,
+              "aria-label": o.done ? t("schedUndoDone") : o.rel !== "" ? t("studyCompleteThis") : t("schedDone"),
               onClick: (e) => e.stopPropagation(),
-              onChange: () => {
-                if (!o.done) onComplete(o);
-              },
+              onChange: () => onToggle(o),
             }),
             jsxRuntime.jsx("span", { className: "dshk-sched-daymorename", children: o.title }),
             !o.done && (o.late || o.outOfWeek)
@@ -4929,6 +5157,12 @@ ellipsis，窄列只截字不破版 */
       const [dayMore, setDayMore] = react.useState(null);
       // 空日子的「+ 待办」：点哪一天，新建浮层的截止日就预填哪一天
       const [newTodoDate, setNewTodoDate] = react.useState(null);
+      // 完成确认 / 逾期三选 / 取消完成：三件事互斥，共用一个浮层槽
+      const [doneAsk, setDoneAsk] = react.useState(null); // { title, msg, ok, run } | null
+      const [overdueAsk, setOverdueAsk] = react.useState(null); // { ev, due } | null
+      const [undoAsk, setUndoAsk] = react.useState(null); // { title, msg, ok, run } | null
+      // 取消时递增它：勾选框按数据重建（否则会停在勾上的样子）
+      const [tick, setTick] = react.useState(0);
       // 溢出清单自己收：点浮层外 / Esc 关（条目点了开条目浮层，浮层先关）
       react.useEffect(() => {
         if (dayMore === null) return undefined;
@@ -5029,24 +5263,39 @@ ellipsis，窄列只截字不破版 */
           };
         });
       }, [data.occurrences, choreOcc, timedOcc]);
-      // 表头下的全天带：只放「有截止日且不带时刻的待办」——位置即语义，用自己的
-      // 状态色（未完成橙 / 逾期红 / 已完成灰置底）。不在本周的落周一列（tooltip
-      // 写明原截止日）。**按列成栈**：同列多条各占一行，平铺会全叠进同一个网格
-      // 单元互相盖住，读者只看得见最后一条（逾期一多整条带子就白了）
+      // 表头下的全天带：放「有截止日」的待办——未完成按**截止日**落列，已完成按
+      // **完成日**落列（due 在完成之后就不该再当口径）。带时刻的待办未完成时由网格
+      // 画块，完成后回到带子里、落在完成那天。不在本周的未完成落周一列（tooltip 写
+      // 原截止日），完成日不在本周的不进带子。**按列成栈**：同列多条各占一行，
+      // 平铺会全叠进同一个网格单元互相盖住，读者只看得见最后一条
       const dateTodoByCol = react.useMemo(() => {
         const cols = new Map();
         for (const date of weekDates) cols.set(date, []);
         const monday = weekDates[0];
         for (const ev of Array.isArray(data.events) ? data.events : []) {
-          if (ev.start !== undefined || typeof ev.due !== "string" || ev.due === "" || ev.due.includes("T")) continue;
-          const day = ev.due.slice(0, 10);
-          const inWeek = cols.has(day);
-          const arr = cols.get(inWeek ? day : monday) ?? [];
+          if (ev.start !== undefined || typeof ev.due !== "string" || ev.due === "") continue;
           const done = !!ev.completedAt;
-          arr.push({ baseId: ev.id, date: day, title: ev.title, done, late: !done && schedIsOverdue(ev), outOfWeek: !inWeek, rel: typeof ev.studyRel === "string" ? ev.studyRel : "" });
+          const dueDay = ev.due.slice(0, 10);
+          const day = done ? String(ev.completedAt).slice(0, 10) : dueDay;
+          const inWeek = cols.has(day);
+          if (done && !inWeek) continue;
+          const arr = cols.get(inWeek ? day : monday) ?? [];
+          arr.push({
+            baseId: ev.id,
+            date: day,
+            dueDay,
+            title: ev.title,
+            done,
+            late: !done && schedIsOverdue(ev),
+            outOfWeek: !inWeek,
+            // 完成那条只看完成日；带时刻的待办把原本那个钟点留在提示里
+            at: done ? String(ev.completedAt).slice(5, 10).replace("-", "/") : "",
+            clock: done && ev.due.includes("T") ? ev.due.slice(11, 16) : "",
+            rel: typeof ev.studyRel === "string" ? ev.studyRel : "",
+          });
           cols.set(inWeek ? day : monday, arr);
         }
-        // 本周那天的排前面，跨周堆积的按截止日从早到晚（逾期最久的先看见）；
+        // 本周那天的排前面，跨周堆积的按日子从早到晚（逾期最久的先看见）；
         // 已完成的沉到最下面——露在外面的那条优先是还没做的
         for (const arr of cols.values()) {
           arr.sort((a, b) => {
@@ -5065,17 +5314,18 @@ ellipsis，窄列只截字不破版 */
         const base = (Array.isArray(data.events) ? data.events : []).find((e) => e.id === id);
         if (base) setEditEv(base);
       };
-      /** 待办轨上的勾：普通待办标完成；复习待办走学习端点（推进记录、旧条归档） */
-      const completeTodo = (o) => {
-        const ev = (Array.isArray(data.events) ? data.events : []).find((e) => e.id === o.baseId);
-        if (!ev) return;
+      /** 落完成：普通待办按 at（缺省今天）记完成时刻；复习待办走学习端点（归档 + 排下一条） */
+      const finishCompleteTodo = (ev, at) => {
         const rel = typeof ev.studyRel === "string" ? ev.studyRel : "";
         if (rel === "") {
-          schedOp({ op: "done", id: ev.id, done: true })
+          schedOp(at ? { op: "done", id: ev.id, done: true, at } : { op: "done", id: ev.id, done: true })
+            .then(() => {
+              if (at && at !== today) flashToast(t("schedDoneAt").replace("{date}", at.slice(5)));
+            })
             .catch((e) => flashToast(t("schedOpFail").replace("{error}", e && e.message ? e.message : "?")));
           return;
         }
-        studyOp("/dsh-wangshu/vault/study-complete", { rel })
+        studyOp("/dsh-wangshu/vault/study-complete", at ? { rel, doneDate: at } : { rel })
           .then((body) => {
             const rec = body && body.state && body.state.record ? body.state.record : null;
             flashToast(rec === null
@@ -5083,6 +5333,61 @@ ellipsis，窄列只截字不破版 */
               : t("schedReviewNext").replace("{n}", String(rec.reps ?? 0)).replace("{date}", String(rec.dueAt ?? "")).replace("{label}", studyDueLabel(rec.dueAt)));
           })
           .catch((e) => flashToast(t("studyOpFail").replace("{error}", e && e.message ? e.message : "?")));
+      };
+      /** 勾完成：逾期先问「今天 / 原定日」，其余问一句就落（这一勾会把完成日写进条目） */
+      const askCompleteTodo = (o) => {
+        const ev = (Array.isArray(data.events) ? data.events : []).find((e) => e.id === o.baseId);
+        if (!ev) return;
+        if (o.late) {
+          setOverdueAsk({ ev, due: o.dueDay ?? o.date });
+          return;
+        }
+        const rel = typeof ev.studyRel === "string" ? ev.studyRel : "";
+        setDoneAsk({
+          title: ev.title,
+          msg: t("schedDoneAsk").replace("{name}", ev.title),
+          ok: rel === "" ? t("schedDone") : t("studyCompleteThis"),
+          run: () => finishCompleteTodo(ev),
+        });
+      };
+      /** 已完成的再点一次 = 取消完成；复习连记录与它排的下一条一起回滚 */
+      const askUndoTodo = (o) => {
+        const ev = (Array.isArray(data.events) ? data.events : []).find((e) => e.id === o.baseId);
+        if (!ev) return;
+        const rel = typeof ev.studyRel === "string" ? ev.studyRel : "";
+        setUndoAsk({
+          title: t("schedUndoDone"),
+          msg: rel !== ""
+            ? t("schedUndoReviewAsk").replace("{name}", ev.title)
+            : t("schedUndoDoneAsk").replace("{name}", ev.title),
+          ok: t("schedUndoDone"),
+          run: () => {
+            if (rel !== "") {
+              studyOp("/dsh-wangshu/vault/study-undo", { rel })
+                .then(() => flashToast(t("schedUndoReviewDone")))
+                .catch((e) => flashToast(t("studyOpFail").replace("{error}", e && e.message ? e.message : "?")));
+              return;
+            }
+            schedOp({ op: "done", id: ev.id, done: false })
+              .then(() => flashToast(t("schedUndone")))
+              .catch((e) => flashToast(t("schedOpFail").replace("{error}", e && e.message ? e.message : "?")));
+          },
+        });
+      };
+      /** 待办轨上的勾：未完成 → 完成；已完成 → 撤回 */
+      const toggleTodo = (o) => {
+        if (o.done) askUndoTodo(o);
+        else askCompleteTodo(o);
+      };
+      /** 条目浮层里的完成勾选：先关浮层，再走与待办轨同一个问法 */
+      const onToggleDoneOf = (ev) => {
+        if (!ev) return;
+        setEditEv(null);
+        if (ev.completedAt) {
+          askUndoTodo({ baseId: ev.id, done: true });
+          return;
+        }
+        askCompleteTodo({ baseId: ev.id, done: false, late: schedIsOverdue(ev), dueDay: schedDueDay(ev), date: schedDueDay(ev) });
       };
       const nowMins = new Date(nowTick).getHours() * 60 + new Date(nowTick).getMinutes();
       const hours = [];
@@ -5131,10 +5436,12 @@ ellipsis，窄列只截字不破版 */
             const shown = items.slice(0, more ? SCHED_ALLDAY_VISIBLE : items.length);
             const rest = items.slice(shown.length);
             const zh = resolveZh();
-            const hintOf = (o) =>
-              `${o.title} · ${t("schedTaskDue")} ${o.date}` +
-              (o.done ? ` · ${zh ? "已完成" : "done"}` : o.late ? ` · ${t("schedOverdue")}` : "") +
-              (o.outOfWeek ? (zh ? `（不在本周）` : " (not this week)") : "");
+            // 已完成的只看完成日（带时刻的待办把原定钟点留在提示里）；未完成写截止日
+            const hintOf = (o) => o.done
+              ? `${o.title}${o.clock ? " · " + t("schedTaskPlanClock").replace("{time}", o.clock) : ""} · ${t("schedDoneOn").replace("{date}", o.at)}`
+              : `${o.title} · ${t("schedTaskDue")} ${o.date}` +
+                (o.late ? ` · ${t("schedOverdue")}` : "") +
+                (o.outOfWeek ? (zh ? `（不在本周）` : " (not this week)") : "");
             const chip = (o) => jsxRuntime.jsxs("div", {
               className: `dshk-sched-allday${o.done ? " is-done" : o.late ? " is-overdue" : ""}`,
               children: [
@@ -5142,17 +5449,17 @@ ellipsis，窄列只截字不破版 */
                   type: "checkbox",
                   className: "dshk-sched-alldaycheck",
                   checked: o.done,
-                  disabled: o.done,
-                  title: hintOf(o),
-                  "aria-label": o.done ? t("schedDone") : o.rel !== "" ? t("studyCompleteThis") : t("schedDone"),
+                  title: o.done ? t("schedUndoDone") : hintOf(o),
+                  "aria-label": o.done ? t("schedUndoDone") : o.rel !== "" ? t("studyCompleteThis") : t("schedDone"),
                   onClick: (e) => e.stopPropagation(),
                   onChange: () => {
-                    if (!o.done) completeTodo(o);
+                    setTick((n) => n + 1);
+                    toggleTodo(o);
                   },
                 }),
                 jsxRuntime.jsx("span", { className: "dshk-sched-alldaytitle", title: hintOf(o), onClick: () => openEntryOf(o.baseId), children: o.title }),
               ],
-            }, `ad-${o.baseId}`);
+            }, `ad-${o.baseId}#${tick}`);
             return jsxRuntime.jsxs("div", { className: "dshk-sched-alldaycol", style: { gridRow: 2, gridColumn: i + 2 }, children: [
               ...shown.map(chip),
               rest.length > 0
@@ -5281,14 +5588,26 @@ ellipsis，窄列只截字不破版 */
                 setDayMore(null);
                 openEntryOf(o.baseId);
               },
-              onComplete: completeTodo,
+              onToggle: (o) => {
+                setDayMore(null);
+                toggleTodo(o);
+              },
             })
           : null,
         newTodoDate !== null
           ? jsxRuntime.jsx(SchedEventDialog, { ev: null, initialDue: newTodoDate, onClose: () => setNewTodoDate(null) })
           : null,
-        editEv ? jsxRuntime.jsx(SchedEventDialog, { ev: editEv, onClose: () => setEditEv(null) }) : null,
+        editEv ? jsxRuntime.jsx(SchedEventDialog, { ev: editEv, onClose: () => setEditEv(null), onToggleDone: () => onToggleDoneOf(editEv) }) : null,
         entry ? jsxRuntime.jsx(SchedEntryDialog, { owner: entry.owner, index: entry.index, entry: entry.entry, onClose: () => setEntry(null) }) : null,
+        // 完成 / 撤回 / 逾期三选：三件事互斥，一次只开一个浮层
+        doneAsk === null ? null : jsxRuntime.jsx(SchedConfirm, { ask: doneAsk, onClose: () => setDoneAsk(null) }),
+        undoAsk === null ? null : jsxRuntime.jsx(SchedConfirm, { ask: undoAsk, onClose: () => setUndoAsk(null) }),
+        overdueAsk === null ? null : jsxRuntime.jsx(SchedOverdueAsk, {
+          asked: { title: overdueAsk.ev.title, due: overdueAsk.due },
+          today,
+          onClose: () => setOverdueAsk(null),
+          onPick: (date) => finishCompleteTodo(overdueAsk.ev, date),
+        }),
       ] });
     }
     /** 计时段 "YYYY-MM-DDTHH:mm(:ss)" → 当日分钟数（网格块定位用） */
@@ -12184,6 +12503,8 @@ ellipsis，窄列只截字不破版 */
     exports.SchedTimerStartDialog = SchedTimerStartDialog;
     exports.SchedTimerBall = SchedTimerBall;
     exports.SchedReviewToast = SchedReviewToast;
+    exports.SchedConfirm = SchedConfirm;
+    exports.SchedOverdueAsk = SchedOverdueAsk;
     exports.SchedDayMore = SchedDayMore;
     exports.SchedStudyAdjustDialog = SchedStudyAdjustDialog;
     exports.schedOp = schedOp;

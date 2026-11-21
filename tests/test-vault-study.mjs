@@ -24,6 +24,7 @@ import {
   scope,
   siblingsForDelete,
   studyPath,
+  undo,
 } from '../dist/vault/study.js'
 import {
   completeReviewEvent,
@@ -32,6 +33,7 @@ import {
   moveReviewLinks,
   removeReviewEvents,
   syncReviewEvents,
+  undoReviewEvent,
 } from '../dist/vault/study-events.js'
 import { ScheduleStore, addDays, todayStr } from '../dist/vault/schedule.js'
 import { createEntry, deleteEntries, moveEntry, renameEntry } from '../dist/vault/fs.js'
@@ -163,6 +165,34 @@ await test('complete：次数 +1、间隔上一档、due 从今天重算、histo
   assert.equal(custom.record.dueAt, addDays(TODAY, 10))
   // 自定义越界夹取
   assert.equal(complete(root, '学习/函数', 99999).record.intervalDays, MAX_INTERVAL)
+})
+
+await test('complete(doneDate)：补勾按那天算；undo：记录回到这次之前、这条 review 从历史里去掉', () => {
+  const rel = '学习/极限'
+  mkpage(rel)
+  first(root, rel)
+  const done = complete(root, rel, undefined, '2026-10-20')
+  assert.equal(done.record.reps, 1)
+  assert.equal(done.record.lastReviewedAt, '2026-10-20')
+  assert.equal(done.record.intervalDays, 2)
+  assert.equal(done.record.dueAt, addDays('2026-10-20', 2))
+  assert.equal(done.record.history.at(-1).at, '2026-10-20')
+  assert.throws(() => complete(root, rel, undefined, '2026-13-01'))
+  const back = undo(root, rel)
+  assert.equal(back.record.reps, 0)
+  assert.equal(back.record.intervalDays, 1)
+  assert.equal(back.record.dueAt, addDays(TODAY, 1))
+  assert.equal(back.record.lastReviewedAt, undefined)
+  assert.deepEqual(back.record.history.map((h) => h.kind), ['first'])
+  // 之后又调整过：不允许撤（回滚会把后面的动作说得不明不白）
+  complete(root, rel)
+  adjust(root, rel, 5)
+  assert.throws(() => undo(root, rel))
+  // 没复习过：没有可撤的
+  const fresh = '学习/没复习过'
+  mkpage(fresh)
+  first(root, fresh)
+  assert.throws(() => undo(root, fresh))
 })
 
 await test('complete/adjust：没标记过与已完成（done）都拒绝', () => {
@@ -459,7 +489,7 @@ await test('ensureReviewEvent：按 rel 建一条 studyRel 待办；再调只改
   assert.equal(openEvents(s, '数学/极限').length, 0)
 })
 
-await test('completeReviewEvent：先建下一条再归档旧条；归档条截止挪到实际完成日（提前完成不挂在原计划日）', () => {
+await test('completeReviewEvent：先建下一条再归档旧条；归档条完成时刻记在实际完成日，截止留原计划日', () => {
   const s = store()
   const rel = '物理/力学'
   ensureReviewEvent(s, rel, DAY1) // 原计划日 = 明天
@@ -470,8 +500,15 @@ await test('completeReviewEvent：先建下一条再归档旧条；归档条截�
   assert.equal(openEvents(s, rel)[0].due, '2026-10-23')
   const old = allEvents(s, rel).find((e) => e.id === oldId)
   assert.ok(old)
-  assert.equal(old.due, TODAY) // 今天提前完成 → 归档条落今天，不是明天
-  assert.ok(old.completedAt)
+  assert.equal(old.due, DAY1) // 计划日留着：完成日看 completedAt
+  assert.ok(old.completedAt.startsWith(TODAY))
+  // 补勾（逾期按原定日）：完成时刻记在那一天
+  const s2 = store()
+  ensureReviewEvent(s2, rel, '2026-10-20')
+  completeReviewEvent(s2, rel, '2026-10-24', '2026-10-20')
+  const back = allEvents(s2, rel).find((e) => e.due === '2026-10-20')
+  assert.ok(back)
+  assert.ok(back.completedAt.startsWith('2026-10-20T'))
 })
 
 await test('finishReviewEvents：删掉未完成待办（不把它记成已完成），真实完成过的归档条留着；removeReviewEvents：连历史一起删', () => {
@@ -486,7 +523,7 @@ await test('finishReviewEvents：删掉未完成待办（不把它记成已完�
   assert.equal(openEvents(s, rel).length, 0)
   const kept = allEvents(s, rel)
   assert.equal(kept.length, 1) // 未完成的那条删掉，不是记成"已完成"
-  assert.equal(kept[0].due, TODAY)
+  assert.equal(kept[0].due, DAY1) // 截止仍是原计划日
   assert.ok(kept[0].completedAt)
   // 别的 rel 的已完成条目不受影响
   const archivedBefore = allEvents(s, '物理/力学').filter((e) => e.completedAt).length
@@ -494,6 +531,23 @@ await test('finishReviewEvents：删掉未完成待办（不把它记成已完�
   assert.equal(allEvents(s, '物理/力学').filter((e) => e.completedAt).length, archivedBefore)
   removeReviewEvents(s, rel)
   assert.equal(allEvents(s, rel).length, 0)
+})
+
+await test('undoReviewEvent：删掉这次完成排的下一条，最近一条归档恢复成未完成（截止以记录为准）', () => {
+  const s = store()
+  const rel = '生物/细胞'
+  ensureReviewEvent(s, rel, DAY1)
+  const oldId = openEvents(s, rel)[0].id
+  completeReviewEvent(s, rel, '2026-10-27')
+  assert.equal(allEvents(s, rel).length, 2)
+  // 别端归档时可能把截止挪过：撤销一并纠正回记录给的日子
+  s.update(oldId, { due: '2026-10-27' })
+  undoReviewEvent(s, rel, DAY1)
+  const all = allEvents(s, rel)
+  assert.equal(all.length, 1)
+  assert.equal(all[0].id, oldId)
+  assert.equal(all[0].due, DAY1)
+  assert.equal('completedAt' in all[0], false)
 })
 
 await test('syncReviewEvents：在学页补齐未完成待办、清掉不在学的未完成待办，返回补建数', () => {

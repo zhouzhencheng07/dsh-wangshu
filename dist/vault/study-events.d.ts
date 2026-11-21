@@ -2,8 +2,12 @@ import { type ScheduleStore } from './schedule.ts';
 import type { StudyState } from './study.ts';
 /** 保证这一页有一条未完成的复习待办，日期与记录一致；有就改，没有就建 */
 export declare function ensureReviewEvent(store: ScheduleStore, rel: string, due: string): void;
-/** 完成本次：先把下一次排出来，再把当前这条归档（时间条目跟着归档条目走） */
-export declare function completeReviewEvent(store: ScheduleStore, rel: string, nextDue: string): void;
+/** 完成本次：先把下一次排出来，再把当前这条归档（时间条目跟着归档条目走）。
+ *  doneAt 给了（逾期补勾）完成时刻就记在那一天 */
+export declare function completeReviewEvent(store: ScheduleStore, rel: string, nextDue: string, doneAt?: string): void;
+/** 撤回复习的待办侧：删掉那次完成排的下一条，把最近一条已完成的恢复成未完成，
+ *  截止日以记录为准（别端归档时可能把它挪过，这里一并纠正） */
+export declare function undoReviewEvent(store: ScheduleStore, rel: string, due: string): void;
 /** 完成这一轮：删掉未完成待办，不建下一条。
  *  不归档：归档 = 勾完成，可这轮复习根本没发生，记成已完成会在日程里多出一条
  *  当天的假记录（刚完成一次再结束时，新排的那条会被当成"又完成了一次"）。 */

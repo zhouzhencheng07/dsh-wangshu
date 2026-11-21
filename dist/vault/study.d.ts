@@ -75,8 +75,13 @@ export declare function listActive(root: string, dir: string): StudyState[];
 /** 首次学习：建记录，明天开始第一次复习 */
 export declare function first(root: string, rel: string): StudyState;
 /** 完成本次复习。nextInterval 为空 = 按默认表往上一档；给了就按给的值（自定义）。
+ *  doneDate 给了就按那天算（逾期补勾：原定日），缺省 = 今天。
  *  只重置间隔，次数继续累计。 */
-export declare function complete(root: string, rel: string, nextInterval?: number): StudyState;
+export declare function complete(root: string, rel: string, nextInterval?: number, doneDate?: string): StudyState;
+/** 撤回上一次复习：记录回到这次之前（间隔 / 下次日 / 次数 / 上次复习日），
+ *  历史里那条 review 一并删掉。只撤「最后一次动作就是这次复习」的那种——之后又调整 /
+ *  重启过的话，回滚会把后面的动作说得不明不白，先撤它。 */
+export declare function undo(root: string, rel: string): StudyState;
 /** 只改下一次间隔（不算一次复习，次数不变） */
 export declare function adjust(root: string, rel: string, nextInterval: number): StudyState;
 /** 完成这一轮：不再排下一次，记录保留，可重启 */

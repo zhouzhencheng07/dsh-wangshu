@@ -1672,13 +1672,16 @@ let vaultFetchPrev = null;
   check("周网格表头在滚动区之外（留在里面会被 sticky + y 轴吸附盖住全天带）", src.includes("className: \"dshk-sched-topgrid\"") && src.includes("scroll-padding-top:4px") && !/dshk-sched-dayhead\{position:sticky/.test(src));
   check("周统计跟着周导航取（口径钉 weekStart），拉取失败挂提示", src.includes("useScheduleData(true, weekStart)") && src.includes('date=${encodeURIComponent(statsDate ?? schedToday())}') && src.includes('className: "dshk-sched-headfail"') && src.includes('className: "dshk-sched-taskfail"'));
   check(
-    "全天带一列一条 + 勾选框（复习待办走学习端点）+ 空日子悬停「+ 待办」+ 溢出折成浅色 +N",
+    "全天带：未完成按截止日、已完成按完成日落列（再点 = 撤回）+ 空日子悬停「+ 待办」+ 溢出折成浅色 +N",
     src.includes("const SCHED_ALLDAY_VISIBLE = 1;") &&
       src.includes("const dateTodoByCol = react.useMemo") &&
+      src.includes("const day = done ? String(ev.completedAt).slice(0, 10) : dueDay;") &&
+      src.includes("if (done && !inWeek) continue;") &&
       src.includes('className: "dshk-sched-alldaycheck"') &&
       src.includes('className: "dshk-sched-alldaytitle"') &&
-      src.includes("const completeTodo = (o) =>") &&
+      src.includes("const toggleTodo = (o) =>") &&
       src.includes('"/dsh-wangshu/vault/study-complete"') &&
+      src.includes('"/dsh-wangshu/vault/study-undo"') &&
       src.includes('className: "dshk-sched-alldayadd"') &&
       src.includes("initialDue: newTodoDate") &&
       src.includes('className: "dshk-sched-allday is-more"') &&
@@ -1691,23 +1694,28 @@ let vaultFetchPrev = null;
   stateSeq = 0;
   callLog = [];
   const morePick = [];
+  const moreToggle = [];
   comps.SchedDayMore({
     date: "2026-10-21",
     items: [
       { baseId: "m1", date: "2026-10-21", title: "甲", done: false, late: false, outOfWeek: false },
-      { baseId: "m2", date: "2026-10-20", title: "乙", done: true, late: false, outOfWeek: false },
+      { baseId: "m2", date: "2026-10-20", title: "乙", done: true, late: false, outOfWeek: false, at: "10/21" },
       { baseId: "m3", date: "2026-10-15", title: "丙", done: false, late: true, outOfWeek: true },
     ],
     top: 10,
     left: 20,
     onPick: (o) => morePick.push(o.baseId),
+    onToggle: (o) => moreToggle.push(o.baseId),
   });
   const moreHead = callLog.find((c) => c[2] && c[2].className === "dshk-sched-daymorehead");
   const moreRows = callLog.filter((c) => c[2] && typeof c[2].className === "string" && c[2].className.startsWith("dshk-sched-daymoreitem"));
+  const moreChecks = callLog.filter((c) => c[2] && c[2].type === "checkbox" && c[2].className === "dshk-sched-alldaycheck");
+  moreChecks.forEach((c) => c[2].onChange());
   moreRows.forEach((r) => r[2].onClick());
   check(
-    "全天带溢出清单：整列待办逐条列出，点任一条回传那条（调用方开条目浮层）",
-    !!moreHead && /10\/21/.test(String(moreHead[2].children)) && moreRows.length === 3 && morePick.join(",") === "m1,m2,m3",
+    "全天带溢出清单：整列待办逐条列出，点任一条回传那条；已完成那条的勾 = 撤回",
+    !!moreHead && /10\/21/.test(String(moreHead[2].children)) && moreRows.length === 3 && morePick.join(",") === "m1,m2,m3" &&
+      moreChecks.length === 3 && moreChecks[1][2].checked === true && moreToggle.join(",") === "m1,m2,m3",
   );
   check("文档内链接走解析、带协议的外链走 openExternalUrl（openOnClick:false 下不接管就是死点击）", src.includes("onRelLink: (href) => {") && src.includes('if (!isDocHref(href)) {') && src.includes("openExternalUrl(href);") && src.includes('if (href === "" || href.startsWith("#")) return;'));
   check("外链打开只有一份实现：编辑器点击走 openExternalUrl", src.includes("function openExternalUrl(href) {") && (src.match(/openExternalUrl\(href\);/g) ?? []).length === 1);
@@ -2004,27 +2012,26 @@ setTimeout(async () => {
       "空日子的「+ 待办」：新建浮层预填那天的截止日",
       !!dueFields[1] && dueFields[1].type === "date" && dueFields[1].value === "2026-10-22",
     );
-    // 改已有日程：起止与重复规则原样带回，完成勾选走 completedAt（不是独立 op）
+    // 改已有日程：起止与重复规则原样带回；完成勾选不给表单（勾它 = 关浮层走完成 / 撤回那套问法）
     stateSeq = 0;
     stateStore.clear();
     const ev = { id: "e1", title: "例会", start: "2026-10-06T09:00", end: "2026-10-06T10:00", recurrence: { type: "weekly", days: [2] }, completedAt: "2026-10-06T10:05" };
-    rerender(() => comps.SchedEventDialog({ ev, onClose: () => {} }));
+    let toggleHits = 0;
+    rerender(() => comps.SchedEventDialog({ ev, onClose: () => {}, onToggleDone: () => { toggleHits += 1; } }));
     // 最长的组合（日程 + 每周重复）：标题/类型/开始/结束/重复/每/每周/重复到/地点/备注 10 行 + 完成勾选 1 行，一次排完
     check("日程 + 周重复 10 行 + 完成勾选一次排完（不靠滚动）",
       fieldRows().length === 10 && callLog.filter((c) => c[2] && c[2].className === "dshk-sched-checkline").length === 1);
+    const doneCheck = callLog.find((c) => c[2] && c[2].className === "dshk-sched-checkline");
+    const doneBox = callLog.find((c) => c[2] && c[2].type === "checkbox" && c[2].className === undefined);
+    if (doneBox) doneBox[2].onChange();
+    check("完成勾选：打勾只回传 onToggleDone（不写 completedAt，不直接发请求）", toggleHits === 1 && !!doneCheck);
     const updated = await pressPrimary();
     check(
-      "日程保存：op=update + id，起止与重复规则原样带回",
+      "日程保存：op=update + id，起止与重复规则原样带回，且不带 completedAt",
       updated.body.op === "update" && updated.body.id === "e1" && updated.body.patch.start === "2026-10-06T09:00" &&
         updated.body.patch.end === "2026-10-06T10:00" && updated.body.patch.recurrence.type === "weekly" &&
-        updated.body.patch.due === null,
+        updated.body.patch.due === null && !("completedAt" in updated.body.patch),
     );
-    // 取消完成：completedAt 显式 null（面板不另开一个 done 分支）
-    stateSeq = 0;
-    stateStore.clear();
-    rerender(() => comps.SchedEventDialog({ ev: { id: "e2", title: "写周报" }, onClose: () => {} }));
-    const undone = await pressPrimary();
-    check("取消完成：completedAt=null（待办无 start 时不补 due）", undone.body.patch.completedAt === null && undone.body.patch.due === null);
     // 独立计时：标题必填（有标题才发请求）
     stateSeq = 0;
     stateStore.clear();
@@ -2057,12 +2064,21 @@ setTimeout(async () => {
       callLog = [];
       comps.ScheduleTasksPanel({});
       const revCheck = callLog.find((c) => c[2] && c[2].type === "checkbox" && c[2].className === "dshk-sched-taskcheck");
+      const beforeTick = calls.length;
       if (revCheck) revCheck[2].onChange();
+      // 勾完成先问一句（不直接落）：确认浮层排上了，请求还没发
+      stateSeq = 0;
+      callLog = [];
+      comps.ScheduleTasksPanel({});
+      const askEl = callLog.find((c) => c[1] === comps.SchedOverdueAsk);
+      check("逾期待办勾完成先问「今天 / 原定日 / 取消」（未确认前不发请求）", !!revCheck && !!askEl && calls.length === beforeTick);
+      if (askEl) askEl[2].onPick(askEl[2].today);
       await new Promise((r) => setTimeout(r, 0));
       const revDone = calls[calls.length - 1];
       check(
-        "清单行勾选（复习待办）= POST study-complete（推进学习记录，不发 op=done）",
-        !!revCheck && !!revDone && revDone.url === "/dsh-wangshu/vault/study-complete" && revDone.body.rel === "数学/函数",
+        "选「今天」后这条复习 = POST study-complete（推进学习记录，完成日记在今天）",
+        !!revDone && revDone.url === "/dsh-wangshu/vault/study-complete" && revDone.body.rel === "数学/函数" &&
+          !!askEl && revDone.body.doneDate === askEl[2].today,
       );
       // 完成后出「第 N 次复习 · 下次 …」提示（带调整下次 / 结束学习两个快动作）
       stateSeq = 0;

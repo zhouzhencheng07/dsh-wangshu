@@ -592,14 +592,15 @@ export class ScheduleStore {
         }
         return true;
     }
-    /** 勾选完成 / 取消完成（日程与待办同一动作；completedAt = 完成时刻） */
-    setDone(id, done) {
+    /** 勾选完成 / 取消完成（日程与待办同一动作；completedAt = 完成时刻）。
+     *  at 给了就按那一天的此刻记（逾期补勾记在原定日）；不给 = 今天此刻 */
+    setDone(id, done, at) {
         this.sync();
         const ev = this.data.events.find((e) => e.id === id);
         if (!ev)
             return null;
         if (done)
-            ev.completedAt = dtStrOf(new Date());
+            ev.completedAt = at !== undefined && at !== '' ? dtStrOn(at) : dtStrOf(new Date());
         else
             delete ev.completedAt;
         this.touch(ev);
@@ -793,6 +794,12 @@ export class ScheduleStore {
 export function dtStrOf(d, withSeconds = false) {
     const base = `${dateStrOf(d)}T${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
     return withSeconds ? `${base}:${pad2(d.getSeconds())}` : base;
+}
+/** 给定那一天 + 此刻的钟点：补勾（逾期按原定日）成的完成时刻落在那一天 */
+export function dtStrOn(date) {
+    const now = new Date();
+    const day = DATE_RE.test(date) ? date : dateStrOf(now);
+    return `${day}T${pad2(now.getHours())}:${pad2(now.getMinutes())}`;
 }
 export function rangeOf(scope, date) {
     const base = DATE_RE.test(date) ? date : todayStr();

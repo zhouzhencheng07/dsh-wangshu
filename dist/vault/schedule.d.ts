@@ -136,8 +136,9 @@ export declare class ScheduleStore {
     create(input: Record<string, unknown>): ScheduleEvent;
     update(id: string, patch: Record<string, unknown>): ScheduleEvent | null;
     remove(id: string): boolean;
-    /** 勾选完成 / 取消完成（日程与待办同一动作；completedAt = 完成时刻） */
-    setDone(id: string, done: boolean): ScheduleEvent | null;
+    /** 勾选完成 / 取消完成（日程与待办同一动作；completedAt = 完成时刻）。
+     *  at 给了就按那一天的此刻记（逾期补勾记在原定日）；不给 = 今天此刻 */
+    setDone(id: string, done: boolean, at?: string): ScheduleEvent | null;
     /**
      * 起表：`id` 命中条目就挂它计时，否则按 `title` 起一段独立计时。
      * 已有进行中先闭合——两段同时在跑等于这段时间凭空多出一份，谁也说不清自己在干什么。
@@ -171,6 +172,8 @@ export declare class ScheduleStore {
     };
 }
 export declare function dtStrOf(d: Date, withSeconds?: boolean): string;
+/** 给定那一天 + 此刻的钟点：补勾（逾期按原定日）成的完成时刻落在那一天 */
+export declare function dtStrOn(date: string): string;
 export declare function rangeOf(scope: 'day' | 'week' | 'month', date: string): [string, string];
 /** 睡眠段的名目：睡眠是特殊计时（只记起止、不走全局计时），只上网格看一天怎么切，
  *  不计入「总时长」——只认独立计时段；挂条目的段带的是备注，不按名目判 */

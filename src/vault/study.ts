@@ -20,7 +20,7 @@ import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 
-import { addDays, todayStr } from './schedule.ts'
+import { addDays, isRealDateStr, todayStr } from './schedule.ts'
 import { SKIP_DIRS } from './scanner.ts'
 
 /** 页面旁挂目录（点前缀：扫描跳过，不进索引与目录树） */
@@ -464,13 +464,15 @@ export function first(root: string, rel: string): StudyState {
 }
 
 /** 完成本次复习。nextInterval 为空 = 按默认表往上一档；给了就按给的值（自定义）。
+ *  doneDate 给了就按那天算（逾期补勾：原定日），缺省 = 今天。
  *  只重置间隔，次数继续累计。 */
-export function complete(root: string, rel: string, nextInterval?: number): StudyState {
+export function complete(root: string, rel: string, nextInterval?: number, doneDate?: string): StudyState {
   const r = requirePageRel(rel)
   const rec = readRecord(root, r)
   if (rec === null) throw new Error('还没有开始学习')
   if (rec.status === 'done') throw new Error('这一页已完成，先重启复习')
-  const today = todayStr()
+  const today = doneDate === undefined || doneDate === '' ? todayStr() : doneDate
+  if (!isRealDateStr(today)) throw new Error('完成日期不合法')
   const next = nextInterval === undefined ? nextLadder(rec.intervalDays) : clampInterval(nextInterval)
   const due = addDays(today, next)
   rec.reps = Math.min(rec.reps + 1, 0xffffffff)
@@ -480,6 +482,40 @@ export function complete(root: string, rel: string, nextInterval?: number): Stud
   rec.status = 'active'
   rec.updatedMs = nowMs()
   pushHistory(rec, { at: today, kind: 'review', intervalDays: next, dueAt: due, reps: rec.reps })
+  writeRecord(root, r, rec)
+  return stateFor(root, r, rec)
+}
+
+/** 撤回上一次复习：记录回到这次之前（间隔 / 下次日 / 次数 / 上次复习日），
+ *  历史里那条 review 一并删掉。只撤「最后一次动作就是这次复习」的那种——之后又调整 /
+ *  重启过的话，回滚会把后面的动作说得不明不白，先撤它。 */
+export function undo(root: string, rel: string): StudyState {
+  const r = requirePageRel(rel)
+  const rec = readRecord(root, r)
+  if (rec === null) throw new Error('还没有开始学习')
+  if (rec.status === 'done') throw new Error('这一页已结束学习，先重启')
+  const last = rec.history[rec.history.length - 1]
+  if (last === undefined) throw new Error('没有可撤回的复习')
+  if (last.kind !== 'review') throw new Error('这次复习之后还有别的动作（调整 / 重启），先撤回它')
+  // 往回找这次复习之前的模样：上一条带间隔与下次日的记录就是当时的状态，
+  // 上一条 review 的日子是当时的上次复习日（没有 = 还没复习过）
+  let prev: StudyHistoryEntry | undefined
+  let prevLastReview: string | undefined
+  for (let i = rec.history.length - 2; i >= 0; i--) {
+    const entry = rec.history[i]
+    if (entry === undefined) continue
+    if (prev === undefined && entry.intervalDays !== undefined && entry.dueAt !== undefined) prev = entry
+    if (prevLastReview === undefined && entry.kind === 'review') prevLastReview = entry.at
+  }
+  if (prev === undefined) throw new Error('找不到这次复习之前的状态')
+  rec.intervalDays = prev.intervalDays ?? 1
+  if (prev.dueAt !== undefined) rec.dueAt = prev.dueAt
+  rec.reps = prev.reps ?? 0
+  if (prevLastReview === undefined) delete rec.lastReviewedAt
+  else rec.lastReviewedAt = prevLastReview
+  rec.status = 'active'
+  rec.updatedMs = nowMs()
+  rec.history.pop()
   writeRecord(root, r, rec)
   return stateFor(root, r, rec)
 }
