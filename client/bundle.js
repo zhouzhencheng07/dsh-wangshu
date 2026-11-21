@@ -1674,6 +1674,11 @@ ellipsis，窄列只截字不破版 */
 .dshk-sched-fold{appearance:none;border:0;background:none;font:inherit;display:flex;align-items:center;gap:4px;width:100%;padding:8px 4px 2px;font-size:10px;line-height:1.4;color:var(--dsw-alias-label-tertiary);cursor:pointer;text-align:left}
 .dshk-sched-fold:hover{color:var(--dsw-alias-label-secondary)}
 .dshk-sched-foldarrow{flex:none;width:8px}
+/* 复习组头：知识集名占满一行，右侧「N 页 · 逾期 M」；下面两段（逾期 / 已完成）是静态小标题 */
+.dshk-sched-fold.is-review{padding-top:10px}
+.dshk-sched-foldname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-weight:600;color:var(--dsw-alias-label-primary)}
+.dshk-sched-foldcount{flex:none;font-size:10px;color:var(--dsw-alias-label-tertiary)}
+.dshk-sched-tasklabel{font-size:10px;line-height:1.4;color:var(--dsw-alias-label-tertiary);padding:8px 4px 2px}
 /* 复习完成提示（带「调整 / 完成」两个快捷动作）：portal 到 body，别压在侧栏里 */
 .dshk-sched-rtoast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);z-index:1250;display:flex;align-items:center;gap:10px;max-width:min(92vw,560px);padding:8px 12px;border-radius:10px;background:var(--dsw-alias-bg-layer-3);border:1px solid var(--dsw-alias-border-l2);box-shadow:0 4px 16px rgba(0,0,0,.18);color:var(--dsw-alias-label-primary);font-size:12px;line-height:1.5}
 .dshk-sched-rtoasttext{min-width:0;overflow-wrap:anywhere}
@@ -2464,6 +2469,9 @@ ellipsis，窄列只截字不破版 */
       schedDone: "已完成",
       schedDoneFold: "已完成",
       schedOverdueFold: "逾期",
+      schedUnfiled: "未归类",
+      schedReviewPages: "{n} 页",
+      schedReviewDone: "已完成 {n}",
       schedDoneToday: "今天",
       schedDonePlanDay: "原定日",
       schedDoneAsk: "完成「{name}」？",
@@ -2908,6 +2916,9 @@ ellipsis，窄列只截字不破版 */
       schedDone: "Done",
       schedDoneFold: "Done",
       schedOverdueFold: "Overdue",
+      schedUnfiled: "Unfiled",
+      schedReviewPages: "{n} pages",
+      schedReviewDone: "{n} done",
       schedDoneToday: "Today",
       schedDonePlanDay: "Planned day",
       schedDoneAsk: "Mark \"{name}\" done?",
@@ -4744,25 +4755,62 @@ ellipsis，窄列只截字不破版 */
 
     /** 复习待办指回的页面 rel（非空 = 复习待办，完成 / 撤回都走学习端点） */
     const schedStudyRel = (ev) => (typeof ev.studyRel === "string" ? ev.studyRel : "");
-    /** 折叠段的开合记在本地（已完成默认收起、逾期默认展开） */
-    function schedFoldSaved(key, fallback) {
-      try {
-        const v = localStorage.getItem("dshk:sched:" + key);
-        if (v === "1") return true;
-        if (v === "0") return false;
-      } catch {
-        /* 隐私模式等拿不到 localStorage 就用默认 */
+
+    /** 页 rel 属于哪个知识集：取最近的一层（知识集不嵌套，等价于唯一一层）；
+     *  不在集里按顶层目录归组，连目录都没有就 ""（未归类） */
+    function schedReviewGroupOf(rel, sets) {
+      const clean = rel.replace(/\\/g, "/").replace(/\/+$/, "");
+      let best = "";
+      for (const raw of sets) {
+        const dir = String(raw).replace(/\\/g, "/").replace(/\/+$/, "");
+        if (dir === "") continue;
+        if ((clean === dir || clean.startsWith(dir + "/")) && dir.length > best.length) best = dir;
       }
-      return fallback;
-    }
-    function schedSaveFold(key, open) {
-      try {
-        localStorage.setItem("dshk:sched:" + key, open ? "1" : "0");
-      } catch {
-        /* 忽略 */
-      }
+      if (best !== "") return best;
+      const at = clean.indexOf("/");
+      return at < 0 ? "" : clean.slice(0, at);
     }
 
+    /** 复习行分组：组按最早已到期排在前面、组内逾期在前；只有已完成页的组收在最后 */
+    function schedReviewGroups(open, done, sets) {
+      const map = new Map();
+      const bucket = (rel) => {
+        const key = schedReviewGroupOf(rel, sets);
+        let group = map.get(key);
+        if (group === undefined) {
+          const name = key === "" ? t("schedUnfiled") : key.slice(key.lastIndexOf("/") + 1);
+          group = { key, name, rows: [], done: [], late: 0 };
+          map.set(key, group);
+        }
+        return group;
+      };
+      for (const row of open) {
+        const group = bucket(schedStudyRel(row.ev));
+        group.rows.push(row);
+        if (row.overdue) group.late += 1;
+      }
+      for (const ev of done) bucket(schedStudyRel(ev)).done.push(ev);
+      const groups = Array.from(map.values());
+      for (const group of groups) {
+        group.rows.sort((a, b) => {
+          const ak = a.ev.due ?? "";
+          const bk = b.ev.due ?? "";
+          return ak < bk ? -1 : ak > bk ? 1 : 0;
+        });
+      }
+      groups.sort((a, b) => {
+        const ah = a.rows.length > 0;
+        const bh = b.rows.length > 0;
+        if (ah !== bh) return ah ? -1 : 1;
+        if (ah) {
+          const ak = a.rows[0].ev.due ?? "";
+          const bk = b.rows[0].ev.due ?? "";
+          if (ak !== bk) return ak < bk ? -1 : 1;
+        }
+        return a.name < b.name ? -1 : a.name > b.name ? 1 : 0;
+      });
+      return groups;
+    }
     /** 一次确认（完成 / 取消完成）：问一句再动，文案与动作由调用方给 */
     function SchedConfirm({ ask, onClose }) {
       return jsxRuntime.jsxs(VaultDialog, { title: ask.title, onClose, children: [
@@ -4804,8 +4852,25 @@ ellipsis，窄列只截字不破版 */
       // 取消时递增它：勾选框按数据重建（否则会停在勾上的样子）
       const [tick, setTick] = react.useState(0);
       // 已完成 / 逾期两段折叠（记住上次的开合）
-      const [doneOpen, setDoneOpen] = react.useState(() => schedFoldSaved("doneFold", false));
-      const [overdueOpen, setOverdueOpen] = react.useState(() => schedFoldSaved("overdueFold", true));
+      // 复习组默认收起（一天几门课各一章，页行铺开会淹掉今天）；开合记在本地
+      const [reviewOpen, setReviewOpen] = react.useState(() => {
+        try {
+          const raw = localStorage.getItem("dshk:sched:reviewOpen");
+          const list = raw === null ? [] : JSON.parse(raw);
+          return Array.isArray(list) ? list.filter((k) => typeof k === "string") : [];
+        } catch {
+          return [];
+        }
+      });
+      const toggleReview = (key) => {
+        const next = reviewOpen.includes(key) ? reviewOpen.filter((k) => k !== key) : reviewOpen.concat([key]);
+        setReviewOpen(next);
+        try {
+          localStorage.setItem("dshk:sched:reviewOpen", JSON.stringify(next));
+        } catch {
+          /* 忽略 */
+        }
+      };
       const today = schedToday();
       react.useEffect(() => {
         if (reviewToast === null) return undefined;
@@ -4932,10 +4997,14 @@ ellipsis，窄列只截字不破版 */
           /* 忽略 */
         }
       };
-      // 逾期单独成段（可折叠）：一条条排在最前面，今天的会被挤到下面去看不见
-      const overdueRows = rows.filter((r) => r.overdue);
-      const openRows = rows.filter((r) => !r.overdue);
+      // 复习按知识集分组、默认收起；普通待办平铺（今天 → 逾期 → 已完成）
       const doneRows = groups.doneTodos;
+      const reviewRows = rows.filter((r) => r.ev !== undefined && schedStudyRel(r.ev) !== "");
+      const plainRows = rows.filter((r) => r.ev === undefined || schedStudyRel(r.ev) === "");
+      const overdueRows = plainRows.filter((r) => r.overdue);
+      const openRows = plainRows.filter((r) => !r.overdue);
+      const donePlain = doneRows.filter((ev) => schedStudyRel(ev) === "");
+      const reviewGroups = schedReviewGroups(reviewRows, doneRows, Array.isArray(data.sets) ? data.sets : []);
 
       /** 未完成的一行：勾选、标题（含复习的父目录）、截止、计时 / 编辑 / 删除 */
       const rowOf = (row) => {
@@ -5039,20 +5108,6 @@ ellipsis，窄列只截字不破版 */
         ] }, `done-${ev.id}#${tick}`);
       };
 
-      /** 折叠段标题（已完成 / 逾期）：计数常驻，开合记在本地 */
-      const foldHeader = (key, label, count, open, toggle) => jsxRuntime.jsxs("button", {
-        type: "button",
-        className: "dshk-sched-fold",
-        onClick: () => {
-          toggle(!open);
-          schedSaveFold(key, !open);
-        },
-        children: [
-          jsxRuntime.jsx("span", { className: "dshk-sched-foldarrow", children: open ? "▾" : "▸" }),
-          jsxRuntime.jsx("span", { children: `${label} ${count}` }),
-        ],
-      }, `fold-${key}`);
-
       return jsxRuntime.jsxs("div", { className: "dshk-sched-todo", children: [
         jsxRuntime.jsxs("div", { className: "dshk-sched-todohead", children: [
           jsxRuntime.jsx("div", { className: "dshk-sched-todotitle", children: `${t("schedTasks")} · ${rows.length}` }),
@@ -5078,16 +5133,34 @@ ellipsis，窄列只截字不破版 */
           rows.length === 0
             ? jsxRuntime.jsx("div", { className: "dshk-sched-emptytasks", children: t("schedTasksEmpty") })
             : null,
-          // 顺序：今天要做的 → 已完成（可回看、可撤回，默认收起）→ 逾期（欠的账收在底部）
+          // 顺序：今天要做的 → 复习（按知识集，默认收起）→ 逾期 → 已完成（都只列普通待办）
           ...openRows.map(rowOf),
-          doneRows.length === 0
-            ? null
-            : foldHeader("doneFold", t("schedDoneFold"), doneRows.length, doneOpen, (v) => setDoneOpen(v)),
-          doneOpen ? doneRows.map(doneRowOf) : null,
+          ...reviewGroups.map((group) => jsxRuntime.jsxs("div", { children: [
+            jsxRuntime.jsxs("button", {
+              type: "button",
+              className: "dshk-sched-fold is-review",
+              onClick: () => toggleReview(group.key),
+              children: [
+                jsxRuntime.jsx("span", { className: "dshk-sched-foldarrow", children: reviewOpen.includes(group.key) ? "▾" : "▸" }),
+                jsxRuntime.jsx("span", { className: "dshk-sched-foldname", title: group.key, children: group.name }),
+                jsxRuntime.jsx("span", { className: "dshk-sched-foldcount", children: group.rows.length > 0
+                  ? t("schedReviewPages").replace("{n}", String(group.rows.length)) +
+                    (group.late > 0 ? ` · ${t("schedOverdueFold")} ${group.late}` : "")
+                  : t("schedReviewDone").replace("{n}", String(group.done.length)) }),
+              ],
+            }),
+            reviewOpen.includes(group.key)
+              ? [...group.rows.map(rowOf), ...group.done.map(doneRowOf)]
+              : null,
+          ] }, `rg-${group.key}`)),
           overdueRows.length === 0
             ? null
-            : foldHeader("overdueFold", t("schedOverdueFold"), overdueRows.length, overdueOpen, (v) => setOverdueOpen(v)),
-          overdueOpen ? overdueRows.map(rowOf) : null,
+            : jsxRuntime.jsx("div", { className: "dshk-sched-tasklabel", children: `${t("schedOverdueFold")} ${overdueRows.length}` }),
+          ...overdueRows.map(rowOf),
+          donePlain.length === 0
+            ? null
+            : jsxRuntime.jsx("div", { className: "dshk-sched-tasklabel", children: `${t("schedDoneFold")} ${donePlain.length}` }),
+          ...donePlain.map(doneRowOf),
         ] }),
         editEv ? jsxRuntime.jsx(SchedEventDialog, { ev: editEv, onClose: () => setEditEv(null), onToggleDone: () => onToggleDoneOf(editEv) }) : null,
         newOpen ? jsxRuntime.jsx(SchedEventDialog, { ev: null, onClose: () => setNewOpen(false) }) : null,

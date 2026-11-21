@@ -57,6 +57,7 @@ import {
   parseConflict,
   setFolderRefs,
   unmarkFolder,
+  listKnowledgeSets,
   writePage,
   storeAttachment,
   resolveInside,
@@ -306,6 +307,16 @@ export async function apply(ctx: KitCtx, config: KitSettings = {}): Promise<void
             occurrences: scheduleStore.occurrences(from, to),
             orphans: scheduleStore.listOrphans(),
             runningTimer: scheduleStore.getRunningTimer(),
+            // 复习待办按知识集分组要用：页 rel 按最长前缀归属（知识集不嵌套，只认唯一一层）
+            sets: (() => {
+              try {
+                const configured = String(readSettings().vaultRoot ?? '').trim()
+                const root = configured === '' ? defaultVaultRoot() : configured
+                return listKnowledgeSets(root).map((s) => s.dir)
+              } catch {
+                return []
+              }
+            })(),
           })
         }),
       )

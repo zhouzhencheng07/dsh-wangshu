@@ -368,11 +368,33 @@ out = comps.ScheduleTasksPanel({});
 const runningBadges = callLog.filter((c) => c[2] && c[2].className === "dshk-sched-running");
 const timingRows = callLog.filter((c) => c[2] && typeof c[2].className === "string" && c[2].className.startsWith("dshk-sched-task is-timing"));
 check("计时中：顶部挂走秒状态、挂表那一行亮起", runningBadges.length === 1 && /\d\d:\d\d/.test(String(runningBadges[0][2].children)) && timingRows.length === 1);
+// 复习默认按知识集收起：不展开时只出一行组头（知识集名 + N 页），页行不铺——
+// 一天几门课各一章，页行铺开会把今天的普通待办淹掉
+{
+  global.localStorage.removeItem("dshk:sched:reviewOpen");
+  stateSeq = 0;
+  stateStore.clear();
+  stateStore.set(0, { events: [{ id: "s1", title: "函数", due: "2026-10-21", studyRel: "数学/第一章/函数" }], occurrences: [], orphans: [], runningTimer: null });
+  callLog = [];
+  comps.ScheduleTasksPanel({});
+  const heads = callLog.filter((c) => c[2] && c[2].className === "dshk-sched-fold is-review");
+  const nameEl = callLog.find((c) => c[2] && c[2].className === "dshk-sched-foldname");
+  const countEl = callLog.find((c) => c[2] && c[2].className === "dshk-sched-foldcount");
+  check(
+    "复习按知识集收起：只出一行组头（知识集名 + N 页），页行不铺",
+    heads.length === 1 && !!nameEl && String(nameEl[2].children) === "数学" &&
+      /1 页|1 page/.test(String(countEl[2].children)) &&
+      callLog.filter((c) => c[2] && c[2].className === "dshk-sched-task").length === 0,
+  );
+  global.localStorage.setItem("dshk:sched:reviewOpen", JSON.stringify(["数学"]));
+}
 // 复习待办（studyRel 指回页面）：标题下第二行父目录（截断、title=rel），行尾多一枚
 // 「打开页面」（在计时钮之前）——与普通待办区分开，勾完成走学习端点（见收尾的写路径）
 stateSeq = 0;
 stateStore.clear();
 stateStore.set(0, { events: [{ id: "s1", title: "函数", due: "2026-10-21", studyRel: "数学/第一章/函数" }], occurrences: [], orphans: [], runningTimer: null });
+// 复习按知识集分组、默认收起：这里先把它展开，才验得到行内细节
+global.localStorage.setItem("dshk:sched:reviewOpen", JSON.stringify(["数学"]));
 callLog = [];
 out = comps.ScheduleTasksPanel({});
 const studyParent = callLog.find((c) => c[2] && c[2].className === "dshk-sched-taskparent");
@@ -2061,6 +2083,7 @@ setTimeout(async () => {
       stateSeq = 0;
       stateStore.clear();
       stateStore.set(0, { events: [{ id: "s1", title: "函数", due: "2026-10-21", studyRel: "数学/函数" }], occurrences: [], orphans: [], runningTimer: null });
+      global.localStorage.setItem("dshk:sched:reviewOpen", JSON.stringify(["数学"]));
       callLog = [];
       comps.ScheduleTasksPanel({});
       const revCheck = callLog.find((c) => c[2] && c[2].type === "checkbox" && c[2].className === "dshk-sched-taskcheck");

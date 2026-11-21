@@ -46,7 +46,7 @@ import path from 'node:path';
 import { loadDep, sameOrigin, registerReadableRoot, sendRawFile } from "../core/index.js";
 import { registerVendorFiles, registerVendorSubdir } from "../core/vendor-route.js";
 import { VaultScanner, defaultVaultRoot } from "./scanner.js";
-import { createEntry, renameEntry, moveEntry, importEntry, deleteEntries, parseConflict, setFolderRefs, unmarkFolder, writePage, storeAttachment, resolveInside, relOfEntry, } from "./fs.js";
+import { createEntry, renameEntry, moveEntry, importEntry, deleteEntries, parseConflict, setFolderRefs, unmarkFolder, listKnowledgeSets, writePage, storeAttachment, resolveInside, relOfEntry, } from "./fs.js";
 import { syncScheduleStore, isRealDateStr, todayStr } from "./schedule.js";
 import { kitLogger } from "../core/log.js";
 import { forget, markMastered, readPage, readProgress, readScope, record, revision, savePage, setQuizWarn, setThreshold, } from "./quiz.js";
@@ -223,6 +223,17 @@ export async function apply(ctx, config = {}) {
                     occurrences: scheduleStore.occurrences(from, to),
                     orphans: scheduleStore.listOrphans(),
                     runningTimer: scheduleStore.getRunningTimer(),
+                    // 复习待办按知识集分组要用：页 rel 按最长前缀归属（知识集不嵌套，只认唯一一层）
+                    sets: (() => {
+                        try {
+                            const configured = String(readSettings().vaultRoot ?? '').trim();
+                            const root = configured === '' ? defaultVaultRoot() : configured;
+                            return listKnowledgeSets(root).map((s) => s.dir);
+                        }
+                        catch {
+                            return [];
+                        }
+                    })(),
                 });
             }));
             disposeSchedule.push(route('/dsh-wangshu/schedule/timer', (req, res) => {
