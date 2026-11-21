@@ -378,29 +378,46 @@ await test('知识集：cleanRefs  + 标记写 .refs.json + 索引上报', async
   assert.equal(listKnowledgeSets(root).some((s) => s.dir === '课'), true)
 })
 
-await test('知识集：允许嵌套；空目录 / 库根都拒；unmark 删标记（资料实物不动）', () => {
+await test('知识集：不嵌套（集里 / 集外都拒）；空目录 / 库根都拒；unmark 删标记（资料实物不动）', () => {
   write('课2/子/页.md', '# 页')
   const ke2 = path.join(root, '课2')
   const zi = path.join(root, '课2', '子')
-  setFolderRefs(root, zi, ['书.pdf'])
-  // 嵌套：含知识集的父目录照样能自己标记，两层清单互不干扰
   setFolderRefs(root, ke2, ['别的.pdf'])
-  assert.equal(isKnowledgeSet(zi), true)
-  assert.deepEqual(readFolderRefs(zi), ['书.pdf'])
-  assert.deepEqual(readFolderRefs(ke2), ['别的.pdf'])
-  const dirs = listKnowledgeSets(root).map((s) => s.dir)
-  assert.equal(dirs.includes('课2'), true)
-  assert.equal(dirs.includes('课2/子'), true)
+  // 集里的子目录不能再设
+  assert.throws(() => setFolderRefs(root, zi, ['书.pdf']), /已经在知识集「课2」里/)
+  // 反过来：内含/内含知识集的目录也套不住已有的集
+  unmarkFolder(root, ke2)
+  setFolderRefs(root, zi, ['书.pdf'])
+  assert.throws(() => setFolderRefs(root, ke2, ['别的.pdf']), /里面已经有知识集「子」，先取消它/)
+  // 已是知识集时改清单不受限
+  setFolderRefs(root, zi, ['书.pdf', '别的.pdf'])
+  assert.deepEqual(readFolderRefs(zi), ['书.pdf', '别的.pdf'])
+  assert.deepEqual(listKnowledgeSets(root).map((s) => s.dir).filter((d) => d.startsWith('课2')), ['课2/子'])
   unmarkFolder(root, zi)
   assert.equal(exists('课2/子/.refs.json'), false)
   assert.equal(exists('课2/子/页.md'), true)
-  unmarkFolder(root, ke2)
   const empty = path.join(root, '空课')
   fs.mkdirSync(empty)
   assert.throws(() => setFolderRefs(root, empty, []), /空目录/)
   assert.throws(() => setFolderRefs(root, root, []), /知识库根/)
   unmarkFolder(root, path.join(root, '课'))
   assert.equal(exists('课/.refs.json'), false)
+})
+
+await test('知识集：移动拦着集往集里放', async () => {
+  write('外层目录/页.md', '# 页')
+  write('内层目录/页.md', '# 页')
+  const outer = path.join(root, '外层目录')
+  const inner = path.join(root, '内层目录')
+  setFolderRefs(root, outer, [])
+  setFolderRefs(root, inner, [])
+  await assert.rejects(() => moveEntry(root, inner, outer, 'skip'), /知识集不能放进另一个知识集里/)
+  // 普通目录挪进集里不受影响
+  write('普通目录/页.md', '# 页')
+  const plain = await moveEntry(root, path.join(root, '普通目录'), outer, 'skip')
+  assert.equal(plain.skipped, false)
+  unmarkFolder(root, inner)
+  unmarkFolder(root, outer)
 })
 
 await test('知识集：库内文献 / 目录改名与移动改写挂载清单', async () => {

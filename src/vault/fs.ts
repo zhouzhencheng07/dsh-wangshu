@@ -170,8 +170,8 @@ export function isLibraryRoot(root: string, target: string): boolean {
 // 标记与清单存在**目录体内的隐藏文件** .refs.json（存在 = 是知识集，内容 = 挂载清单）：
 // 跟着目录生死，改名 / 移动 / 删除都不用单独维护；扫描只收 .md，点前缀文件不进索引。
 // 清单里存的是库内 rel（相对 library/、正斜杠）；资料实物在 library/ 里只存一份，
-// 多个知识集挂同一本书就是多条 ref 指向同一个 rel。允许嵌套（每一层各挂各的清单，
-// 呈现按「最近的一层」走），。
+// 多个知识集挂同一本书就是多条 ref 指向同一个 rel。**知识集不嵌套**：新建标记时要求
+// 祖先与子孙里都没有知识集，移动也拦着集往集里放——页只归属唯一一个集。
 
 /** 知识集标记文件名 */
 export const REFS_FILE = '.refs.json'
@@ -234,8 +234,49 @@ function dirHasContent(dirAbs: string): boolean {
   return false
 }
 
+/** 一个目录在不在 root 里面（不含 root 自己） */
+function withinRoot(rootReal: string, p: string): boolean {
+  const rel = path.relative(rootReal, p)
+  return rel !== '' && !rel.startsWith('..') && !path.isAbsolute(rel)
+}
+
+/** 祖先里最近的知识集（目录名）。知识集不嵌套：新建标记前拿它拦 */
+function ancestorSetName(rootReal: string, dirAbs: string): string | null {
+  let cur = path.dirname(dirAbs)
+  while (withinRoot(rootReal, cur)) {
+    if (isKnowledgeSet(cur)) return path.basename(cur)
+    cur = path.dirname(cur)
+  }
+  return null
+}
+
+/** 子树里最近的一层知识集（目录名，逐层往下取浅的那层） */
+function descendantSetName(dirAbs: string): string | null {
+  let level: string[] = [dirAbs]
+  while (level.length > 0) {
+    const next: string[] = []
+    for (const d of level) {
+      let entries: fs.Dirent[]
+      try {
+        entries = fs.readdirSync(d, { withFileTypes: true })
+      } catch {
+        continue
+      }
+      for (const ent of entries) {
+        if (!ent.isDirectory()) continue
+        if (ent.name.startsWith('.') || REFS_SKIP_DIRS.has(ent.name)) continue
+        const sub = path.join(d, ent.name)
+        if (isKnowledgeSet(sub)) return ent.name
+        next.push(sub)
+      }
+    }
+    level = next
+  }
+  return null
+}
+
 /** 写一个知识集的挂载清单（**全量写回**——挂载 / 移除都由调用方拼好整张清单）。
- *  **允许嵌套**：目录树本来就能把集套进集里，每一层各挂各的清单；
+ *  **知识集不嵌套**：新建标记时祖先与子孙里都不能有知识集；
  *  refs 为空也照写（「标记了但还没挂资料」是合法状态），取消标记走 unmarkFolder。
  *  **标记**动作要求目录非空（已标记的只更新清单，内容删光也还是知识集）。tmp + rename
  *  原子落盘。 */
@@ -244,7 +285,13 @@ export function setFolderRefs(root: string, dirAbs: string, refs: unknown): void
   const dir = resolveInside(root, dirAbs, { allowRoot: true })
   if (dir === rootReal) throw new Error('知识库根不能设为知识集')
   if (!fs.statSync(dir).isDirectory()) throw new Error('落点不是文件夹')
-  if (!isKnowledgeSet(dir) && !dirHasContent(dir)) throw new Error('空目录不能设为知识集')
+  if (!isKnowledgeSet(dir)) {
+    if (!dirHasContent(dir)) throw new Error('空目录不能设为知识集')
+    const up = ancestorSetName(rootReal, dir)
+    if (up !== null) throw new Error(`已经在知识集「${up}」里`)
+    const down = descendantSetName(dir)
+    if (down !== null) throw new Error(`里面已经有知识集「${down}」，先取消它`)
+  }
   const doc = { dir: relUnderRoot(rootReal, dir) ?? '', refs: cleanRefs(refs) }
   const tmp = path.join(dir, `${REFS_FILE}.${process.pid}.tmp`)
   fs.writeFileSync(tmp, JSON.stringify(doc, null, 2), 'utf8')
@@ -751,6 +798,12 @@ export async function moveEntry(
   const samePath = (a: string, b: string) => a.toLowerCase() === b.toLowerCase()
   if (stat.isDirectory() && (samePath(dest, target) || relUnderRoot(target, dest) !== null)) {
     throw new Error('不能移动到自己的子目录里')
+  }
+  // 知识集不嵌套：把集（或含集的目录）挪进另一个集里，等于造出两层
+  const rootReal = fs.realpathSync(root)
+  const srcHasSet = isKnowledgeSet(target) || (stat.isDirectory() && descendantSetName(target) !== null)
+  if (srcHasSet && (isKnowledgeSet(dest) || ancestorSetName(rootReal, dest) !== null)) {
+    throw new Error('知识集不能放进另一个知识集里')
   }
   const name = path.basename(target)
   if (samePath(path.dirname(target), dest)) {

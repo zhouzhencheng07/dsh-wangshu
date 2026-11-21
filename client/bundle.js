@@ -8078,7 +8078,7 @@ ellipsis，窄列只截字不破版 */
         const atLibRoot = libRoot !== null && entry.path === libRoot;
         const extraItems = [];
         // 知识集：普通目录可设（空目录没有「进入」的意义，置灰不给设）；已是知识集的
-        // 给「添加资料…」与「取消」——允许嵌套，父子各挂各的清单
+        // 给「添加资料…」与「取消」——不嵌套，集里不再有集（宿主拦）
         if (!lib && entry.dir === true) {
           const ksRefs = ksRefsOf(entry.path);
           if (ksRefs !== null) {
