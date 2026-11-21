@@ -1814,8 +1814,11 @@ ellipsis，窄列只截字不破版 */
 .dshk-quiz-segbtn:hover:not(.is-on){background:var(--dsw-alias-interactive-bg-hover)}
 .dshk-quiz-chk{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--dsw-alias-label-primary);padding:3px 0;cursor:pointer}
 .dshk-quiz-chk input,.dshk-quiz-opt input{accent-color:var(--dsw-alias-brand-primary);margin:0}
-.dshk-quiz-pages{max-height:220px;overflow:auto;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;padding:4px 10px;margin-top:6px}
+.dshk-quiz-pages{max-height:240px;overflow:auto;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;padding:4px 10px;margin-top:6px}
 .dshk-quiz-prow{display:flex;align-items:center;gap:8px;padding:3px 0}
+.dshk-quiz-pgroup{display:flex;align-items:center;gap:8px;padding:7px 0 3px;border-top:1px solid var(--dsw-alias-border-l1);margin-top:5px;font-weight:600}
+.dshk-quiz-pages>div:first-child>.dshk-quiz-pgroup{border-top:0;margin-top:0;padding-top:2px}
+.dshk-quiz-prows{padding-left:22px}
 .dshk-quiz-input{width:100%;box-sizing:border-box;appearance:none;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary);font:inherit;font-size:12px;padding:6px 8px;border-radius:6px}
 .dshk-quiz-num{width:72px;text-align:center}
 .dshk-quiz-kind{flex:none;font-size:11px;color:var(--dsw-alias-label-secondary);border:1px solid var(--dsw-alias-border-l2);border-radius:999px;padding:2px 9px}
@@ -10672,6 +10675,30 @@ ellipsis，窄列只截字不破版 */
       }
       return { total: questions.length, mastered, unmastered: questions.length - mastered };
     }
+    /** 目录的末 depth 段；同名目录靠多带一段来分开 */
+    function qzDirLabel(dir, depth) {
+      if (dir === "") return "根目录";
+      const parts = dir.split("/");
+      return parts.slice(Math.max(0, parts.length - depth)).join(" / ");
+    }
+    /** 页面清单按目录分组：组头整组勾选（页面一多，平铺清单挑不出某一章） */
+    function qzGroupPages(pages) {
+      const byDir = new Map();
+      for (const p of pages) {
+        const i = p.rel.lastIndexOf("/");
+        const dir = i < 0 ? "" : p.rel.slice(0, i);
+        const list = byDir.get(dir);
+        if (list === undefined) byDir.set(dir, [p]); else list.push(p);
+      }
+      const groups = Array.from(byDir, (entry) => ({ dir: entry[0], label: "", pages: entry[1] }));
+      for (let depth = 1; depth <= 4; depth += 1) {
+        const labels = groups.map((g) => qzDirLabel(g.dir, depth));
+        const unique = new Set(labels).size === labels.length;
+        groups.forEach((g, i) => { g.label = labels[i]; });
+        if (unique) break;
+      }
+      return groups;
+    }
     const qzFilterStatus = (questions, status, progress) => {
       if (status === "all") return questions;
       const want = status === "mastered";
@@ -11529,17 +11556,42 @@ ellipsis，窄列只截字不破版 */
                 jsxRuntime.jsx("span", { className: "dshk-quiz-gap" }),
                 jsxRuntime.jsx("button", { type: "button", className: "dshk-quiz-mini", onClick: () => setPicked(allPicked ? [] : list.map((p) => p.rel)), children: allPicked ? t("qzNone") : t("qzAll") }),
               ] }),
-              jsxRuntime.jsx("div", { className: "dshk-quiz-pages", children: list.map((p) => {
-                const s = qzStatOf(qzQuestionsOf([p]), progressMap);
-                return jsxRuntime.jsxs("div", { className: "dshk-quiz-prow", children: [
-                  chk(picked === null || picked.includes(p.rel), (on) => {
-                    const cur = picked === null ? list.map((x) => x.rel) : picked.slice();
-                    const nextPick = on === true ? cur.concat([p.rel]) : cur.filter((r) => r !== p.rel);
-                    setPicked(Array.from(new Set(nextPick)));
-                  }, jsxRuntime.jsx("span", { className: "dshk-quiz-grow", style: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: p.rel.split("/").pop() ?? p.rel })),
-                  jsxRuntime.jsx("span", { className: "dshk-quiz-sub", style: { flex: "none" }, children: t("qzPageStat").replace("{t}", String(s.total)).replace("{m}", String(s.mastered)) }),
-                  canEdit === false ? null : jsxRuntime.jsx("button", { type: "button", className: "dshk-quiz-mini", title: t("qzEditPageTip"), onClick: () => onEdit(p.rel), children: "✎" }),
-                ] }, p.rel);
+              jsxRuntime.jsx("div", { className: "dshk-quiz-pages", children: qzGroupPages(list).map((g) => {
+                const gs = qzStatOf(qzQuestionsOf(g.pages), progressMap);
+                const inGroup = picked === null ? g.pages.length : picked.filter((rel) => g.pages.some((x) => x.rel === rel)).length;
+                const allIn = inGroup === g.pages.length;
+                const someIn = inGroup > 0 && !allIn;
+                return jsxRuntime.jsxs("div", { children: [
+                  jsxRuntime.jsxs("div", { className: "dshk-quiz-pgroup", children: [
+                    jsxRuntime.jsxs("label", { className: "dshk-quiz-chk", style: { flex: 1, minWidth: 0 }, children: [
+                      jsxRuntime.jsx("input", {
+                        type: "checkbox",
+                        checked: allIn,
+                        // 半选：只勾了组里的一部分页
+                        ref: (el) => { if (el) el.indeterminate = someIn; },
+                        onChange: () => {
+                          const cur = picked === null ? list.map((x) => x.rel) : picked.slice();
+                          const rest = cur.filter((rel) => !g.pages.some((x) => x.rel === rel));
+                          setPicked(allIn ? rest : Array.from(new Set(rest.concat(g.pages.map((x) => x.rel)))));
+                        },
+                      }),
+                      jsxRuntime.jsx("span", { className: "dshk-quiz-grow", style: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: g.label }),
+                    ] }),
+                    jsxRuntime.jsx("span", { className: "dshk-quiz-sub", style: { flex: "none" }, children: t("qzPageStat").replace("{t}", String(gs.total)).replace("{m}", String(gs.mastered)) }),
+                  ] }),
+                  jsxRuntime.jsx("div", { className: "dshk-quiz-prows", children: g.pages.map((p) => {
+                    const s = qzStatOf(qzQuestionsOf([p]), progressMap);
+                    return jsxRuntime.jsxs("div", { className: "dshk-quiz-prow", children: [
+                      chk(picked === null || picked.includes(p.rel), (on) => {
+                        const cur = picked === null ? list.map((x) => x.rel) : picked.slice();
+                        const nextPick = on === true ? cur.concat([p.rel]) : cur.filter((r) => r !== p.rel);
+                        setPicked(Array.from(new Set(nextPick)));
+                      }, jsxRuntime.jsx("span", { className: "dshk-quiz-grow", style: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: p.rel.split("/").pop() ?? p.rel })),
+                      jsxRuntime.jsx("span", { className: "dshk-quiz-sub", style: { flex: "none" }, children: t("qzPageStat").replace("{t}", String(s.total)).replace("{m}", String(s.mastered)) }),
+                      canEdit === false ? null : jsxRuntime.jsx("button", { type: "button", className: "dshk-quiz-mini", title: t("qzEditPageTip"), onClick: () => onEdit(p.rel), children: "✎" }),
+                    ] }, p.rel);
+                  }) }),
+                ] }, g.dir);
               }) }),
             ] })
           : null,

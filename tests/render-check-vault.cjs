@@ -217,6 +217,29 @@ check(
       "点「刷题」只弹开局对话框：默认每轮 = 面板当前值（池子封顶）、过关连对 = 全局阈值",
       JSON.stringify(drillAsked) === JSON.stringify({ perRound: 2, threshold: 4 }),
     );
+    // 范围面板：页面清单按目录分组，组头带整组勾选与组内合计（页面一多，平铺清单挑不出某一章）
+    stateSeq = 0;
+    stateStore.clear();
+    callLog = [];
+    comps.VaultQuizScope({
+      ...scopeBase,
+      isPage: false,
+      pages: [
+        { rel: "数学/第1章/a", questions: [{ id: "a1", type: "judge", stem: "x", options: [], answer: true }] },
+        { rel: "数学/第1章/b", questions: [{ id: "b1", type: "judge", stem: "y", options: [], answer: true }] },
+        { rel: "数学/第2章/c", questions: [{ id: "c1", type: "judge", stem: "z", options: [], answer: true }] },
+      ],
+    });
+    const groupHeads = callLog.filter((c) => c[2] && c[2].className === "dshk-quiz-pgroup");
+    const groupLabels = callLog.filter(
+      (c) => c[2] && c[2].className === "dshk-quiz-grow" && ["第1章", "第2章"].includes(String(c[2].children)),
+    );
+    check(
+      "范围面板：页面清单按目录分组，组头带整组勾选与组内合计",
+      groupHeads.length === 2 && groupLabels.length === 2 &&
+        callLog.filter((c) => c[2] && c[2].className === "dshk-quiz-prows").length === 2 &&
+        callLog.filter((c) => c[2] && c[2].className === "dshk-quiz-prow").length === 3,
+    );
     stateSeq = 0;
     stateStore.clear();
     callLog = [];
@@ -914,6 +937,12 @@ async function checkApply() {
   // 只留只读小字；刷题开局先问每轮题数与过关连对，阈值只这一次会话有效
   const scopeBody = sliceBetween("function VaultQuizScope(", "// ── 出题：题目列表");
   const drillBody = sliceBetween("const startDrill = (pool, perRound, thr) => {", "/** 记一笔「新掌握」");
+  check(
+    "范围面板：页面清单按目录分组，组头整组勾选（页面一多，平铺清单挑不出某一章）",
+    bundleSrc.includes("function qzGroupPages(") && scopeBody.includes("qzGroupPages(list)") &&
+      scopeBody.includes("dshk-quiz-pgroup") && scopeBody.includes("dshk-quiz-prows") &&
+      scopeBody.includes("qzStatOf(qzQuestionsOf(g.pages)"),
+  );
   check(
     "范围面板不带掌握阈值输入：只读小字「连对 {t} 次算掌握」，值取 progress.threshold",
     scopeBody.includes('t("qzMasteryHint")') && scopeBody.includes("progress?.threshold") &&
