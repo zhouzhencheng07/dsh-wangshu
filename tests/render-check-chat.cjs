@@ -86,63 +86,64 @@ const requireMap = (name) => {
 const dockExports = loadBundle(__dirname + "/../client/bundle.js", requireMap);
 const comps = dockExports.chat;
 
-// 1) 导出面
+// ─── 1) 导出面 ──────────────────────────────────────────────────────────────
 check("chat 导出 apply（client 插件形状）与 inject 声明 slots", typeof comps.apply === "function" && Array.isArray(comps.inject) && comps.inject[0] === "slots");
-check("chat 导出面齐全（浮层组件 + 解析纯函数 + 配置页字段表）", typeof comps.ChatSurface === "function" && typeof comps.ChatPanel === "function" && typeof comps.ChatBall === "function" && typeof comps.ChatSessionBody === "function" && typeof comps.resolveSessionId === "function" && Array.isArray(comps.CHAT_CFG_FIELDS));
+check(
+  "导出面：签正文 + 输入框那一枚 + 快捷键 / 开关 / 探针",
+  typeof comps.ChatPaneBody === "function" && typeof comps.ChatComposerButton === "function" &&
+    typeof comps.registerShortcuts === "function" && typeof comps.toggleChat === "function" &&
+    typeof comps.loadCfg === "function" && typeof comps.getCSnap === "function",
+);
+check(
+  "小窗那一套整体退场（浮窗 / 把手 / 面板 / 配置页 / 目标解析都不再导出）",
+  ["ChatBall", "ChatPanel", "ChatSurface", "ChatSessionBody", "ChatConfigPage", "CHAT_CFG_FIELDS", "CHAT_CFG_DEFAULTS", "rectOf", "setChat", "getChatSnap", "resolveSessionId"]
+    .every((k) => comps[k] === undefined),
+);
 
-// 2) 配置页：两个布尔开关、单组、summary 返回 null
+// ─── 2) 签正文：官方 conversation.content 的 embedded 变体 ──────────────────
 {
-  const fakeForm = { state: { status: "ready", value: { rememberWindow: true, rememberTarget: true, followMain: false }, revision: 3, writable: true }, mutate: async () => true };
-  stateSeq = 0; stateStore.clear(); callLog = [];
-  const out = comps.ChatConfigPage({ view: "page", form: fakeForm });
-  const switches = callLog.filter((c) => c[1] === primStub.Switch);
-  check("配置页渲染无异常且两个开关都出", !!out && switches.length === 2);
-  check(
-    "配置字段 = 记住窗口 / 记住工作区与会话（贴哪侧由拖动决定，不给配置项）",
-    comps.CHAT_CFG_FIELDS.every((f) => f.type === "bool") &&
-      comps.CHAT_CFG_FIELDS.map((f) => f.key).join(",") === "rememberWindow,rememberTarget",
-  );
-  check("贴边侧不再有配置项（字段表里没有、源码里也不留 edgeLeft）", !comps.CHAT_CFG_FIELDS.some((f) => f.key === "edgeLeft"));
-  check("summary 视图返回 null（行详情收起态）", comps.ChatConfigPage({ view: "summary", form: fakeForm }) === null);
+  const noFactory = comps.ChatPaneBody({ useSession: (sel) => sel(null) });
+  check("没有 renderFactorySlot（宿主太旧）：出提示条而不是抛", !!noFactory && noFactory.props.className === "dshk-chat-note");
+
+  const render = (session) => {
+    callLog = [];
+    const out = comps.ChatPaneBody({
+      useSession: (sel) => sel(session),
+      renderFactorySlot: (name, params, opts) => { callLog.push(["factory", name, params, opts]); return { $$dshk: "factory" }; },
+    });
+    return { out, call: callLog.find((c) => c[0] === "factory") };
+  };
+  const active = render({ id: "s1", blank: false, running: true });
+  check("签正文渲染官方对话本体（conversation.content / embedded）", !!active.call && active.call[1] === "conversation.content" && active.call[2].variant === "embedded");
+  check("非空会话走 active 相位", active.call[2].phase === "active" && active.call[2].hero === false);
+  const hero = render({ id: "s2", blank: true, running: false });
+  check("空会话走 hero 相位（与主面新会话页同形）", hero.call[2].phase === "hero" && hero.call[2].hero === true);
+  const running = render({ id: "s3", blank: true, running: true });
+  check("空白但已在跑：不按 hero 处理", running.call[2].hero === false);
+  check("只给 chat 一个 view（与主面同一套视图槽）+ 兜底提示", typeof active.call[3].slots.views === "function" && !!active.call[3].fallback);
 }
 
-// 3) apply 装配：贴边常驻面（带 session 子槽）+ 子槽正文 + 配置页 + sessions 捕获
-async function checkApply() {
-  // apply 现在先等配置探针：行关闭（404）时一个槽都不注册，行可用才装配
-  const run = async (available) => {
-    global.fetch = async () =>
-      available
-        ? { ok: true, status: 200, json: async () => ({ rememberWindow: true, rememberTarget: true }) }
-        : { ok: false, status: 404, json: async () => ({ error: "HTTP 404" }) };
-    const registered = [];
-    const seatInjects = [];
-    const injected = [];
-    const ctx = {
-      slots: {
-        register: (seat) => { registered.push(seat); return () => {}; },
-        inject: (k, cb) => { seatInjects.push(k); if (typeof cb === "function") cb(); },
-      },
-      // 服务注入按真宿主口径回调：⇄ 互换要拿 uiWorkspace，后面的渲染分支直接用它
-      inject: (deps, cb) => { injected.push(deps); if (typeof cb === "function") cb({ sessions: {}, uiWorkspace: { openSession: (id) => { swapCalls.push(id); } } }); },
-    };
-    await comps.apply(ctx);
-    return { registered, seatInjects, injected };
-  };
-  const off = await run(false);
-  check("行关闭（/dsh-wangshu-chat/config 404）：一个槽、一个服务注入都不发生", off.registered.length === 0 && off.seatInjects.length === 0 && off.injected.length === 0);
-  const { registered, seatInjects, injected } = await run(true);
-  check("apply 挂三个槽位等待（shell.overlay / 子槽 / 配置页）", seatInjects.join(",") === "shell.overlay,dsh-wangshu.chat.session,plugins.row.config");
-  const overlay = registered.find((r) => r.name === "shell.overlay" && r.id === "dsh-wangshu-chat");
-  check(
-    "贴边面注册进 shell.overlay 且带 session 子槽声明（换 SessionProvider 与 renderFactorySlot）",
-    !!overlay && overlay.children?.["dsh-wangshu.chat.session"]?.scope === "session",
-  );
-  check("小窗正文注册进自声明的子槽", registered.some((r) => r.name === "dsh-wangshu.chat.session"));
-  check("配置页挂本组件行（key = dsh-wangshu#chat）", registered.some((r) => r.name === "plugins.row.config" && r.key === "dsh-wangshu#chat"));
-  check("apply 期 inject 官方 sessions 服务", injected.some((d) => Array.isArray(d) && d.includes("sessions")));
-  check("apply 期 inject 官方 uiWorkspace（⇄ 互换要它把主面换到小窗这条）", injected.some((d) => Array.isArray(d) && d.includes("uiWorkspace")));
+// ─── 3) 输入框左边那一枚「会话」 ────────────────────────────────────────────
+check("开关不在左栏形态条上（形态钮导出与登记都退场）", comps.ChatEntry === undefined);
+{
+  stateSeq = 0; stateStore.clear(); callLog = [];
+  const out = comps.ChatComposerButton();
+  const btn = callLog.find((c) => c[1] === "button");
+  check("输入框那一枚渲染出按钮（会话图标 + 无障碍名 + 未按下态）", !!out && !!btn && btn[2]["aria-label"] === "会话" && btn[2]["aria-pressed"] === "false");
+  check("点它不抢焦点 + 点击 = 开关（由 toggleChat 承担）", typeof btn[2].onMouseDown === "function" && typeof btn[2].onClick === "function" && typeof comps.toggleChat === "function");
+  const src = fs.readFileSync(__dirname + "/../client/bundle.js", "utf8");
+  check("样式类自带 + 不再往签条注入（没有 data-dockkit-strip-chrome）", src.includes("dshk-chat-inputbtn") && !src.includes("data-dockkit-strip-chrome"));
+}
 
-  // 3b) 快捷键：开合小窗一条命令注册进官方 shortcuts（默认键避开宿主与自家其余命令）
+// ─── 4) 快捷键 + apply 装配 ────────────────────────────────────────────────
+async function checkApply() {
+  const setProbe = (ok) => {
+    global.fetch = async () => (ok
+      ? { ok: true, status: 200, json: async () => ({}) }
+      : { ok: false, status: 404, json: async () => ({ error: "HTTP 404" }) });
+  };
+
+  // 4a) 快捷键：一条命令，默认键 primary+alt+分号
   const shortcutCmds = [];
   const effects = [];
   comps.registerShortcuts({
@@ -153,215 +154,91 @@ async function checkApply() {
   const cmd = shortcutCmds.find((c) => c.id === "dsh-wangshu.chat.toggle");
   const keys = cmd ? Object.values(cmd.defaults).map((d) => d.code + "+" + d.modifiers.join("+")).join(" ") : "";
   check(
-    "快捷键注册进官方服务：开合小窗一条（默认键 primary+alt+分号，避开系统保留的字母键）",
-    !!cmd && typeof cmd.label === "function" && keys.split(" ").every((k) => k === "Semicolon+primary+alt") &&
-      !("web:linux" in cmd.defaults) &&
-      cmd.regions.includes("page") && cmd.regions.includes("editable") && cmd.regions.includes("terminal"),
+    "快捷键：开合会话签一条（默认 primary+alt+分号，避开系统保留键）",
+    !!cmd && typeof cmd.label === "function" && keys.split(" ").every((k) => k === "Semicolon+primary+alt") && !("web:linux" in cmd.defaults),
   );
-  check("快捷键动作 = 开关小窗", !!cmd && typeof comps.toggleChat === "function");
-  // 行关闭（探针 404）→ blocked；行可用 → handled（同一开关两处结论必须一致）
-  global.fetch = async () => ({ ok: false, status: 404, json: async () => ({ error: "HTTP 404" }) });
+  check("快捷键在输入框与终端里也生效", cmd.regions.includes("page") && cmd.regions.includes("editable") && cmd.regions.includes("terminal"));
+  setProbe(false);
   await comps.loadCfg();
-  check("快捷键：行关闭（探针 404）时 blocked", !!cmd && cmd.resolve().status === "blocked" && typeof cmd.resolve().reason === "string");
-  global.fetch = async () => ({ ok: true, status: 200, json: async () => ({ rememberWindow: true, rememberTarget: true }) });
+  check("快捷键：行关闭（探针 404）时 blocked", cmd.resolve().status === "blocked" && typeof cmd.resolve().reason === "string");
+  setProbe(true);
   await comps.loadCfg();
-  check("快捷键：行可用时 handled", !!cmd && cmd.resolve().status === "handled");
+  check("快捷键：行可用时 handled", cmd.resolve().status === "handled");
 
-  // 4) 渲染分支：把手 / 面板 / 浮层宿主 / 内嵌对话
-  stateSeq = 0; stateStore.clear();
-  const cfg = { ...comps.CHAT_CFG_DEFAULTS };
-  const ui = { open: false, workspaceId: "w1", sessionId: "s1", rect: { x: 100, y: 80, w: 420, h: 600 }, followMain: false };
-  const ws = { workspaceId: "w1", path: "D:\\work\\demo", title: "demo", sessionIds: ["s1", "s2"] };
-  const rows = [{ id: "s1", displayTitle: "第一条", updatedAt: 2, running: true }, { id: "s2", displayTitle: "第二条", updatedAt: 1 }];
-  callLog = [];
-  const ball = comps.ChatBall({ cfg, ui, title: "第一条", running: true });
-  const ballBtn = callLog.find((c) => c[1] === "button");
-  check("把手渲染（常显，含图形与标题，可拖 = onPointerDown）", !!ball && !!ballBtn && typeof ballBtn[2].onPointerDown === "function");
-  callLog = [];
-  comps.ChatBall({ cfg, ui: { ball: { dock: null, x: 120, y: 240 } }, title: "x", running: false });
-  const freeBtn = callLog.find((c) => c[1] === "button");
-  check(
-    "自由位置：内联 left/top（拖到哪儿停哪儿）；停靠时不写坐标（交给 CSS 贴边）",
-    freeBtn[2].style.left === 120 && freeBtn[2].style.top === 240 && ballBtn[2].style.left === undefined,
-  );
-  callLog = [];
-  comps.ChatPanel({ ui, cfg, workspaces: [ws], rows, ws, body: null, onCreate: () => {}, onSessionId: () => {}, onWorkspaceId: () => {} });
-  const panelTypes = callLog.map((c) => c[1]);
-  const classes = callLog.map((c) => c[2]?.className).filter(Boolean);
-  check(
-    "面板渲染：外壳 + 头部 + 正文槽 + 缩放角",
-    panelTypes.includes("div") && panelTypes.includes("button") &&
-      classes.includes("dshk-chat-panel") && classes.includes("dshk-chat-head") &&
-      classes.includes("dshk-chat-body") && classes.includes("dshk-chat-grip"),
-  );
-  check("收起按钮与展开按钮都在头部", callLog.filter((c) => c[1] === "button").length >= 5);
-
-  callLog = [];
-  const listState = { ids: ["s1", "s2"], byId: { s1: rows[0], s2: rows[1] } };
-  const wsState = { items: [ws], archivedSessionIds: [] };
-  const props = {
-    useWorkspaces: (sel) => sel(wsState),
-    useSessions: (sel) => sel(listState),
-    SessionProvider: (p) => ({ type: "session-provider", props: p, $$dshk: "provider" }),
-    renderSlot: (key) => ({ type: "child-slot", props: { key }, $$dshk: "slot" }),
-  };
-  const surface = comps.ChatSurface(props);
-  check(
-    "浮层宿主渲染：portal 到 body（盖得住右栏全屏），收起态只有把手",
-    surface !== null && surface.$$dshk === "portal" && surface.props.container === global.document.body &&
-      surface.props.children.$$dshk === "jsxs" &&
-      callLog.some((c) => typeof c[2]?.className === "string" && c[2].className.startsWith("dshk-chat-root")),
-  );
-
-  let factoryArgs = null;
-  const bodyOut = comps.ChatSessionBody({
-    useSession: (sel) => sel({ blank: true, running: false }),
-    renderFactorySlot: (name, propsIn, opts) => { factoryArgs = { name, propsIn, opts }; return { type: "factory", $$dshk: "factory" }; },
-  });
-  check(
-    "正文走官方 conversation.content 工厂的 embedded 变体（空会话 → hero 相位，带 views 局部槽与回落）",
-    !!bodyOut && factoryArgs !== null && factoryArgs.name === "conversation.content" &&
-      factoryArgs.propsIn.variant === "embedded" && factoryArgs.propsIn.hero === true && factoryArgs.propsIn.phase === "hero" &&
-      typeof factoryArgs.opts.slots.views === "function" && factoryArgs.opts.fallback !== undefined,
-  );
-  callLog = [];
-  let factoryArgs2 = null;
-  comps.ChatSessionBody({
-    useSession: (sel) => sel({ blank: false, running: true }),
-    renderFactorySlot: (name, propsIn) => { factoryArgs2 = propsIn; return null; },
-  });
-  check("有内容的会话 → active 相位", factoryArgs2 !== null && factoryArgs2.phase === "active" && factoryArgs2.hero === false);
-  const noFactory = comps.ChatSessionBody({ useSession: (sel) => sel(null), renderFactorySlot: undefined });
-  check("宿主没有工厂能力时给出说明而不是空白", noFactory !== null && noFactory.$$dshk === "jsx");
-
-  // 5) 目标解析纯函数
-  check("路径归一：反斜杠 / 尾分隔符 / 盘符大小写", comps.normPath("D:\\Work\\Demo\\") === "d:/work/demo" && comps.normPath("/a/b/") === "/a/b");
-  check("按 cwd 找主面会话的工作区（大小写与分隔符不敏感）", comps.workspaceOfCwd([ws], "d:/work/DEMO")?.workspaceId === "w1" && comps.workspaceOfCwd([ws], "") === null);
-  const filtered = comps.sessionsOfWorkspace(ws, { byId: { s1: rows[0], s2: rows[1], s3: { id: "s3", displayTitle: "归档的", updatedAt: 9 }, s4: { id: "s4", displayTitle: "子智能体", updatedAt: 9, origin: "subagent" } } }, ["s3"]);
-  check(
-    "会话列表：滤掉归档与子智能体，按更新时间倒序",
-    filtered.map((r) => r.id).join(",") === "s1,s2",
-  );
-  check(
-    "目标会话：记忆优先，其次最近一条有内容的，没有则空",
-    comps.resolveSessionId(filtered, "s2") === "s2" && comps.resolveSessionId(filtered, "gone") === "s1" && comps.resolveSessionId([], "s2") === null,
-  );
-  check(
-    "目标会话永不选主面那条（排除项连记忆一起否掉，回落也跳过）",
-    comps.resolveSessionId(filtered, "s2", "s2") === "s1" &&
-      comps.resolveSessionId(filtered, null, "s1") === "s2" &&
-      comps.resolveSessionId([{ id: "s1", displayTitle: "只剩主面那条", updatedAt: 1 }], null, "s1") === null,
-  );
-  check(
-    "空白会话不进下拉、且标题显示「新建对话」（空白会话的 displayTitle 是工作区名，与新建重复）",
-    comps.sessionLabel({ id: "sx", blank: true, displayTitle: "test" }, "空") === "新建对话" &&
-      comps.sessionLabel({ id: "sy", displayTitle: "你好" }, "空") === "你好" &&
-      comps.sessionLabel(null, "空") === "空" &&
-      comps.resolveSessionId([{ id: "blank", blank: true, updatedAt: 9 }, { id: "real", displayTitle: "x", updatedAt: 1 }], null) === "real" &&
-      comps.resolveSessionId([{ id: "blank", blank: true, updatedAt: 9 }], "blank") === "blank",
-  );
-  check(
-    "目标工作区：记忆 > 主面 cwd > 第一个",
-    comps.resolveWorkspace([ws, { workspaceId: "w2", path: "D:\\other" }], "w2", "D:/work/demo").workspaceId === "w2" &&
-      comps.resolveWorkspace([ws], null, "D:/work/demo").workspaceId === "w1" &&
-      comps.resolveWorkspace([], null, "x") === null,
-  );
-  check(
-    "会话归属工作区按 sessionIds 认（跨工作区切主面用，cwd 不作准）",
-    comps.workspaceOfSession([ws], "s2")?.workspaceId === "w1" &&
-      comps.workspaceOfSession([ws, { workspaceId: "w2", path: "D:\\other", sessionIds: ["s3"] }], "s3")?.workspaceId === "w2" &&
-      comps.workspaceOfSession([ws], "nope") === null &&
-      comps.workspaceOfSession([ws], null) === null,
-  );
-
-  // 5c) ⇄ 与主面互换：宿主一条会话只有一个输入框编辑器实例，两边不能同时渲染同一条
-  {
-    const mainRow = { id: "s9", displayTitle: "主面那条", updatedAt: 9, cwd: "D:\\other", retainedBy: { mainView: 1 } };
-    const smallRow = { id: "s1", displayTitle: "小窗那条", updatedAt: 2 };
-    const wsA = { workspaceId: "wA", path: "D:\\work\\demo", title: "A", sessionIds: ["s1"] };
-    const wsB = { workspaceId: "wB", path: "D:\\other", title: "B", sessionIds: ["s9"] };
-    const wsC = { workspaceId: "wC", path: "D:\\c", title: "C", sessionIds: ["s1", "s9"] };
-    const list = { ids: ["s1", "s9"], byId: { s1: smallRow, s9: mainRow } };
-    const render = (items, wsId, sessionId) => {
-      stateSeq = 0; stateStore.clear(); callLog = [];
-      comps.setChat({ open: true, workspaceId: wsId, sessionId, rect: null, ball: null }, false);
-      comps.ChatSurface({
-        useWorkspaces: (sel) => sel({ items, archivedSessionIds: [] }),
-        useSessions: (sel) => sel(list),
-        SessionProvider: (p) => ({ type: "session-provider", props: p }),
-        renderSlot: () => null,
-      });
-      return callLog.find((c) => c[1] === comps.ChatPanel);
+  // 4b) apply 装配：签类型 + pane body + 形态钮 + tabKinds；行关闭时一个都不注册
+  const run = async (available) => {
+    setProbe(available);
+    delete dockExports.tabKinds.chat;
+    const before = dockExports.sideForms.length;
+    const regs = [];
+    const calls = [];
+    const ctx = {
+      inject(deps, cb) {
+        calls.push(["inject", deps.join(",")]);
+        if (deps.includes("sidebarRightTabs")) {
+          cb({
+            sidebarRightTabs: { register: (o) => { regs.push(["tab", o]); return () => {}; } },
+            slots: { inject: (n, f) => f(), register: (o) => { regs.push(["body", o]); return () => {}; } },
+            effect: (f) => { f(); },
+          });
+        }
+        if (deps.includes("shortcuts")) cb({ shortcuts: { catalog: { subscribe: () => () => {} }, register: () => () => {} }, effect: (f) => { f(); } });
+      },
+      effect(fn) { fn(); },
+      slots: {
+        inject: (n, f) => { calls.push(["slots.inject", n]); f(); },
+        register: (o) => { regs.push(["slot", o]); return () => {}; },
+      },
     };
-    // 小窗目标记忆成主面那条（同区）→ 让开，换本区另一条
-    render([wsC], "wC", "s9");
-    check("小窗目标等于主面那条时让开（同区换另一条）", dockExports.chatSurface.sessionId === "s1");
-    // ⇄：主面接手小窗这条，小窗接手主面那条（主面那条在别的工作区 → 连工作区一起换）
-    swapCalls.length = 0;
-    const panel = render([wsA, wsB], "wA", "s1");
-    check("⇄ 认得主面那条（主面属于别的工作区时仍可用）", !!panel && panel[2].mainId === "s9" && panel[2].ui.workspaceId === "wA");
-    if (panel) panel[2].onPickMain();
-    const after = comps.getChatSnap();
-    check("⇄ 两边互换：主面接手小窗这条", swapCalls.join(",") === "s1");
-    check("⇄ 两边互换：小窗接手主面那条（连工作区一起换）", after.sessionId === "s9" && after.workspaceId === "wB");
-  }
-  check(
-    "窗口矩形：贴右默认位置、记忆越界收回视口内、窄屏整屏",
-    comps.rectOf({ rect: null }, cfg) !== null &&
-      comps.rectOf({ rect: { x: 99999, y: 99999, w: 420, h: 620 } }, cfg).x < 1600 &&
-      (global.window.innerWidth = 480, comps.rectOf({ rect: null }, cfg)) === null &&
-      (global.window.innerWidth = 1600, true),
-  );
-  check(
-    "配置快照回落内置默认（端点 404 / 字段缺失都不炸）",
-    JSON.stringify(comps.cCfgFromSnapshot(null)) === JSON.stringify(comps.CHAT_CFG_DEFAULTS) &&
-      comps.cCfgFromSnapshot({ status: "ready", value: { rememberWindow: false } }).rememberWindow === false &&
-      comps.cCfgFromSnapshot({ status: "ready", value: { rememberWindow: "yes" } }).rememberWindow === true,
-  );
+    await comps.apply(ctx);
+    return { regs, calls, forms: dockExports.sideForms.slice(before) };
+  };
 
-  // 5b) 引用落点按光标（底座的 composerFocus）：光标在哪个输入框就归那面
-  {
-    const el = (seatSel, panelSel) => ({
-      closest: (sel) => (sel === '[class*="composerSeat"]' ? (seatSel ? {} : null) : sel === ".dshk-chat-panel" && panelSel ? {} : null),
-    });
-    global.document.activeElement = null;
-    check("光标不在任何输入框（页面空白 / 编辑器里）", dockExports.composerFocus() === null);
-    global.document.activeElement = el(true, false);
-    check("光标在官方输入框但不在小窗 → 主面", dockExports.composerFocus() === "main");
-    global.document.activeElement = el(true, true);
-    check("光标在小窗的输入框 → 小窗", dockExports.composerFocus() === "chat");
-    global.document.activeElement = el(false, false);
-    check("光标在普通页面元素（侧栏 / 工具条）→ 都不算", dockExports.composerFocus() === null);
-    global.document.activeElement = null;
-  }
+  const off = await run(false);
+  check("行关闭（探针 404）：签类型、形态钮、tabKinds 一个都不注册", off.regs.length === 0 && off.forms.length === 0 && dockExports.tabKinds.chat === undefined);
 
-  // 6) 源哨兵：组件行 / exports / locale / 宿主 Config 同源
+  const on = await run(true);
+  const tab = on.regs.find((r) => r[0] === "tab");
+  check("签类型注册成 dshk-chat（标题「会话」）", !!tab && tab[1].kind === "dshk-chat" && tab[1].title() === "会话");
+  const body = on.regs.find((r) => r[0] === "body");
+  check("pane body 落在官方 sidebar.right.pane.tab 槽上（key 与签 id 同源）", !!body && body[1].name === "sidebar.right.pane.tab" && body[1].key === "dsh-wangshu-chat");
+  check("tabKinds 补登（openRightbarTab 按 feature 查 kind）", dockExports.tabKinds.chat?.kind === "dshk-chat");
+  check("不往左栏形态条登记任何东西（开关在输入框那一行）", on.forms.length === 0);
+  const slot = on.regs.find((r) => r[0] === "slot");
+  check("开关挂在官方 conversation.input.left（每处输入框都带）", !!slot && slot[1].name === "conversation.input.left" && slot[1].id === "dsh-wangshu-chat-toggle");
+  check("apply 期 inject 官方 shortcuts", on.calls.some((c) => c[0] === "inject" && c[1] === "shortcuts"));
+
+  // ─── 5) 源哨兵：小窗退场、签形态就位 ────────────────────────────────────
   const read = (rel) => fs.readFileSync(__dirname + "/../" + rel, "utf8");
   const bundleSrc = read("client/bundle.js");
   const compSrc = read("src/chat/index.ts");
   const patchSrc = read("cordis.patch.yml");
   const pkg = JSON.parse(read("package.json"));
   check("组件行声明 + exports 子路径 + locale 齐备", patchSrc.includes("name: dsh-wangshu/chat") && !!pkg.exports["./chat"] && !!pkg.exports["./chat/locale/*.json"]);
-  check("组件行中文名与描述在 locale/chat", read("locale/chat/zh.json").includes("对话小窗") && read("locale/chat/en.json").includes("Chat window"));
-  check("chatModule 装进 bundle 且进组件激活循环", bundleSrc.includes("const chatModule = (kit, require) => {") && bundleSrc.includes("exports.chat = chatModule(exports, require);") && bundleSrc.includes("exports.files, exports.chat,"));
-  const schemaKeys = [...compSrc.matchAll(/^ {8}(\w+): z\.boolean\(\)/gm)].map((m) => m[1]);
+  check("组件行卡片文案改成「会话」", read("locale/chat/zh.json").includes("会话") && !read("locale/chat/zh.json").includes("小窗"));
+  check("chatModule 装进 bundle 且进组件激活循环", bundleSrc.includes("const chatModule = (kit, require) => {") && bundleSrc.includes("exports.chat = chatModule(exports, require);"));
   check(
-    "宿主 Config 字段与 client 默认表、配置字段表三处同源",
-    schemaKeys.join(",") === comps.CHAT_CFG_FIELDS.map((f) => f.key).join(",") &&
-      schemaKeys.join(",") === Object.keys(comps.CHAT_CFG_DEFAULTS).join(","),
-  );
-  check("宿主半边只有配置快照端点（会话与工作区全走官方服务）", compSrc.includes("/dsh-wangshu-chat/config") && !compSrc.includes("ctx.inject(['tools']"));
-  check(
-    "引用按目标 id 把门：effect 释放旧引用与 state 落地之间，旧引用不交给 SessionProvider",
-    bundleSrc.includes("return held !== null && held.id === sessionId ? held.ref : null;"),
+    "小窗的浮窗外壳 / 把手 / 矩形记忆 / 配置项全退场",
+    !/dshk-chat-ball|dshk-chat-panel|dshk-chat-grip|rememberWindow|rememberTarget|MEM_KEY/.test(bundleSrc),
   );
   check(
-    "引用落点记住最近一次有光标的输入面（工具条 / 树行入口先夺焦点）",
-    bundleSrc.includes("const face = composerFocus() ?? lastComposerFace;"),
+    "引用落点不再分面（没有 chatSurface / composerFocus / lastComposerFace）",
+    !/chatSurface|composerFocus|lastComposerFace/.test(bundleSrc),
   );
   check(
-    "小窗藏掉官方 hero 的「选择工作区」行（主面全局选择器，与小窗自己的选择钮重复且越权）",
-    bundleSrc.includes('.dshk-chat-panel [class*="heroWorkspaceRow"]{display:none}'),
+    "宿主半边只剩可达性探针（没有 Config 字段表）",
+    compSrc.includes("/dsh-wangshu-chat/config") && !compSrc.includes("rememberWindow") && !/z\.object/.test(compSrc),
+  );
+  check("签里渲染官方对话本体（bundle 里有 conversation.content + embedded）", bundleSrc.includes('renderFactorySlot(\n        "conversation.content"') || bundleSrc.includes('"conversation.content"'));
+  check(
+    "主面与签两处输入框同时挂着时，同一芯片只显示一份（重复的装饰器节点隐藏）",
+    bundleSrc.includes("[data-composer-chip] > * ~ *,[data-composer-quote] > * ~ *{display:none!important}"),
+  );
+  check(
+    "签卸载把编辑根交还主面输入框（handoffComposerRoot + 签侧标记）",
+    bundleSrc.includes("function handoffComposerRoot(") &&
+      bundleSrc.includes("handoffComposerRoot(paneSessionId)") &&
+      bundleSrc.includes('"data-dshk-chat-pane"'),
   );
 }
 checkApply().then(() => {

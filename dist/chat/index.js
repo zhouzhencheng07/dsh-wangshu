@@ -1,41 +1,16 @@
-// dsh-wangshu/chat 组件（宿主半边入口）——对话小窗
+// dsh-wangshu/chat 组件（宿主半边入口）——右栏「会话」签
 //
-// 能力本体在 client/bundle.js 的 chatModule（贴边常驻把手 + 浮窗外壳 + 会话绑定）；
-// 本模块只做两件事：暴露行可达性探针，以及本组件的细粒度设置。
-//   GET /dsh-wangshu-chat/config —— 生效配置快照（client 门控与可达性探针：404 = 行关闭）
+// 能力本体在 client/bundle.js 的 chatModule（签类型与 pane body、形态条那一枚、
+// 快捷键）。本模块只做一件事：暴露行可达性探针。
+//   GET /dsh-wangshu-chat/config —— 200 = 行启用（client 门控与可达性探针：404 = 行关闭）
 // 行开关（插件页组件行 switch）= 总开关：行禁用 → 本模块不物化 → 端点 404 → client
-// 半边整体不注册（把手与浮窗都不出现）。
+// 半边整体不注册（签类型、形态钮、快捷键都不出现）。
 //
-// 小窗不需要自己的端点：会话、工作区、历史全走宿主官方的 sessions / workspace 服务。
+// 签里渲染的是宿主官方对话本体（当前这条会话），本组件不碰会话、工作区与历史。
 import http from 'node:http';
-import { loadDep, sameOrigin } from "../core/index.js";
+import { sameOrigin } from "../core/index.js";
 export const name = 'dsh-wangshu/chat';
-// ── 组件设置 schema（声明式模型）──
-// **字段必须 .volatile()**（SettingsForms 只投影 volatile 字段进表单）；volatile 写入
-// = 热提交，readSettings 统一解引用后每次现读。client 侧另有一份默认值
-// （client/bundle.js 的 CHAT_CFG_DEFAULTS），渲染级检查钉住两处同源。
-const schemastery = loadDep('@deepseek-ai/schemastery');
-const z = (schemastery?.default ?? schemastery ?? null);
-export const Config = z && typeof z.object === 'function'
-    ? z.object({
-        // 记住浮窗的位置与尺寸（跨刷新恢复）。
-        rememberWindow: z.boolean().default(true).volatile(),
-        // 记住上次用的工作区与会话（小窗是独立的，与主面各自切换）。
-        rememberTarget: z.boolean().default(true).volatile(),
-    })
-    : undefined;
-export async function apply(ctx, config = {}) {
-    const defaults = Config ? Config({}) : {};
-    // volatile 字段在 fiber config 里是稳定 ref（{get}），统一解引用
-    const readRef = (v) => v !== null && typeof v === 'object' && typeof v.get === 'function'
-        ? v.get()
-        : v;
-    const readSettings = () => {
-        const out = { ...defaults };
-        for (const [key, value] of Object.entries(config ?? {}))
-            out[key] = readRef(value);
-        return out;
-    };
+export async function apply(ctx) {
     ctx.inject(['webServer'], (webCtx) => {
         // 路由必须随 fiber 注销（宿主 register 对重复 path 直接抛错）：行关闭再开会
         // 因残留路由重复注册失败，行关闭期间探针也仍 200、client 门控失效
@@ -55,7 +30,7 @@ export async function apply(ctx, config = {}) {
                     json(403, { error: 'cross-origin denied' });
                     return;
                 }
-                json(200, readSettings());
+                json(200, {});
             },
         }), 'dsh-wangshu/chat: config endpoint');
     });

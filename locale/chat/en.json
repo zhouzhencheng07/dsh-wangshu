@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "Chat window",
-    "description": "An always-on edge handle that opens a small chat window: switchable workspace and session, running the official conversation surface inside."
+    "title": "Chat",
+    "description": "A chat tab in the right sidebar: shows and continues the current session, same conversation as the main panel, dockable or floated like any other tab."
   }
 }
