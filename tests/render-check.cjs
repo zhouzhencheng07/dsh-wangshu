@@ -334,7 +334,8 @@ try { comps.closeRightbarTab("file"); } catch { rbCloseOk = false; }
 check("closeRightbarTab 服务未就绪时静默不抛", rbCloseOk);
 callLog = [];
 out = comps.ScheduleTasksPanel({});
-const scopeChips = callLog.filter((c) => c[2] && typeof c[2].className === "string" && c[2].className.startsWith("dshk-sched-wdchip"));
+const scopeChips = callLog.filter((c) => c[2] && typeof c[2].className === "string" && c[2].className.startsWith("dshk-sched-scopebtn"));
+const headRows = callLog.filter((c) => c[2] && c[2].className === "dshk-sched-todoheadrow");
 const barBtns = callLog.filter((c) => c[2] && typeof c[2].className === "string" && c[2].className.startsWith("dshk-sched-actionbtn"));
 check("ScheduleTasksPanel 渲染清单壳（标题带行数 + 今日/近三日/全部三档）", !!out && scopeChips.length === 3);
 {
@@ -346,6 +347,7 @@ check("ScheduleTasksPanel 渲染清单壳（标题带行数 + 今日/近三日/�
   );
 }
 check("计时入口在侧栏日程 tab 顶部（新建 + 开始计时两枚）", barBtns.length === 2);
+check("标题与计时入口同一行（两枚钮挂在表头行里）", headRows.length === 1);
 // 预置 useScheduleData 的数据槽（0）让清单真出行：标题 + 截止徽章 + 行尾动作
 stateSeq = 0;
 stateStore.clear();

@@ -227,6 +227,114 @@ const WikiLink = Node.create({
 /** click 距最近一次 touchstart 不超过这么久，就按触屏点开处理（触摸后 click 紧跟着来） */
 const TOUCH_CLICK_MS = 1000;
 
+/** 公式源码浮层：贴在公式下方（下面放不下就翻到上面），多行等宽输入 + 一行实时预览。
+ *  源码可以写很长——放回正文里只是一条横向滚动的一行框，看不清也改不动。
+ *  提交 = Ctrl/Cmd+Enter 或点浮层外面；Esc 取消。touch 为真时源码不整条全选。 */
+function mountMathPanel(anchor, tex, onCommit, onCancel, touch) {
+  const panel = document.createElement("div");
+  panel.className = "dshk-math-panel";
+  const src = document.createElement("textarea");
+  src.className = "dshk-math-panel-src";
+  src.spellcheck = false;
+  src.value = tex;
+  const preview = document.createElement("div");
+  preview.className = "dshk-math-panel-preview";
+  panel.append(src, preview);
+
+  const paint = () => {
+    const text = src.value.trim();
+    preview.classList.toggle("is-empty", text === "");
+    preview.textContent = "";
+    if (text === "") {
+      preview.textContent = "空公式";
+      return;
+    }
+    if (window.katex) {
+      try {
+        preview.innerHTML = window.katex.renderToString(text, { throwOnError: false });
+        return;
+      } catch {
+        /* 渲染失败回退原文 */
+      }
+    }
+    preview.textContent = text;
+  };
+  // 源码自己长高（再长就在面板里滚），整块跟着重新量高、重新找位置
+  const layout = () => {
+    src.style.height = "auto";
+    src.style.height = `${Math.min(220, src.scrollHeight)}px`;
+    const box = anchor.getBoundingClientRect();
+    const host = anchor.closest(".ProseMirror");
+    const width = Math.min(520, Math.max(280, (host ? host.clientWidth : 420) - 8));
+    panel.style.width = `${width}px`;
+    panel.style.left = `${Math.min(Math.max(8, box.left), Math.max(8, window.innerWidth - width - 8))}px`;
+    const height = panel.offsetHeight;
+    const below = box.bottom + 6;
+    const above = box.top - height - 6;
+    panel.style.top = `${below + height > window.innerHeight - 8 && above > 8 ? above : below}px`;
+  };
+
+  let done = false;
+  const onDown = (e) => {
+    if (!panel.contains(e.target)) commit();
+  };
+  const close = () => {
+    document.removeEventListener("mousedown", onDown, true);
+    window.removeEventListener("scroll", layout, true);
+    window.removeEventListener("resize", layout);
+    panel.remove();
+  };
+  const commit = () => {
+    if (done) return;
+    done = true;
+    close();
+    onCommit(src.value);
+  };
+  const cancel = () => {
+    if (done) return;
+    done = true;
+    close();
+    onCancel();
+  };
+
+  src.addEventListener("input", () => {
+    paint();
+    layout();
+  });
+  src.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      commit();
+    } else if (e.key === "Escape") {
+      e.stopPropagation();
+      cancel();
+    } else if (e.key === "Backspace" && src.value === "") {
+      // 空源码里按退格：收掉整个公式，不顺带去吃前一个字符
+      e.preventDefault();
+      commit();
+    }
+  });
+  // 点预览或面板空白处不夺走输入框焦点（光标留在源码里）
+  panel.addEventListener("mousedown", (e) => {
+    if (e.target !== src) e.preventDefault();
+  });
+
+  // 挂在编辑器容器里（浮层带着面板样式，挂 body 会掉出样式作用域）
+  const mount = (anchor.closest(".ProseMirror") && anchor.closest(".ProseMirror").parentElement) || document.body;
+  mount.appendChild(panel);
+  paint();
+  layout();
+  document.addEventListener("mousedown", onDown, true);
+  window.addEventListener("scroll", layout, true);
+  window.addEventListener("resize", layout);
+  src.focus();
+  // 触屏点开不进全选：全选状态下点框内不会把全选收成光标，接着打字整条 tex 被替换，
+  // 等于没法把光标挪到要改的那一处；触屏改为光标落末尾。
+  if (touch) src.setSelectionRange(src.value.length, src.value.length);
+  else src.select();
+  return { close };
+}
+
 function mathNodeView(props, display) {
   const wrap = document.createElement(display ? "div" : "span");
   wrap.className = display ? "dshk-rte-mathblock" : "dshk-rte-math";
@@ -256,67 +364,39 @@ function mathNodeView(props, display) {
     );
     props.editor.view.focus();
   };
-  // 最近一次触摸的时间戳：点开的这一下是触屏还是鼠标，决定输入框要不要全选
+  // 最近一次触摸的时间戳：点开的这一下是触屏还是鼠标，决定源码要不要全选
   let touchAt = 0;
+  // 打开中的源码浮层（同时只开一个；再点别的公式时浮层先按"点外面"提交）
+  let panel = null;
   const openEditor = () => {
-    if (wrap.classList.contains("is-editing")) return;
+    if (panel) return;
+    const tex0 = props.node.attrs.tex ?? "";
     wrap.classList.add("is-editing");
-    wrap.textContent = "";
-    const input = document.createElement("input");
-    input.className = "dshk-rte-math-input";
-    input.type = "text";
-    input.value = props.node.attrs.tex ?? "";
-    input.placeholder = display ? "\\frac{a}{b}" : "E=mc^2";
-    // 收尾只走一次：删节点会让节点视图销毁、wrap 带着 input 一起脱离文档，此时
-    // wrap.contains(input) 仍为真，晚到的 blur 会拿过期的 pos 再删一次、吃掉邻居字符
-    let done = false;
-    const finish = (tex) => {
-      // 先摘输入框退编辑态、本地先渲一次再提交：同值提交不会产生 doc 变化、
-      // update() 不来，不本地渲的话节点视图会停留在摘掉输入框的空白态
-      wrap.classList.remove("is-editing");
-      input.remove();
-      if (tex === "") {
-        dropNode();
-        return;
-      }
-      render(tex);
-      props.editor.view.dispatch(
-        props.editor.view.state.tr.setNodeMarkup(props.getPos(), undefined, { tex }),
-      );
-      props.editor.view.focus();
-    };
-    const commit = () => {
-      if (done) return;
-      done = true;
-      finish(input.value);
-    };
-    const cancel = () => {
-      if (done) return;
-      done = true;
-      // 取消：还原原 tex；新建的空公式（原 tex 本就为空）连节点一起收掉
-      finish(props.node.attrs.tex ?? "");
-    };
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        commit();
-      } else if (e.key === "Escape") {
-        e.stopPropagation();
-        cancel();
-      } else if (e.key === "Backspace" && input.value === "") {
-        // 空输入框里的退格：收掉整个公式，不顺带去吃前一个字符
-        e.preventDefault();
-        commit();
-      }
-    });
-    input.addEventListener("blur", commit);
-    wrap.appendChild(input);
-    input.focus();
-    // 触屏点开不进全选：全选状态下点框内不会把全选收成光标，接着打字整条 tex 被替换，
-    // 等于没法把光标挪到要改的那一处；触屏改为光标落末尾，之后点框内哪一处就落哪一处。
-    // 鼠标点开仍全选（点开即可整体替换）——触摸设备也常带鼠标，不按设备类型一刀切。
-    if (Date.now() - touchAt < TOUCH_CLICK_MS) input.setSelectionRange(input.value.length, input.value.length);
-    else input.select();
+    panel = mountMathPanel(
+      wrap,
+      tex0,
+      (tex) => {
+        panel = null;
+        wrap.classList.remove("is-editing");
+        // 提交成空源码 = 不要这个公式了：节点连 $$ 一起收掉
+        if (tex === "") {
+          dropNode();
+          return;
+        }
+        render(tex);
+        props.editor.view.dispatch(
+          props.editor.view.state.tr.setNodeMarkup(props.getPos(), undefined, { tex }),
+        );
+        props.editor.view.focus();
+      },
+      () => {
+        panel = null;
+        wrap.classList.remove("is-editing");
+        // 取消：原来就空着的（斜杠菜单刚插进来）连节点一起收掉
+        if (tex0 === "") dropNode();
+      },
+      Date.now() - touchAt < TOUCH_CLICK_MS,
+    );
   };
   render(props.node.attrs.tex ?? "");
   if ((props.node.attrs.tex ?? "") === "") {
@@ -333,6 +413,12 @@ function mathNodeView(props, display) {
       props.node = node;
       if (!wrap.classList.contains("is-editing")) render(node.attrs.tex ?? "");
       return true;
+    },
+    destroy() {
+      if (panel) {
+        panel.close();
+        panel = null;
+      }
     },
     stopEvent() {
       return true;

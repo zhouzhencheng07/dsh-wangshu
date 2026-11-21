@@ -1376,8 +1376,12 @@ window.__ModuleLoader__.load({
 .dshk-rte-math{display:inline-block;cursor:pointer}
 .dshk-rte-mathblock{display:block;cursor:pointer;text-align:center;margin:.6em 0}
 .dshk-rte-math.is-editing,.dshk-rte-mathblock.is-editing{background:var(--dsw-alias-bg-layer-3);border-radius:6px}
-.dshk-rte-math-input{font-family:ui-monospace,Consolas,monospace;font-size:12px;border:1px solid var(--dsw-alias-border-l2);border-radius:6px;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);padding:2px 6px;min-width:120px}
-.dshk-rte-mathblock .dshk-rte-math-input{width:70%}
+/* 公式源码浮层：贴在公式下方，多行等宽输入 + 一行预览（位置与尺寸由节点视图给） */
+.dshk-math-panel{position:fixed;z-index:1200;display:flex;flex-direction:column;gap:4px;padding:6px;background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.12)}
+.dshk-math-panel-src{font-family:ui-monospace,Consolas,monospace;font-size:12px;line-height:1.5;color:var(--dsw-alias-label-primary);background:var(--dsw-alias-bg-base);border:1px solid var(--dsw-alias-border-l2);border-radius:6px;padding:4px 6px;outline:none;resize:none;overflow:auto;min-height:26px;max-height:220px}
+.dshk-math-panel-src:focus{border-color:var(--dsw-alias-brand-primary)}
+.dshk-math-panel-preview{min-height:22px;padding:0 4px;overflow-x:auto;overflow-y:hidden;font-size:13px;color:var(--dsw-alias-label-primary)}
+.dshk-math-panel-preview.is-empty{font-size:11px;color:var(--dsw-alias-label-tertiary)}
 /* mermaid 图块：vendor 只给类名，三副面孔（空块提示 / 编辑态源码框 / 渲染态图）
    的长相全在这层 CSS。少了 is-editing 那条「藏图」规则，编辑态就成了
    「一行正文号占位提示 + 浏览器默认 textarea」摞在一起。编辑态按公式块
@@ -1637,7 +1641,7 @@ ellipsis，窄列只截字不破版 */
    （不做分页加载——滚动本身就是「最多看几条，多了滚」） */
 .dshk-sched-todo{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;color:var(--dsw-alias-label-primary);font-size:13px}
 .dshk-sched-todohead{flex:none;display:flex;flex-direction:column;gap:6px;padding:8px 10px;border-bottom:1px solid var(--dsw-alias-border-l2)}
-.dshk-sched-todotitle{font-weight:600;font-size:12px;color:var(--dsw-alias-label-secondary)}
+.dshk-sched-todotitle{flex:none;font-weight:600;font-size:12px;color:var(--dsw-alias-label-secondary)}
 .dshk-sched-taskrows{flex:1 1 auto;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:2px;padding:4px 6px 10px}
 .dshk-sched-task{display:flex;align-items:center;gap:7px;padding:4px;border-radius:6px}
 .dshk-sched-task:hover{background:var(--dsw-alias-interactive-bg-hover)}
@@ -1645,14 +1649,18 @@ ellipsis，窄列只截字不破版 */
 .dshk-sched-taskduebadge{flex:none;font-size:10px;color:var(--dsw-alias-label-tertiary);border:1px solid var(--dsw-alias-border-l2);border-radius:5px;padding:1px 5px}
 .dshk-sched-taskduebadge.is-overdue{color:var(--dsw-alias-danger,#cd3131);border-color:color-mix(in srgb,var(--dsw-alias-danger,#cd3131) 45%,transparent)}
 .dshk-sched-emptytasks{font-size:12px;color:var(--dsw-alias-label-tertiary);text-align:center;padding:8px 0}
-/* 清单范围档（今日/近三日/全部）：一排小 chip，复用 wdchip 的形态 */
+/* 清单范围档（今日/近三日/全部）：三档连成一条分段条，选中的那一档抬起来 */
 /* 统计小字行（表头右端）：窄坞截断由 ellipsis 兜底，完整值在悬停提示里 */
 .dshk-sched-statrow{font-size:11px;color:var(--dsw-alias-label-tertiary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dshk-sched-wdchip{appearance:none;border:1px solid var(--dsw-alias-border-l2);background:none;color:var(--dsw-alias-label-secondary);font:inherit;font-size:11px;line-height:1;padding:4px 8px;border-radius:6px;cursor:pointer}
 .dshk-sched-wdchip.is-active{background:var(--dsw-alias-brand-primary);border-color:var(--dsw-alias-brand-primary);color:var(--dsw-alias-bg-base)}
-.dshk-sched-scopes{display:flex;gap:4px;align-items:center}
+.dshk-sched-scopes{display:flex;gap:2px;padding:2px;border-radius:7px;background:var(--dsw-alias-interactive-bg-hover)}
+.dshk-sched-scopebtn{flex:1 1 0;min-width:0;appearance:none;border:0;background:none;font:inherit;font-size:11px;line-height:1;padding:5px 4px;border-radius:5px;color:var(--dsw-alias-label-secondary);cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dshk-sched-scopebtn:hover{color:var(--dsw-alias-label-primary)}
+.dshk-sched-scopebtn.is-active{background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.12)}
 /* 清单行尾动作（悬停才显）+ 行首完成勾选 + 计时入口条 */
-.dshk-sched-todobar{display:flex;align-items:center;gap:6px;margin-top:2px}
+.dshk-sched-todoheadrow{display:flex;align-items:center;justify-content:space-between;gap:6px;min-width:0}
+.dshk-sched-todobar{display:flex;align-items:center;gap:6px;flex:none;min-width:0}
 .dshk-sched-actionbtn{appearance:none;border:1px solid var(--dsw-alias-border-l2);background:none;color:var(--dsw-alias-label-secondary);font:inherit;font-size:11px;line-height:1;padding:4px 8px;border-radius:6px;cursor:pointer}
 .dshk-sched-actionbtn:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}
 .dshk-sched-running{font-size:11px;color:var(--dsw-alias-brand-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -5110,20 +5118,22 @@ ellipsis，窄列只截字不破版 */
 
       return jsxRuntime.jsxs("div", { className: "dshk-sched-todo", children: [
         jsxRuntime.jsxs("div", { className: "dshk-sched-todohead", children: [
-          jsxRuntime.jsx("div", { className: "dshk-sched-todotitle", children: `${t("schedTasks")} · ${rows.length}` }),
-          // 计时入口在这一格：新建 + 开始计时（已开表时这里退成状态，停表在悬浮球）。
-          // 排在范围档上面：范围档是切清单的档位钮，紧挨着下面那片清单读起来才是"切这一片"
-          jsxRuntime.jsxs("div", { className: "dshk-sched-todobar", children: [
-            jsxRuntime.jsx(KitTip, { label: t("schedNew"), children:
-              jsxRuntime.jsx("button", { type: "button", className: "dshk-sched-actionbtn", "aria-label": t("schedNew"), onClick: () => setNewOpen(true), children: `＋ ${t("schedNew")}` }) }),
-            running
-              ? jsxRuntime.jsx(KitTip, { label: `${running.title || t("schedTimerStandalone")} · ${t("schedTimerBallTip")}`, children:
-                  jsxRuntime.jsx("span", { className: "dshk-sched-running", children: `${t("schedTimerRunning")} ${schedClockOf(running.start)}` }) })
-              : jsxRuntime.jsx(KitTip, { label: t("schedTimerPick"), children:
-                  jsxRuntime.jsx("button", { type: "button", className: "dshk-sched-actionbtn", "aria-label": t("schedTimerStart"), onClick: () => setTimerOpen(true), children: `▶ ${t("schedTimerStart")}` }) }),
+          // 表头两行：标题与计时入口同一行，范围档单独一行
+          jsxRuntime.jsxs("div", { className: "dshk-sched-todoheadrow", children: [
+            jsxRuntime.jsx("div", { className: "dshk-sched-todotitle", children: `${t("schedTasks")} · ${rows.length}` }),
+            // 计时入口（已开表时这里退成状态，停表在悬浮球）
+            jsxRuntime.jsxs("div", { className: "dshk-sched-todobar", children: [
+              jsxRuntime.jsx(KitTip, { label: t("schedNew"), children:
+                jsxRuntime.jsx("button", { type: "button", className: "dshk-sched-actionbtn", "aria-label": t("schedNew"), onClick: () => setNewOpen(true), children: `＋ ${t("schedNew")}` }) }),
+              running
+                ? jsxRuntime.jsx(KitTip, { label: `${running.title || t("schedTimerStandalone")} · ${t("schedTimerBallTip")}`, children:
+                    jsxRuntime.jsx("span", { className: "dshk-sched-running", children: `${t("schedTimerRunning")} ${schedClockOf(running.start)}` }) })
+                : jsxRuntime.jsx(KitTip, { label: t("schedTimerPick"), children:
+                    jsxRuntime.jsx("button", { type: "button", className: "dshk-sched-actionbtn", "aria-label": t("schedTimerStart"), onClick: () => setTimerOpen(true), children: `▶ ${t("schedTimerStart")}` }) }),
+            ] }),
           ] }),
           jsxRuntime.jsx("div", { className: "dshk-sched-scopes", children: SCHED_TODO_SCOPES.map((s) =>
-            jsxRuntime.jsx("button", { type: "button", className: `dshk-sched-wdchip${scope === s ? " is-active" : ""}`, onClick: () => pickScope(s), children: t(SCHED_SCOPE_KEY[s]) }, s),
+            jsxRuntime.jsx("button", { type: "button", className: `dshk-sched-scopebtn${scope === s ? " is-active" : ""}`, "aria-pressed": scope === s, onClick: () => pickScope(s), children: t(SCHED_SCOPE_KEY[s]) }, s),
           ) }),
         ] }),
         // 行全部渲染，这一层自己滚（表头、操作条与范围档钉死）
