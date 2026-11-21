@@ -440,7 +440,7 @@ export function complete(root, rel, nextInterval) {
     const r = requirePageRel(rel);
     const rec = readRecord(root, r);
     if (rec === null)
-        throw new Error('还没有标记学习');
+        throw new Error('还没有开始学习');
     if (rec.status === 'done')
         throw new Error('这一页已完成，先重启复习');
     const today = todayStr();
@@ -461,7 +461,7 @@ export function adjust(root, rel, nextInterval) {
     const r = requirePageRel(rel);
     const rec = readRecord(root, r);
     if (rec === null)
-        throw new Error('还没有标记学习');
+        throw new Error('还没有开始学习');
     if (rec.status === 'done')
         throw new Error('这一页已完成，先重启复习');
     const today = todayStr();
@@ -479,7 +479,7 @@ export function finish(root, rel) {
     const r = requirePageRel(rel);
     const rec = readRecord(root, r);
     if (rec === null)
-        throw new Error('还没有标记学习');
+        throw new Error('还没有开始学习');
     const today = todayStr();
     rec.status = 'done';
     delete rec.dueAt;
@@ -494,7 +494,7 @@ export function restart(root, rel, mode, nextInterval) {
     const r = requirePageRel(rel);
     const rec = readRecord(root, r);
     if (rec === null)
-        throw new Error('还没有标记学习');
+        throw new Error('还没有开始学习');
     const today = todayStr();
     const next = nextInterval !== undefined
         ? clampInterval(nextInterval)

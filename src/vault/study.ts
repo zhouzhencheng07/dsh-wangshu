@@ -468,7 +468,7 @@ export function first(root: string, rel: string): StudyState {
 export function complete(root: string, rel: string, nextInterval?: number): StudyState {
   const r = requirePageRel(rel)
   const rec = readRecord(root, r)
-  if (rec === null) throw new Error('还没有标记学习')
+  if (rec === null) throw new Error('还没有开始学习')
   if (rec.status === 'done') throw new Error('这一页已完成，先重启复习')
   const today = todayStr()
   const next = nextInterval === undefined ? nextLadder(rec.intervalDays) : clampInterval(nextInterval)
@@ -488,7 +488,7 @@ export function complete(root: string, rel: string, nextInterval?: number): Stud
 export function adjust(root: string, rel: string, nextInterval: number): StudyState {
   const r = requirePageRel(rel)
   const rec = readRecord(root, r)
-  if (rec === null) throw new Error('还没有标记学习')
+  if (rec === null) throw new Error('还没有开始学习')
   if (rec.status === 'done') throw new Error('这一页已完成，先重启复习')
   const today = todayStr()
   const next = clampInterval(nextInterval)
@@ -505,7 +505,7 @@ export function adjust(root: string, rel: string, nextInterval: number): StudySt
 export function finish(root: string, rel: string): StudyState {
   const r = requirePageRel(rel)
   const rec = readRecord(root, r)
-  if (rec === null) throw new Error('还没有标记学习')
+  if (rec === null) throw new Error('还没有开始学习')
   const today = todayStr()
   rec.status = 'done'
   delete rec.dueAt
@@ -520,7 +520,7 @@ export function finish(root: string, rel: string): StudyState {
 export function restart(root: string, rel: string, mode: string, nextInterval?: number): StudyState {
   const r = requirePageRel(rel)
   const rec = readRecord(root, r)
-  if (rec === null) throw new Error('还没有标记学习')
+  if (rec === null) throw new Error('还没有开始学习')
   const today = todayStr()
   const next =
     nextInterval !== undefined
