@@ -2,12 +2,12 @@ English | [中文](README.md)
 
 # dsh-wangshu
 
-**Wangshu's plugin for DeepSeek Harness (dsh)**: brings the knowledge base and schedule into dsh sessions, plus a few page add-ons — file tree, floating chat, phone access, usage monitor and web search. Each component row has its own switch; with none enabled dsh stays stock. The workbench lives in the official right sidebar (one dock tab per piece of content).
+**Wangshu's plugin for DeepSeek Harness (dsh)**: brings the knowledge base and schedule into dsh sessions, plus a few page add-ons — file tree, a chat tab in the right sidebar, phone access, usage monitor and web search. Each component row has its own switch; with none enabled dsh stays stock. The workbench lives in the official right sidebar (one dock tab per piece of content).
 
 ## Features
 
 - **File tree**: tree in the left rail — create / rename / move / import / recycle-bin delete; clicking a file opens the official preview.
-- **Floating chat**: a handle pinned to the screen edge opens a floating conversation with its own session, swappable with the main view; Ctrl+Alt+; toggles it.
+- **Right-sidebar chat tab**: a “Chat” tab in the right sidebar showing the current session itself (same workspace and context); toggle it from the button left of the composer, or Ctrl+Alt+;.
 - **Knowledge base · Schedule**: markdown vault editing (slash menu, wiki links and backlinks, outline, full-text search, quiz and study review), schedule week grid + to-dos + timer, writable from the panel.
 - **Phone access**: scan a QR code to reach the local dsh from your phone — token-gated gateway, LAN and remote channels.
 - **Usage & monitoring**: balance / quota chip, desktop notifications for turn end, compaction completion and agent questions.
@@ -17,7 +17,7 @@ English | [中文](README.md)
 
 - Each component row has its own switch (Plugins page): turning a row off removes that capability entirely (host endpoints 404, UI entry gone).
 - Rows that take settings carry their own config page; saving writes to the profile and takes effect immediately.
-- Shortcuts for the file tree, knowledge base · schedule and floating chat are registered on the host's Shortcuts page (Ctrl+/).
+- Shortcuts for the file tree, knowledge base · schedule and chat tab are registered on the host's Shortcuts page (Ctrl+/).
 - Runtime data lives in `<DSH_HOME>/wangshu/` (default vault root, schedule, …); the vault root can be changed on its config page.
 
 ## Requirements
