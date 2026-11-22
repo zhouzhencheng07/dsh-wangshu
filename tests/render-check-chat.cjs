@@ -128,8 +128,13 @@ check("开关不在左栏形态条上（形态钮导出与登记都退场）", c
 {
   stateSeq = 0; stateStore.clear(); callLog = [];
   const out = comps.ChatComposerButton();
-  const btn = callLog.find((c) => c[1] === "button");
+  // 这一枚走 TipButton（官方气泡 + 原生 button）：按 className 认，标签名在组件里
+  const btn = callLog.find((c) => c[2] && typeof c[2].className === "string" && c[2].className.startsWith("dshk-chat-inputbtn"));
   check("输入框那一枚渲染出按钮（会话图标 + 无障碍名 + 未按下态）", !!out && !!btn && btn[2]["aria-label"] === "会话" && btn[2]["aria-pressed"] === "false");
+  check(
+    "气泡走官方 Tooltip：朝上 + 键帽读官方快捷键目录（不再拼文字标题）",
+    !!btn && btn[2].side === "top" && btn[2].command === "dsh-wangshu.chat.toggle" && !String(btn[2].title ?? "").includes("Ctrl"),
+  );
   check("点它不抢焦点 + 点击 = 开关（由 toggleChat 承担）", typeof btn[2].onMouseDown === "function" && typeof btn[2].onClick === "function" && typeof comps.toggleChat === "function");
   const src = fs.readFileSync(__dirname + "/../client/bundle.js", "utf8");
   check("样式类自带 + 不再往签条注入（没有 data-dockkit-strip-chrome）", src.includes("dshk-chat-inputbtn") && !src.includes("data-dockkit-strip-chrome"));

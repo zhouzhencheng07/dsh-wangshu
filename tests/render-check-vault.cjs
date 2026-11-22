@@ -811,10 +811,15 @@ async function checkApply() {
   const bubCiteBody = sliceBetween("const bubCite = () => {", "const BUB_COLORS");
   check(
     "泡泡菜单挂「引用到对话」（现读编辑器选区走引用管线，成功收泡泡）",
-    bundleSrc.includes('title: t("vtbCite"), onClick: bubCite') &&
+    bundleSrc.includes('tip: t("vtbCite"), onClick: bubCite') &&
       /citeVaultPageToChat\(docKey, selText,/.test(bubCiteBody) &&
       /vaultSelectionText\(h\.editor\)/.test(bubCiteBody) &&
       /setBub\(null\)/.test(bubCiteBody),
+  );
+  check(
+    "悬停提示统一走官方气泡：工具条/勾选框不再挂原生 title（TipButton / TipCheck，挂在 body 上）",
+    bundleSrc.includes("function TipButton(") && bundleSrc.includes("function TipCheck(") &&
+      bundleSrc.includes("portal,") && !/dshk-vault-bbtn[^\n]*title:/.test(bundleSrc),
   );
   check(
     "引用到对话的选区走宿主「引用文本」同一条动作（QuoteNode 小卡），字面引用块只作兜底",
@@ -1159,8 +1164,8 @@ async function checkApply() {
   check(
     "复习口径与普通待办分清：勾 = 完成本次复习，提示里的结束动作叫「结束学习」（带说明，不是再记一次完成）",
     bundleSrc.includes('"aria-label": rel === "" ? t("schedDone") : t("studyCompleteThis")') &&
-      bundleSrc.includes('title: rel === "" ? undefined : t("studyCompleteThis")') &&
-      bundleSrc.includes('title: t("studyFinishTip")') &&
+      bundleSrc.includes('tip: rel === "" ? t("schedDone") : t("studyCompleteThis")') &&
+      bundleSrc.includes('tip: t("studyFinishTip")') &&
       bundleSrc.includes('studyFinish: "结束学习"') &&
       bundleSrc.includes('studyFinishTip: "结束这页的学习'),
   );

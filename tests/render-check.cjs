@@ -356,7 +356,8 @@ callLog = [];
 out = comps.ScheduleTasksPanel({});
 const taskRows = callLog.filter((c) => c[2] && c[2].className === "dshk-sched-task");
 const rowBadges = callLog.filter((c) => c[2] && typeof c[2].className === "string" && c[2].className.startsWith("dshk-sched-taskduebadge"));
-const taskChecks = callLog.filter((c) => c[2] && c[2].type === "checkbox");
+// 勾选框挂在 TipCheck（官方气泡 + input）上：按「带 checked 的复选控件」认，不看标签名
+  const taskChecks = callLog.filter((c) => c[2] && typeof c[2].checked === "boolean" && c[2].className === "dshk-sched-taskcheck");
 const timerBtns = callLog.filter((c) => c[2] && c[2].className === "dshk-sched-tasktimer");
 const rowActs = callLog.filter((c) => c[2] && c[2].className === "dshk-sched-taskact");
 check("ScheduleTasksPanel 出行：待办一行 + 右端截止徽章", taskRows.length === 1 && rowBadges.length === 1);
@@ -1733,7 +1734,7 @@ let vaultFetchPrev = null;
   });
   const moreHead = callLog.find((c) => c[2] && c[2].className === "dshk-sched-daymorehead");
   const moreRows = callLog.filter((c) => c[2] && typeof c[2].className === "string" && c[2].className.startsWith("dshk-sched-daymoreitem"));
-  const moreChecks = callLog.filter((c) => c[2] && c[2].type === "checkbox" && c[2].className === "dshk-sched-alldaycheck");
+  const moreChecks = callLog.filter((c) => c[2] && typeof c[2].checked === "boolean" && c[2].className === "dshk-sched-alldaycheck");
   moreChecks.forEach((c) => c[2].onChange());
   moreRows.forEach((r) => r[2].onClick());
   check(
@@ -2088,7 +2089,7 @@ setTimeout(async () => {
       global.localStorage.setItem("dshk:sched:reviewOpen", JSON.stringify(["数学"]));
       callLog = [];
       comps.ScheduleTasksPanel({});
-      const revCheck = callLog.find((c) => c[2] && c[2].type === "checkbox" && c[2].className === "dshk-sched-taskcheck");
+      const revCheck = callLog.find((c) => c[2] && typeof c[2].checked === "boolean" && c[2].className === "dshk-sched-taskcheck");
       const beforeTick = calls.length;
       if (revCheck) revCheck[2].onChange();
       // 勾完成先问一句（不直接落）：确认浮层排上了，请求还没发
@@ -2136,7 +2137,7 @@ setTimeout(async () => {
           toastBtns.length === 2 && adjustHit === 1 && finishHit === 1 &&
           (toastLabels.includes("调整下次") || toastLabels.includes("Adjust next")) &&
           (toastLabels.includes("结束学习") || toastLabels.includes("End study")) &&
-          toastBtns.some((b) => /结束这页的学习|End study for this page/.test(String(b[2].title ?? ""))),
+          toastBtns.some((b) => /结束这页的学习|End study for this page/.test(String(b[2].tip ?? ""))),
       );
       // 条目浮层：studyRel 走只读视图（没有可编辑输入框），只有 关闭 / 完成本次复习 / 打开页面
       stateSeq = 0;

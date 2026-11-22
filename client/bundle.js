@@ -101,6 +101,30 @@ window.__ModuleLoader__.load({
       });
     }
 
+    /** 工具按钮：官方气泡 + 原生 button。提示走气泡（有命令绑定时连带出键帽），
+     *  不再用原生 title——浏览器自带那套延迟长、样式跟主题脱节。
+     *  side / align 照官方口径：靠在窗口底边的用 "top"，行尾动作钮补 align:"end"。 */
+    function TipButton({ tip, side = "bottom", align, command, portal = true, className, children, ...rest }) {
+      return jsxRuntime.jsx(KitTip, {
+        label: tip,
+        side,
+        align,
+        command,
+        // 挂到 body：行内气泡会被行盒/浮条的 overflow 裁掉（浮条自己就是 overflow:auto）
+        portal,
+        children: jsxRuntime.jsx("button", { type: "button", className, ...rest, children }),
+      });
+    }
+
+    /** 勾选框：官方气泡 + input（原生 title 换成气泡） */
+    function TipCheck({ tip, className, children, ...rest }) {
+      return jsxRuntime.jsx(KitTip, {
+        label: tip,
+        portal: true,
+        children: jsxRuntime.jsx("input", { type: "checkbox", className, ...rest, children }),
+      });
+    }
+
     // 轻提示样式（本包私有 CSS，materialization 时注入一次）
     if (typeof document !== "undefined") {
       const style = document.createElement("style");
@@ -775,6 +799,8 @@ window.__ModuleLoader__.load({
 
     exports.flashToast = flashToast;
     exports.KitTip = KitTip;
+    exports.TipButton = TipButton;
+    exports.TipCheck = TipCheck;
     exports.attachShortcutCatalog = attachShortcutCatalog;
     exports.writeClipboard = writeClipboard;
     exports.hookGlobal = hookGlobal;
@@ -2379,7 +2405,7 @@ ellipsis，窄列只截字不破版 */
     const reactDom = require("react-dom");
     const dock = kit;
     const {
-      getKitUi, setKitUi, useKitUi, KitTip, flashToast, writeClipboard,
+      getKitUi, setKitUi, useKitUi, KitTip, TipButton, TipCheck, flashToast, writeClipboard,
       kitJson, kitPostJson, resolveZh, baseName, pageBasename,
       markFeaturePresence,
       openRightbarTab, closeRightbarTab, sidebarViewPatch,
@@ -4703,7 +4729,7 @@ ellipsis，窄列只截字不破版 */
           t("schedReviewNext").replace("{n}", String(info.reps)).replace("{date}", info.dueAt).replace("{label}", studyDueLabel(info.dueAt)) }),
         jsxRuntime.jsxs("span", { className: "dshk-sched-rtoastacts", children: [
           jsxRuntime.jsx("button", { type: "button", className: "dshk-sched-rtoastbtn", onClick: onAdjust, children: t("studyAdjust") }),
-          jsxRuntime.jsx("button", { type: "button", className: "dshk-sched-rtoastbtn is-ghost", title: t("studyFinishTip"), onClick: onFinish, children: t("studyFinish") }),
+          jsxRuntime.jsx(TipButton, { className: "dshk-sched-rtoastbtn is-ghost", side: "top", tip: t("studyFinishTip"), onClick: onFinish, children: t("studyFinish") }),
         ] }),
       ] });
     }
@@ -4991,7 +5017,7 @@ ellipsis，窄列只截字不破版 */
           const o = row.occ;
           const base = eventById(o.baseId);
           return jsxRuntime.jsxs("div", { className: "dshk-sched-task", children: [
-            jsxRuntime.jsx("span", { className: "dshk-sched-tasktitle is-link", title: t("schedEdit"), onClick: () => base && setEditEv(base), children: o.title }),
+            jsxRuntime.jsx(KitTip, { label: t("schedEdit"), children: jsxRuntime.jsx("span", { className: "dshk-sched-tasktitle is-link", onClick: () => base && setEditEv(base), children: o.title }) }),
             jsxRuntime.jsx("span", { className: "dshk-sched-taskduebadge", children: schedOccRowLabel(o, today) }),
           ] }, row.key);
         }
@@ -5002,20 +5028,19 @@ ellipsis，窄列只截字不破版 */
         const dueTxt = typeof ev.due === "string" ? ev.due.slice(5).replace("T", " ") : "";
         const isRunning = running !== null && running.id === ev.id;
         return jsxRuntime.jsxs("div", { className: `dshk-sched-task${isRunning ? " is-timing" : ""}`, children: [
-          jsxRuntime.jsx("input", {
-            type: "checkbox",
+          jsxRuntime.jsx(TipCheck, {
             className: "dshk-sched-taskcheck",
             checked: false,
             // 复习待办这一勾 = 完成本次复习（推进记录），不是普通待办的"已完成"
             "aria-label": rel === "" ? t("schedDone") : t("studyCompleteThis"),
-            title: rel === "" ? undefined : t("studyCompleteThis"),
+            tip: rel === "" ? t("schedDone") : t("studyCompleteThis"),
             onChange: () => {
               setTick((n) => n + 1);
               askComplete(ev);
             },
           }),
           jsxRuntime.jsxs("div", { className: "dshk-sched-taskmain", children: [
-            jsxRuntime.jsx("span", { className: "dshk-sched-tasktitle is-link", title: t("schedEdit"), onClick: () => setEditEv(ev), children: ev.title }),
+            jsxRuntime.jsx(KitTip, { label: t("schedEdit"), children: jsxRuntime.jsx("span", { className: "dshk-sched-tasktitle is-link", onClick: () => setEditEv(ev), children: ev.title }) }),
             parent === "" ? null : jsxRuntime.jsx("span", { className: "dshk-sched-taskparent", title: rel, children: parent }),
           ] }),
           dueTxt
@@ -5066,19 +5091,18 @@ ellipsis，窄列只截字不破版 */
         const parent = rel.includes("/") ? rel.slice(0, rel.lastIndexOf("/")) : "";
         const day = typeof ev.completedAt === "string" ? ev.completedAt.slice(5, 10).replace("-", "/") : "";
         return jsxRuntime.jsxs("div", { className: "dshk-sched-task", children: [
-          jsxRuntime.jsx("input", {
-            type: "checkbox",
+          jsxRuntime.jsx(TipCheck, {
             className: "dshk-sched-taskcheck",
             checked: true,
-            title: t("schedUndoDone"),
             "aria-label": t("schedUndoDone"),
+            tip: t("schedUndoDone"),
             onChange: () => {
               setTick((n) => n + 1);
               askUndo(ev);
             },
           }),
           jsxRuntime.jsxs("div", { className: "dshk-sched-taskmain", children: [
-            jsxRuntime.jsx("span", { className: "dshk-sched-tasktitle is-link", title: t("schedEdit"), onClick: () => setEditEv(ev), children: ev.title }),
+            jsxRuntime.jsx(KitTip, { label: t("schedEdit"), children: jsxRuntime.jsx("span", { className: "dshk-sched-tasktitle is-link", onClick: () => setEditEv(ev), children: ev.title }) }),
             parent === "" ? null : jsxRuntime.jsx("span", { className: "dshk-sched-taskparent", title: rel, children: parent }),
           ] }),
           jsxRuntime.jsx("span", { className: "dshk-sched-taskduebadge", children: t("schedDoneOn").replace("{date}", day) }),
@@ -5182,12 +5206,11 @@ ellipsis，窄列只截字不破版 */
           title: o.done ? `${o.title} · ${t("schedDoneOn").replace("{date}", o.at)}` : `${o.title} · ${t("schedTaskDue")} ${o.date}`,
           onClick: () => onPick(o),
           children: [
-            jsxRuntime.jsx("input", {
-              type: "checkbox",
+            jsxRuntime.jsx(TipCheck, {
               className: "dshk-sched-alldaycheck",
               checked: o.done,
-              title: o.done ? t("schedUndoDone") : undefined,
               "aria-label": o.done ? t("schedUndoDone") : o.rel !== "" ? t("studyCompleteThis") : t("schedDone"),
+              tip: o.done ? t("schedUndoDone") : o.rel !== "" ? t("studyCompleteThis") : t("schedDone"),
               onClick: (e) => e.stopPropagation(),
               onChange: () => onToggle(o),
             }),
@@ -5461,10 +5484,10 @@ ellipsis，窄列只截字不破版 */
           loadFail
             ? jsxRuntime.jsx("span", { className: "dshk-sched-headfail", children: t("schedLoadFail") })
             : stats
-              ? jsxRuntime.jsxs("span", { className: "dshk-sched-headstat", title: t("schedStatsTitle"), children: [
+              ? jsxRuntime.jsx(KitTip, { label: t("schedStatsTitle"), align: "end", children: jsxRuntime.jsxs("span", { className: "dshk-sched-headstat", children: [
                 jsxRuntime.jsx("b", { children: schedFmtDur(stats.totalMs) }),
                 jsxRuntime.jsx("span", { className: "dshk-sched-statrow", children: `${t("schedStatsEvents")} ${stats.eventCount} · ${t("schedStatsDone")} ${stats.completedCount} · ${t("schedStatsOpen")} ${stats.openCount}` }),
-              ] })
+              ] }) })
               : null,
         ],
       });
@@ -5500,12 +5523,11 @@ ellipsis，窄列只截字不破版 */
             const chip = (o) => jsxRuntime.jsxs("div", {
               className: `dshk-sched-allday${o.done ? " is-done" : o.late ? " is-overdue" : ""}`,
               children: [
-                jsxRuntime.jsx("input", {
-                  type: "checkbox",
+                jsxRuntime.jsx(TipCheck, {
                   className: "dshk-sched-alldaycheck",
                   checked: o.done,
-                  title: o.done ? t("schedUndoDone") : hintOf(o),
                   "aria-label": o.done ? t("schedUndoDone") : o.rel !== "" ? t("studyCompleteThis") : t("schedDone"),
+                  tip: o.done ? t("schedUndoDone") : o.rel !== "" ? t("studyCompleteThis") : t("schedDone"),
                   onClick: (e) => e.stopPropagation(),
                   onChange: () => {
                     setTick((n) => n + 1);
@@ -5541,10 +5563,9 @@ ellipsis，窄列只截字不破版 */
                   }, "ad-more")
                 : null,
               items.length === 0
-                ? jsxRuntime.jsx("button", {
-                    type: "button",
+                ? jsxRuntime.jsx(TipButton, {
                     className: "dshk-sched-alldayadd",
-                    title: `${t("schedNew")} · ${t("schedKindTodo")}`,
+                    tip: `${t("schedNew")} · ${t("schedKindTodo")}`,
                     onClick: () => setNewTodoDate(date),
                     children: `+ ${t("schedKindTodo")}`,
                   }, "ad-add")
@@ -7269,41 +7290,41 @@ ellipsis，窄列只截字不破版 */
                 onMouseDown: (e) => e.preventDefault(),
                 children: [
                   jsxRuntime.jsxs("div", { className: "dshk-vault-bubblebar", children: [
-                    jsxRuntime.jsx("button", { type: "button", className: `dshk-vault-bbtn${bubActive("bold") ? " is-active" : ""}`, title: t("vtbBold"), onClick: () => rteCmd((h) => h.editor.chain().focus().toggleBold().run()), children: "B" }),
-                    jsxRuntime.jsx("button", { type: "button", className: `dshk-vault-bbtn${bubActive("italic") ? " is-active" : ""}`, title: t("vtbItalic"), onClick: () => rteCmd((h) => h.editor.chain().focus().toggleItalic().run()), children: "I" }),
-                    jsxRuntime.jsx("button", { type: "button", className: `dshk-vault-bbtn${bubActive("underline") ? " is-active" : ""}`, title: t("vtbUnderline"), onClick: () => rteCmd((h) => h.editor.chain().focus().toggleUnderline().run()), children: "U̲" }),
-                    jsxRuntime.jsx("button", { type: "button", className: `dshk-vault-bbtn${bubActive("strike") ? " is-active" : ""}`, title: t("vtbStrike"), onClick: () => rteCmd((h) => h.editor.chain().focus().toggleStrike().run()), children: "S̶" }),
-                    jsxRuntime.jsx("button", { type: "button", className: `dshk-vault-bbtn${bubActive("superscript") ? " is-active" : ""}`, title: t("vtbSup"), onClick: () => rteCmd((h) => h.editor.chain().focus().toggleSuperscript().run()), children: "x²" }),
-                    jsxRuntime.jsx("button", { type: "button", className: `dshk-vault-bbtn${bubActive("subscript") ? " is-active" : ""}`, title: t("vtbSub"), onClick: () => rteCmd((h) => h.editor.chain().focus().toggleSubscript().run()), children: "x₂" }),
+                    jsxRuntime.jsx(TipButton, { className: `dshk-vault-bbtn${bubActive("bold") ? " is-active" : ""}`, tip: t("vtbBold"), onClick: () => rteCmd((h) => h.editor.chain().focus().toggleBold().run()), children: "B" }),
+                    jsxRuntime.jsx(TipButton, { className: `dshk-vault-bbtn${bubActive("italic") ? " is-active" : ""}`, tip: t("vtbItalic"), onClick: () => rteCmd((h) => h.editor.chain().focus().toggleItalic().run()), children: "I" }),
+                    jsxRuntime.jsx(TipButton, { className: `dshk-vault-bbtn${bubActive("underline") ? " is-active" : ""}`, tip: t("vtbUnderline"), onClick: () => rteCmd((h) => h.editor.chain().focus().toggleUnderline().run()), children: "U̲" }),
+                    jsxRuntime.jsx(TipButton, { className: `dshk-vault-bbtn${bubActive("strike") ? " is-active" : ""}`, tip: t("vtbStrike"), onClick: () => rteCmd((h) => h.editor.chain().focus().toggleStrike().run()), children: "S̶" }),
+                    jsxRuntime.jsx(TipButton, { className: `dshk-vault-bbtn${bubActive("superscript") ? " is-active" : ""}`, tip: t("vtbSup"), onClick: () => rteCmd((h) => h.editor.chain().focus().toggleSuperscript().run()), children: "x²" }),
+                    jsxRuntime.jsx(TipButton, { className: `dshk-vault-bbtn${bubActive("subscript") ? " is-active" : ""}`, tip: t("vtbSub"), onClick: () => rteCmd((h) => h.editor.chain().focus().toggleSubscript().run()), children: "x₂" }),
                     jsxRuntime.jsx("span", { className: "dshk-vault-bsep" }),
-                    jsxRuntime.jsx("button", { type: "button", className: `dshk-vault-bbtn${bubPanel === "tc" ? " is-active" : ""}`, title: t("vtbColor"), onClick: () => setBubPanel((p) => (p === "tc" ? null : "tc")), children: "A" }),
-                    jsxRuntime.jsx("button", { type: "button", className: `dshk-vault-bbtn${bubPanel === "hc" ? " is-active" : ""}`, title: t("vtbHighlight"), onClick: () => setBubPanel((p) => (p === "hc" ? null : "hc")), children: "▩" }),
-                    jsxRuntime.jsx("button", { type: "button", className: `dshk-vault-bbtn${bubActive("code") ? " is-active" : ""}`, title: t("vtbCode"), onClick: () => rteCmd((h) => h.editor.chain().focus().toggleCode().run()), children: "‹›" }),
+                    jsxRuntime.jsx(TipButton, { className: `dshk-vault-bbtn${bubPanel === "tc" ? " is-active" : ""}`, tip: t("vtbColor"), onClick: () => setBubPanel((p) => (p === "tc" ? null : "tc")), children: "A" }),
+                    jsxRuntime.jsx(TipButton, { className: `dshk-vault-bbtn${bubPanel === "hc" ? " is-active" : ""}`, tip: t("vtbHighlight"), onClick: () => setBubPanel((p) => (p === "hc" ? null : "hc")), children: "▩" }),
+                    jsxRuntime.jsx(TipButton, { className: `dshk-vault-bbtn${bubActive("code") ? " is-active" : ""}`, tip: t("vtbCode"), onClick: () => rteCmd((h) => h.editor.chain().focus().toggleCode().run()), children: "‹›" }),
                     jsxRuntime.jsx("span", { className: "dshk-vault-bsep" }),
-                    jsxRuntime.jsx("button", { type: "button", className: `dshk-vault-bbtn${bubActive("link") ? " is-active" : ""}`, title: t("vtbLink"), onClick: bubLink, children: "🔗" }),
-                    jsxRuntime.jsx("button", { type: "button", className: "dshk-vault-bbtn", title: t("vtbClear"), onClick: () => rteCmd((h) => h.clearFormat()), children: "⌫" }),
+                    jsxRuntime.jsx(TipButton, { className: `dshk-vault-bbtn${bubActive("link") ? " is-active" : ""}`, tip: t("vtbLink"), onClick: bubLink, children: "🔗" }),
+                    jsxRuntime.jsx(TipButton, { className: "dshk-vault-bbtn", tip: t("vtbClear"), onClick: () => rteCmd((h) => h.clearFormat()), children: "⌫" }),
                     jsxRuntime.jsx("span", { className: "dshk-vault-bsep" }),
-                    jsxRuntime.jsx("button", { type: "button", className: "dshk-vault-bbtn", title: t("vtbCite"), onClick: bubCite, children: "❞" }),
+                    jsxRuntime.jsx(TipButton, { className: "dshk-vault-bbtn", tip: t("vtbCite"), onClick: bubCite, children: "❞" }),
                   ] }),
                   // 表格浮条（选区落在表内才出）：文字键同一条 tablebar 规格，
                   // 命令作用在选区覆盖到的行列上。不做合并/拆分（md 管道表没有 colspan 载体）
                   inTableState
                     ? jsxRuntime.jsx("div", { className: "dshk-vault-bubblebar", children: [
-                      jsxRuntime.jsx("button", { type: "button", className: "dshk-vault-bbtn", title: t("vtblRowAbove"), onClick: () => rteCmd((h) => h.tableAddRow(false)), children: "行↑" }),
-                      jsxRuntime.jsx("button", { type: "button", className: "dshk-vault-bbtn", title: t("vtblRowBelow"), onClick: () => rteCmd((h) => h.tableAddRow(true)), children: "行↓" }),
-                      jsxRuntime.jsx("button", { type: "button", className: "dshk-vault-bbtn", title: t("vtblRowDel"), onClick: () => rteCmd((h) => h.tableDeleteRow()), children: "−行" }),
+                      jsxRuntime.jsx(TipButton, { className: "dshk-vault-bbtn", tip: t("vtblRowAbove"), onClick: () => rteCmd((h) => h.tableAddRow(false)), children: "行↑" }),
+                      jsxRuntime.jsx(TipButton, { className: "dshk-vault-bbtn", tip: t("vtblRowBelow"), onClick: () => rteCmd((h) => h.tableAddRow(true)), children: "行↓" }),
+                      jsxRuntime.jsx(TipButton, { className: "dshk-vault-bbtn", tip: t("vtblRowDel"), onClick: () => rteCmd((h) => h.tableDeleteRow()), children: "−行" }),
                       jsxRuntime.jsx("span", { className: "dshk-vault-bsep" }),
-                      jsxRuntime.jsx("button", { type: "button", className: "dshk-vault-bbtn", title: t("vtblColLeft"), onClick: () => rteCmd((h) => h.tableAddCol(false)), children: "列←" }),
-                      jsxRuntime.jsx("button", { type: "button", className: "dshk-vault-bbtn", title: t("vtblColRight"), onClick: () => rteCmd((h) => h.tableAddCol(true)), children: "列→" }),
-                      jsxRuntime.jsx("button", { type: "button", className: "dshk-vault-bbtn", title: t("vtblColDel"), onClick: () => rteCmd((h) => h.tableDeleteCol()), children: "−列" }),
+                      jsxRuntime.jsx(TipButton, { className: "dshk-vault-bbtn", tip: t("vtblColLeft"), onClick: () => rteCmd((h) => h.tableAddCol(false)), children: "列←" }),
+                      jsxRuntime.jsx(TipButton, { className: "dshk-vault-bbtn", tip: t("vtblColRight"), onClick: () => rteCmd((h) => h.tableAddCol(true)), children: "列→" }),
+                      jsxRuntime.jsx(TipButton, { className: "dshk-vault-bbtn", tip: t("vtblColDel"), onClick: () => rteCmd((h) => h.tableDeleteCol()), children: "−列" }),
                       jsxRuntime.jsx("span", { className: "dshk-vault-bsep" }),
-                      jsxRuntime.jsx("button", { type: "button", className: "dshk-vault-bbtn", title: t("vtblAlignL"), onClick: () => rteCmd((h) => h.editor.chain().setCellAttribute("align", "left").run()), children: "左" }),
-                      jsxRuntime.jsx("button", { type: "button", className: "dshk-vault-bbtn", title: t("vtblAlignC"), onClick: () => rteCmd((h) => h.editor.chain().setCellAttribute("align", "center").run()), children: "中" }),
-                      jsxRuntime.jsx("button", { type: "button", className: "dshk-vault-bbtn", title: t("vtblAlignR"), onClick: () => rteCmd((h) => h.editor.chain().setCellAttribute("align", "right").run()), children: "右" }),
+                      jsxRuntime.jsx(TipButton, { className: "dshk-vault-bbtn", tip: t("vtblAlignL"), onClick: () => rteCmd((h) => h.editor.chain().setCellAttribute("align", "left").run()), children: "左" }),
+                      jsxRuntime.jsx(TipButton, { className: "dshk-vault-bbtn", tip: t("vtblAlignC"), onClick: () => rteCmd((h) => h.editor.chain().setCellAttribute("align", "center").run()), children: "中" }),
+                      jsxRuntime.jsx(TipButton, { className: "dshk-vault-bbtn", tip: t("vtblAlignR"), onClick: () => rteCmd((h) => h.editor.chain().setCellAttribute("align", "right").run()), children: "右" }),
                       jsxRuntime.jsx("span", { className: "dshk-vault-bsep" }),
                       // 「切换表头列」不进条：md 表格只认首行表头，列级表头存不下
                       // （存一次读回来就丢，按钮是个假承诺）——删掉
-                      jsxRuntime.jsx("button", { type: "button", className: "dshk-vault-bbtn", title: t("vtblDelTable"), onClick: () => rteCmd((h) => h.tableDelete()), children: "✕表" }),
+                      jsxRuntime.jsx(TipButton, { className: "dshk-vault-bbtn", tip: t("vtblDelTable"), onClick: () => rteCmd((h) => h.tableDelete()), children: "✕表" }),
                     ] })
                     : null,
                   bubPanel !== null
@@ -9221,15 +9242,18 @@ ellipsis，窄列只截字不破版 */
                   children: [
                     jsxRuntime.jsx("span", { className: hit === null ? "dshk-vault-barmenu-missing" : undefined, children: hit === null ? matShortName(l.target) : matShortName(matNameOf(hit)) }),
                     matPageLabel(l.anchor) === "" ? null : jsxRuntime.jsx("span", { className: "dshk-vault-barmenu-sub", children: matPageLabel(l.anchor) }),
-                    jsxRuntime.jsx("span", {
-                      className: "dshk-vault-barmenu-more",
-                      title: t("vaultBlEditTip"),
-                      onMouseDown: (e) => e.preventDefault(),
-                      onClick: (e) => {
-                        e.stopPropagation();
-                        setBlEdit({ pos: l.pos, page: range === null ? "" : range.start === range.end ? String(range.start) : `${range.start}-${range.end}` });
-                      },
-                      children: "⋯",
+                    jsxRuntime.jsx(KitTip, {
+                      label: t("vaultBlEditTip"),
+                      align: "end",
+                      children: jsxRuntime.jsx("span", {
+                        className: "dshk-vault-barmenu-more",
+                        onMouseDown: (e) => e.preventDefault(),
+                        onClick: (e) => {
+                          e.stopPropagation();
+                          setBlEdit({ pos: l.pos, page: range === null ? "" : range.start === range.end ? String(range.start) : `${range.start}-${range.end}` });
+                        },
+                        children: "⋯",
+                      }),
                     }),
                   ],
                 }, `m${l.pos}`);
@@ -11793,10 +11817,10 @@ ellipsis，窄列只截字不破版 */
                     jsxRuntime.jsx("button", { type: "button", className: "dshk-quiz-mini", onClick: () => setAskDel(null), children: t("qzCancel") }),
                   ] })
                 : jsxRuntime.jsxs(jsxRuntime.Fragment, { children: [
-                    jsxRuntime.jsx("button", { type: "button", className: "dshk-quiz-mini", title: t("qzMark"), disabled: qzIsMastered(progress, q.id) === true, onClick: () => markOrForget(q.id, "/dsh-wangshu/vault/quiz-mark"), children: "✓" }),
-                    jsxRuntime.jsx("button", { type: "button", className: "dshk-quiz-mini", title: t("qzForget"), onClick: () => markOrForget(q.id, "/dsh-wangshu/vault/quiz-forget"), children: "↻" }),
-                    jsxRuntime.jsx("button", { type: "button", className: "dshk-quiz-mini", title: t("qzEdit"), onClick: () => setEditing(i), children: "✎" }),
-                    jsxRuntime.jsx("button", { type: "button", className: "dshk-quiz-mini is-danger", title: t("qzDeleteGo"), onClick: () => setAskDel(i), children: "✕" }),
+                    jsxRuntime.jsx(TipButton, { className: "dshk-quiz-mini", tip: t("qzMark"), disabled: qzIsMastered(progress, q.id) === true, onClick: () => markOrForget(q.id, "/dsh-wangshu/vault/quiz-mark"), children: "✓" }),
+                    jsxRuntime.jsx(TipButton, { className: "dshk-quiz-mini", tip: t("qzForget"), onClick: () => markOrForget(q.id, "/dsh-wangshu/vault/quiz-forget"), children: "↻" }),
+                    jsxRuntime.jsx(TipButton, { className: "dshk-quiz-mini", tip: t("qzEdit"), onClick: () => setEditing(i), children: "✎" }),
+                    jsxRuntime.jsx(TipButton, { className: "dshk-quiz-mini is-danger", tip: t("qzDeleteGo"), onClick: () => setAskDel(i), children: "✕" }),
                   ] }),
             ] }),
           ] }, q.id),
@@ -12284,19 +12308,17 @@ ellipsis，窄列只截字不破版 */
                     onClick: () => setMode("interval"),
                     children: t("studyAdjust"),
                   }, "adjust"),
-                  jsxRuntime.jsx("button", {
-                    type: "button",
+                  jsxRuntime.jsx(TipButton, {
                     className: "dshk-btn-cancel",
-                    title: t("studyCompleteTip"),
+                    tip: t("studyCompleteTip"),
                     onClick: () => run("/dsh-wangshu/vault/study-complete", { rel }, (next) => {
                       say(t("studyCompleteDone").replace("{n}", String(next?.record?.reps ?? 0)).replace("{date}", String(next?.record?.dueAt ?? "")));
                     }),
                     children: t("studyComplete"),
                   }, "complete"),
-                  jsxRuntime.jsx("button", {
-                    type: "button",
+                  jsxRuntime.jsx(TipButton, {
                     className: "dshk-btn-save",
-                    title: t("studyFinishTip"),
+                    tip: t("studyFinishTip"),
                     onClick: () => run("/dsh-wangshu/vault/study-finish", { rel }, () => say(t("studyFinishDone"))),
                     children: t("studyFinish"),
                   }, "finish"),
@@ -15323,7 +15345,7 @@ body.dshk-hide-official-files [data-sidebar-right-guide-entry="files"]{display:n
     const jsxRuntime = require("react/jsx-runtime");
     const dock = kit;
     const {
-      resolveZh, subscribeLocale, getLocaleVersion, kitJson, KitTip, attachShortcutCatalog,
+      resolveZh, subscribeLocale, getLocaleVersion, kitJson, KitTip, TipButton, attachShortcutCatalog,
       openRightbarTab, rightbarTabsOf, getRightbarSr, useRightbarSeat, composerShellOf,
     } = dock;
 
@@ -15430,12 +15452,14 @@ body.dshk-hide-official-files [data-sidebar-right-guide-entry="files"]{display:n
         },
         () => String(chatTabsAll().length > 0),
       ) === "true";
-      return jsxRuntime.jsx("button", {
-        type: "button",
+      return jsxRuntime.jsx(TipButton, {
         className: "dshk-chat-inputbtn" + (open ? " is-open" : ""),
         "aria-label": t("entry"),
         "aria-pressed": open ? "true" : "false",
-        title: (open ? t("closeTip") : t("openTip")) + " · Ctrl+Alt+;",
+        // 输入行靠在窗口底边：气泡朝上；键帽由官方快捷键目录实时给
+        side: "top",
+        command: "dsh-wangshu.chat.toggle",
+        tip: open ? t("closeTip") : t("openTip"),
         // 保光标：点它不该把输入框焦点抢走
         onMouseDown: (e) => e.preventDefault(),
         onClick: () => toggleChat(),
